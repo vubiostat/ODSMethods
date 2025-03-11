@@ -283,16 +283,24 @@ acml_internal <- function(
 # S3 methods for acml
 
 #' @exportS3Method
-coef.acml <- function(object, complete = TRUE, ...)
-{
-  object$Est
-}
+coef.acml <- function(object, complete = TRUE, ...) object$Est
 
 #' @exportS3Method
-vcov.acml <- function(object, complete = TRUE, ...)
-{
-  object$cov
-}
+vcov.acml <- function(object, complete = TRUE, ...) object$cov
+
+#' Retrieve the robust variance covariance matrix
+#'
+#' An S3 Method to retrieve the robust variance-covariance matrix of an ODS
+#' model. It is derived via the sandwich estimator.
+#'
+#' @title robcov: Return the robust covariance matrix.
+#' @param object to get robust variance covariance matrix.
+#' @param ... other arguments
+#' @export
+robcov <- function(object, ...) UseMethod("robcov")
+
+#' @exportS3Method
+robcov.acml <- function(object, ...) object$robcov
 
 #' Fit model using ascertainment corrected likelihood model (ACML)
 #'
