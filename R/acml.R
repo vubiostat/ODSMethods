@@ -369,8 +369,8 @@ acml <- function(
   if(is.null(init))
   {
     init <- c(coef(lm(formula, data=data, na.action=na.action)),
-      rep(1, 4)) ### FIXME: Is this correct?
-  }
+      c(1, 1, 1, 1)) # FIXME: Check for transformation
+   }
 
   mm <- model.matrix(formula, mf)
 

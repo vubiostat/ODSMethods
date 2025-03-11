@@ -129,7 +129,7 @@ ods <- function(
   {
     # Square donut(s)
     pmax(p_sample[as.numeric(
-           cut(z_i['intercept'], c(-Inf, t(cutpoints[,'intercept']), Inf)))],
+           cut(z_i['intercept',], c(-Inf, t(cutpoints[,'intercept']), Inf)))],
          p_sample[as.numeric(
            cut(z_i['slope',],    c(-Inf, t(cutpoints[,'slope']),     Inf)))])
   } else
