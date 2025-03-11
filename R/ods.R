@@ -66,6 +66,7 @@ ods <- function(
   mf <- mf[c(1L, m)]
   mf$drop.unused.levels <- TRUE
   mf[[1L]] <- quote(stats::model.frame)
+  mf[['formula']] <- as.formula(gsub("\\|", "+", format(formula)))
   mf <- eval(mf, parent.frame())
 
   structure(list(
