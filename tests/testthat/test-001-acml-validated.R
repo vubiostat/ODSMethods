@@ -3,25 +3,16 @@ context("ACML Continuous Likelihood Methods")
 data(GroupByTimeInteraction)
 
 data <- GroupByTimeInteraction
-data <- data[!is.na(data$genotype),]
+data <- data[!is.na(data$genotype),]  # Drop NA data for these tests
 
-means <- quantile(
-  aggregate(data$response, list(data$patient), FUN=mean)$x,
-  probs=c(0.1, 0.9))
-
+# Create a design matrix
 d_mat <- cbind(rep(1, nrow(data)),
                data[,c("month", "genotype")])
 d_mat$g_t <- d_mat$month*d_mat$genotype
 
-validated.mean <- acml.validated(
-  y = matrix(data$response,ncol = 1),
-  x = as.matrix(d_mat),
-  z = as.matrix(cbind(rep(1, length(data$month)), data$month)),
-  id = matrix(data$patient,ncol = 1),
-  w.function = "mean",
-  InitVals = c(1,1,1,1,1,1,1,1),
-  cutpoints = means,
-  SampProb = c(1, 0.25, 1))
+  ##################################################################
+ ##
+## Expectations for ACML Mean
 
 estimates_mean <-
   c(10.5220505370398,   0.494186386418856, -0.858622784139645,
@@ -78,15 +69,122 @@ rcv_mean <- structure(
    -5.35364934386637e-05,-0.000300660907654808, 0.000380681446208264,
     0.000439791111586992), dim = c(8L, 8L))
 
-test_that("Validation acml reference works",
+test_that("Validation acml 'mean' reference works",
 {
-  expect_close(validated.mean$Ests, estimates_mean)
+  means <- quantile(
+    aggregate(data$response, list(data$patient), FUN=mean)$x,
+    probs=c(0.1, 0.9)
+  )
 
-  expect_close(validated.mean$LogL, logl_mean)
+  validated_mean <-
+    acml_validated(
+      y = matrix(data$response,ncol = 1),
+      x = as.matrix(d_mat),
+      z = as.matrix(cbind(rep(1, length(data$month)), data$month)),
+      id = matrix(data$patient,ncol = 1),
+      w.function = "mean",
+      InitVals = c(1,1,1,1,1,1,1,1),
+      cutpoints = means,
+      SampProb = c(1, 0.25, 1)
+    )
 
-  expect_close(validated.mean$covar, cv_mean)
+  expect_equal(validated_mean$Code,   2)
 
-  expect_close(validated.mean$Code, 2)
+  expect_close(validated_mean$Ests,   estimates_mean)
 
-  expect_close(validated.mean$robcov, rcv_mean)
+  expect_close(validated_mean$LogL,   logl_mean)
+
+  expect_close(validated_mean$covar,  cv_mean)
+
+  expect_close(validated_mean$robcov, rcv_mean)
+})
+
+  ##################################################################
+ ##
+## Expectations for ACML Intercept
+estimates_intercept <-
+  c(10.4081858395033,   0.492908053174336, -0.48469595029415,
+     0.301427567411956, 1.35620338248198,  -0.908131391743883,
+     0.241606418981776, 0.0202679590365379)
+
+logl_intercept <- -3619.32406785896
+
+cv_intercept <- structure(
+  c(0.0285975462685168,   -0.000219157144506539, -0.0286030568730371,
+    0.000219199373269175, -2.21688138248194e-05, -1.20600598635108e-07,
+    1.20742897765862e-05, -8.38106366361474e-14, -0.00021915728780379,
+    0.000799970112353607,  0.000219199471793421, -0.000800265030143277,
+    1.69890893070153e-07,  7.5543256638754e-07,  -2.10356482434209e-05,
+   -1.06899731169432e-13, -0.0286030567589374,    0.000219199377231779,
+    0.167245900687208,    -0.00128168809492457,   0.000182222407123074,
+    9.91342151054026e-07, -9.92480492756165e-05,  7.64191302654196e-13,
+    0.000219199413429794, -0.000800265031744105, -0.00128168806065772,
+    0.00466325847807885,  -1.3964606459429e-06,  -6.2250563032847e-06,
+    0.000173338598029562, -2.12660147201942e-13, -2.21687852825848e-05,
+    1.69890220478183e-07,  0.000182222457673746, -1.39645853739135e-06,
+    0.000646282062414732,  2.36881993032934e-05, -0.000381739442914932,
+   -3.15236564012132e-05, -1.20690009324242e-07,  7.55638428287338e-07,
+    9.91521882045892e-07, -6.22505937710431e-06,  2.36882393849624e-05,
+    0.00350673558343423,  -0.00146234755563452,  -0.000265472848795742,
+    1.20744013708423e-05, -2.10356954655172e-05, -9.92484286014202e-05,
+    0.000173338603824843, -0.000381739378661909, -0.00146234761319245,
+    0.011570824891137,     0.000408299018569166,  1.05499119410064e-11,
+   -1.98858242122019e-13, -1.66852092162457e-11, -1.07623623133384e-12,
+   -3.15236588515908e-05, -0.000265472836901883,  0.000408298943071217,
+    0.000414593724815866), dim = c(8L, 8L))
+
+rcv_intercept <- structure(
+  c(0.027628386217694,    -8.7870694544095e-05,  -0.0276796235954018,
+    0.000104460898734041, -0.000211568395700013,  0.000698284010190377,
+    0.00127286808949182,   9.15131644250409e-05, -8.78710197257448e-05,
+    0.00079908688675897,   9.60866561726626e-05, -0.000795290773529043,
+    4.00150235911194e-05, -8.08162074870541e-05,  0.000342942512005405,
+    4.36526927955542e-05, -0.0276796232245509,    9.60864801954203e-05,
+    0.18943666648527,     -0.00430994799792439,   0.000354408565340846,
+   -0.000511467992434471,  0.000404197027175982,  0.000539504428156005,
+    0.000104460974565334, -0.000795290783239709, -0.00430994790842999,
+    0.00465265673035159,   9.88123962751783e-06, -1.62891781132177e-05,
+    5.3085709976221e-06,  -9.81518543112156e-05, -0.000211568359219034,
+    4.0015008790155e-05,   0.000354408689260554,  9.88124373313849e-06,
+    0.000729168600908973, -0.000139248086265637, -0.000417909188710721,
+   -5.28601345561865e-05,  0.00069828389125476,  -8.08158450637181e-05,
+   -0.00051146787623043,  -1.62891846813856e-05, -0.000139248000445351,
+    0.00260592173453873,  -0.00132141372501363,  -0.00028489657741748,
+    0.00127286819843556,   0.000342942444701655,  0.000404196490696512,
+    5.30856788613437e-06, -0.000417909074716925, -0.00132141393192189,
+    0.00948718250534389,   0.000518203313162809,  9.15131737914924e-05,
+    4.36526908276141e-05,  0.000539504388852342, -9.81518560350982e-05,
+   -5.28601402340315e-05, -0.000284896561819366,  0.000518203178762568,
+    0.000439791109724428), dim = c(8L, 8L))
+test_that("Validation acml 'intercept' reference works",
+{
+  intercepts <- quantile(
+    sapply(
+      split(data, data$patient),
+      function(d) coef(lm(response~month, d))[1]
+    ),
+    probs=c(0.1, 0.9)
+  )
+
+  validated_intercept <-
+    acml_validated(
+      y = matrix(data$response,ncol = 1),
+      x = as.matrix(d_mat),
+      z = as.matrix(cbind(rep(1, length(data$month)), data$month)),
+      id = matrix(data$patient,ncol = 1),
+      w.function = "intercept",
+      InitVals = c(1,1,1,1,1,1,1,1),
+      cutpoints = intercepts,
+      SampProb = c(1, 0.25, 1)
+    )
+
+  expect_equal(validated_intercept$Code,   2)
+
+  expect_close(validated_intercept$Ests,   estimates_intercept)
+
+  expect_close(validated_intercept$LogL,   logl_intercept)
+
+  expect_close(validated_intercept$covar,  cv_intercept)
+
+  expect_close(validated_intercept$robcov, rcv_intercept)
 })

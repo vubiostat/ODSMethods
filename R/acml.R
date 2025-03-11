@@ -210,7 +210,7 @@ LogLikeAndScore <- function(params, y, x, z, id, w.function, cutpoints, SampProb
 ## If you do not want to use the ascertainment correction term in the conditional likelihood
 ## set all SampProb values equal to each other.  This would be the case if you were doing
 ## straightforward maximum likelihood (albeit inefficient) or weighted likelihood.
-acml.validated <- function(
+acml_validated <- function(
   y,                           ## response vector
   x,                           ## fixed effects design matrix
   z,                           ## random effects design matrix (right now this should be an intercept and a time-varying covariate (?)
