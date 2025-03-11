@@ -67,7 +67,7 @@ ods <- function(
   ...
 )
 {
-  n_c <- length(p_sample)-1
+  n_c <- length(p_sample)-1 # Number of cuts
   if(!is.null(method) && inherits(method, "character") && method == 'bivariate')
     n_c <- 2*n_c
 
