@@ -10,7 +10,7 @@ d_mat <- cbind(rep(1, nrow(data)),
                data[,c("month", "genotype")])
 d_mat$g_t <- d_mat$month*d_mat$genotype
 
-test_that("Validation acml 'mean' reference works",
+test_that("Validation ACML 'mean' reference works",
 {
   means <- quantile(
     aggregate(data$response, list(data$patient), FUN=mean)$x,
@@ -30,17 +30,13 @@ test_that("Validation acml 'mean' reference works",
     )
 
   expect_equal(validated_acml_mean$Code,   2)
-
   expect_close(validated_acml_mean$Ests,   estimates_acml_mean)
-
   expect_close(validated_acml_mean$LogL,   logl_acml_mean)
-
   expect_close(validated_acml_mean$covar,  cv_acml_mean)
-
   expect_close(validated_acml_mean$robcov, rcv_acml_mean)
 })
 
-test_that("Validation acml 'intercept' reference works",
+test_that("Validation ACML 'intercept' reference works",
 {
   intercepts <- quantile(
     sapply(
@@ -63,12 +59,8 @@ test_that("Validation acml 'intercept' reference works",
     )
 
   expect_equal(validated_acml_intercept$Code,   2)
-
   expect_close(validated_acml_intercept$Ests,   estimates_acml_intercept)
-
   expect_close(validated_acml_intercept$LogL,   logl_acml_intercept)
-
   expect_close(validated_acml_intercept$covar,  cv_acml_intercept)
-
   expect_close(validated_acml_intercept$robcov, rcv_acml_intercept)
 })
