@@ -23,8 +23,10 @@ test_that("ACML continuous response intercept",
   expect_close(est$LogL,    logl_acml_intercept)
   expect_close(vcov(est),   rcv_acml_intercept)
 
-  #expect_true("residuals" %in% names(est))
-  #expect_true("fitted.values" %in% names(est))
+  #expect_true("residuals" %in% names(est))     # There are 2 levels!
+  #expect_true("fitted.values" %in% names(est)) # There are 2 levels!
+
+  # This is really complicated
   #expect_true("rank" %in% names(est))
   #expect_true("df.residual" %in% names(est))
 
