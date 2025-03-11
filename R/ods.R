@@ -53,7 +53,7 @@
 #' @importFrom checkmate makeAssertCollection
 #' @importFrom checkmate assert_formula assert_numeric assert_true assert_character
 #' @importFrom checkmate reportAssertions
-#' @importFrom stats model.frame
+#' @importFrom stats model.frame terms as.formula quantile coef
 ods <- function(
   formula,
   method,

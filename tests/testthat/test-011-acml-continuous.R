@@ -7,10 +7,10 @@ data <- GroupByTimeInteraction
 test_that("ACML continuous response intercept",
 {
   design <- ods(response ~ month|patient,
-                data,
-                sampling=c(1, 0.25, 1),
-                quantiles=c(0.1, 0.9),
-                'intercept')
+                'intercept',
+                p_sample=c(1, 0.25, 1),
+                data=data,
+                quantiles=c(0.1, 0.9))
 
   est    <- acml(response ~ month*genotype, design)
 

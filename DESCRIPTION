@@ -26,10 +26,8 @@ Encoding: UTF-8
 LazyData: true
 URL: https://github.com/vubiostat/ODSMethods
 BugReports: https://github.com/vubiostat/ODSMethods/issues
-Suggests: testthat (>= 3.0.0)
+Suggests: testthat (>= 3.0.0), MASS, numDeriv
 Imports:
-	MASS,
 	mvtnorm,
-	numDeriv,
 	checkmate
 RoxygenNote: 7.3.2

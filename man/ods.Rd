@@ -22,7 +22,7 @@ ods(
 coerced to that class): a symbolic description of the sampling
 model.}
 
-\item{method}{`character(1)`; A string that specifies 'slope', 'intercept', 'bivariate', or 'mean'}
+\item{method}{`character(1)`; A string that specifies 'slope', 'intercept', 'bivariate', or 'mean'.}
 
 \item{p_sample}{`numeric(n)`; A numeric vector with sampling probabilities
 for each region specified by cutpoints.}
