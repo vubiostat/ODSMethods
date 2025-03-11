@@ -280,6 +280,22 @@ acml_internal <- function(
   list(Ests=out$estimate, covar=solve(ObsInfo), LogL= -out$minimum,  Code=out$code, robcov=solve(ObsInfo)%*%Cheese%*%solve(ObsInfo))
 }
 
+  ##############################################################################
+ #
+# S3 methods for acml
+
+#' @exportS3Method
+coef.acml <- function(object, complete = TRUE, ...)
+{
+  object$Est
+}
+
+#' @exportS3Method
+vcov.acml <- function(object, complete = TRUE, ...)
+{
+  object$robcov
+}
+
 #' Fit model using ascertainment corrected likelihood model (ACML)
 #'
 #' Outcome dependent sampling designs need to be corrected when fitting a
@@ -318,8 +334,11 @@ acml_internal <- function(
 #'   via the optimizer.
 #' @param ... Optional additional parameters passed to sub methods.
 #'
-#' @importFrom stats lm
 #' @export
+#' @importFrom checkmate makeAssertCollection
+#' @importFrom checkmate assert_formula assert_numeric assert_class
+#' @importFrom checkmate reportAssertions
+#' @importFrom stats lm model.matrix model.frame
 acml <- function(
   formula,
   design,
@@ -331,5 +350,46 @@ acml <- function(
   init = NULL,
   ...)
 {
-  NULL
+  # Validate arguments
+  coll <- makeAssertCollection()
+  assert_formula(formula, add=coll)
+  assert_class(design, "odsdesign", add=coll)
+  reportAssertions(coll)
+
+  # Duplicate of lm behavior
+  cl <- match.call()
+  mf <- match.call(expand.dots = FALSE)
+  m  <- match(c("formula", "data", "subset", "weights", "na.action"), names(mf), 0L)
+  mf <- mf[c(1L, m)]
+  mf$drop.unused.levels <- TRUE
+  mf[[1L]] <- quote(stats::model.frame)
+  mf <- eval(mf, parent.frame())
+
+  # Initial guess of coefficients
+  if(is.null(init))
+  {
+    init <- c(coef(lm(formula, data=data, na.action=na.action)),
+      rep(1, 4)) ### FIXME: Is this correct?
+  }
+
+  mm <- model.matrix(formula, mf)
+
+  #browser()
+  fit <- acml_internal(
+    y  = matrix(mf[,1], ncol = 1),
+    x  = mm,
+    z  = design$z,
+    id = matrix(design$model.frame[,3], ncol = 1),
+    w.function = design$method,
+    InitVals   = init,
+    cutpoints  = as.vector(design$cutpoints),
+    SampProb   = design$p_sample
+  )
+  class(fit) <- "acml"
+
+  if(fit$Code == 3) warning("last global step failed to locate a point lower than estimate. Either estimate is an approximate local minimum of the function or steptol is too small.")
+  if(fit$Code == 4) warning("iteration limit exceeded.")
+  if(fit$Code == 5) warning("maximum step size stepmax exceeded five consecutive times. Either the function is unbounded below, becomes asymptotic to a finite value from above in some direction or stepmax is too small.")
+
+  fit
 }

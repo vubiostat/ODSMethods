@@ -147,7 +147,8 @@ ods <- function(
       p_sample_i  = p_sample_i,
       id          = names(mf)[3],
       quantiles   = quantiles,
-      cutpoints   = cutpoints
+      cutpoints   = cutpoints,
+      z           = as.matrix(cbind(rep(1, nrow(mf)), mf[,2]))
     ),
     class="odsdesign"
   )

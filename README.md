@@ -4,7 +4,7 @@ This package is a draft at present to bring together a wide variety of outcome d
 
 ## Healthy Package Development
 
-* All test cases PASS on before every push to main repository. _Not true at present._
+* All test cases PASS on before every push to main repository.
 * CRAN Check should have 0 ERRORs and 0 WARNINGS before every push to the main repository. This prevents a huge amount of work later.
 * No files added to repository unless they need to be. This is intended to be a working package _not a pile._
 * Work incrementally. Change one or add one small thing at a time. 
