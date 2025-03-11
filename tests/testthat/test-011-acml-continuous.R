@@ -33,7 +33,7 @@ test_that("ACML continuous response intercept",
 
 })
 
-test_that("ACML continuous response intercept",
+test_that("ACML continuous response mean",
 {
   expect_silent(
     design <- ods(response ~ month|patient,
