@@ -2,4 +2,11 @@
 
 export(acml)
 export(ods)
+importFrom(checkmate,assert_character)
+importFrom(checkmate,assert_formula)
+importFrom(checkmate,assert_numeric)
+importFrom(checkmate,assert_true)
+importFrom(checkmate,makeAssertCollection)
+importFrom(checkmate,reportAssertions)
 importFrom(stats,lm)
+importFrom(stats,model.frame)

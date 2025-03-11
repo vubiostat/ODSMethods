@@ -11,8 +11,10 @@
 #'   environment(formula), typically the environment from which acml is called.
 #' @param p_sample `numeric(n)`; A numeric vector with sampling probabilities
 #'   for each region specified by cutpoints.
-#' @param cutpoints a specification of the cutpoints for sampling.
-#' @param method `character(1)`; A string that specifies 'slope', 'intercept', 'bivariate'
+#' @param quantiles `numeric(n-1)`; quantiles to compute cutpoints of interest.
+#'   One of quantiles or cutpoints must be specified. Default is NULL.
+#' @param cutpoints `numeric(n-1)`; a specification of the cutpoints for sampling. Default is NULL.
+#' @param method `character(1)`; A string that specifies 'slope', 'intercept', 'bivariate', or 'mean'
 #' @param subset an optional vector specifying a subset of observations to be
 #'   used in the fitting process. (See additional details about how this
 #'   argument interacts with data-dependent bases in the ‘Details’ section of
@@ -27,18 +29,49 @@
 #'   possible value is NULL, no action. Value na.exclude can be useful.
 #' @param ... additional arguments.
 #' @export
+#'
+#' @importFrom checkmate makeAssertCollection
+#' @importFrom checkmate assert_formula assert_numeric assert_true assert_character
+#' @importFrom checkmate reportAssertions
+#' @importFrom stats model.frame
 ods <- function(
   formula,
-  data = NULL,
-  p_sample,
-  cutpoints,
   method,
-  subset = NULL,
-  weights = NULL,
+  p_sample,
+  data=NULL,
+  quantiles=NULL,
+  cutpoints=NULL,
+  subset=NULL,
+  weights=NULL,
   na.action = getOption('na.action'),
   ...
 )
 {
-  NULL
+  # Validate arguments
+  coll <- makeAssertCollection()
+  assert_formula(formula, add=coll)
+  assert_numeric(p_sample,  add=coll, lower=0, upper=1, min.len=2, any.missing=FALSE)
+  assert_numeric(quantiles, add=coll, lower=0, upper=1, len=length(p_sample)-1, null.ok=TRUE, any.missing=FALSE)
+  assert_numeric(cutpoints, add=coll, len=length(p_sample)-1, null.ok=TRUE, any.missing=FALSE)
+  assert_character(method,  add=coll, len=1, any.missing=FALSE, pattern="slope|intercept|bivariate|mean")
+  assert_true(xor(is.null(quantiles), is.null(cutpoints)), .var.name="only one of quantiles or cutpoints can be specified", add=coll)
+  assert_true(length(terms(formula))==3, .var.name="formula must have 3 terms", add=coll)
+  assert_true(any(grepl("\\|", formula)), .var.name="formula must have an id specified, e.g. y~t|id", add=coll)
+  reportAssertions(coll)
 
+  # Duplicate of lm behavior
+  cl <- match.call()
+  mf <- match.call(expand.dots = FALSE)
+  m  <- match(c("formula", "data", "subset", "weights", "na.action"), names(mf), 0L)
+  mf <- mf[c(1L, m)]
+  mf$drop.unused.levels <- TRUE
+  mf[[1L]] <- quote(stats::model.frame)
+  mf <- eval(mf, parent.frame())
+
+  structure(list(
+      call        = cl,
+      model.frame = mf
+    ),
+    class="odsdesign"
+  )
 }

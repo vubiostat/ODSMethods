@@ -6,10 +6,11 @@
 \usage{
 ods(
   formula,
-  data = NULL,
-  p_sample,
-  cutpoints,
   method,
+  p_sample,
+  data = NULL,
+  quantiles = NULL,
+  cutpoints = NULL,
   subset = NULL,
   weights = NULL,
   na.action = getOption("na.action"),
@@ -21,17 +22,20 @@ ods(
 coerced to that class): a symbolic description of the sampling
 model.}
 
+\item{method}{`character(1)`; A string that specifies 'slope', 'intercept', 'bivariate', or 'mean'}
+
+\item{p_sample}{`numeric(n)`; A numeric vector with sampling probabilities
+for each region specified by cutpoints.}
+
 \item{data}{`data.frame`; an optional data frame, list or environment (or
 object coercible by as.data.frame to a data frame) containing the variables
 in the model. If not found in data, the variables are taken from
 environment(formula), typically the environment from which acml is called.}
 
-\item{p_sample}{`numeric(n)`; A numeric vector with sampling probabilities
-for each region specified by cutpoints.}
+\item{quantiles}{`numeric(n-1)`; quantiles to compute cutpoints of interest.
+One of quantiles or cutpoints must be specified. Default is NULL.}
 
-\item{cutpoints}{a specification of the cutpoints for sampling.}
-
-\item{method}{`character(1)`; A string that specifies 'slope', 'intercept', 'bivariate'}
+\item{cutpoints}{`numeric(n-1)`; a specification of the cutpoints for sampling. Default is NULL.}
 
 \item{subset}{an optional vector specifying a subset of observations to be
 used in the fitting process. (See additional details about how this

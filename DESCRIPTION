@@ -24,12 +24,12 @@ Description: When outcome covariates are available one can perform biased
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-URL: https://github.com/vubiostat/odepsamp
-BugReports: https://github.com/vubiostat/odepsamp/issues
+URL: https://github.com/vubiostat/ODSMethods
+BugReports: https://github.com/vubiostat/ODSMethods/issues
 Suggests: testthat (>= 3.0.0)
 Imports:
 	MASS,
 	mvtnorm,
 	numDeriv,
-	reformulas
+	checkmate
 RoxygenNote: 7.3.2
