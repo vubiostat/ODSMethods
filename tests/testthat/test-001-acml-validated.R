@@ -23,7 +23,7 @@ validated.mean <- acml.validated(
   cutpoints = means,
   SampProb = c(1, 0.25, 1))
 
-test_that("Validation acml works",
+test_that("Validation acml reference works",
 {
   expect_equal(
     validated.mean$Ests,
