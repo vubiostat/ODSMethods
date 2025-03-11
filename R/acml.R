@@ -18,8 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>
 
-
-
 vi.calc <- function(zi, sigma0, sigma1, rho, sigmae){
   zi %*% matrix(c(sigma0^2, rho*sigma0*sigma1,rho*sigma0*sigma1,sigma1^2), nrow=2) %*% t(zi) +
     sigmae*sigmae*diag(length(zi[,2]))
@@ -293,7 +291,7 @@ coef.acml <- function(object, complete = TRUE, ...)
 #' @exportS3Method
 vcov.acml <- function(object, complete = TRUE, ...)
 {
-  object$robcov
+  object$cov
 }
 
 #' Fit model using ascertainment corrected likelihood model (ACML)

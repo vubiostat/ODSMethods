@@ -21,7 +21,7 @@ test_that("ACML continuous response intercept",
   expect_equal(est$Code,   2) # This changes based on method
   expect_close(coef(est),   estimates_acml_intercept)
   expect_close(est$LogL,    logl_acml_intercept)
-  expect_close(vcov(est),   rcv_acml_intercept)
+  expect_close(vcov(est),   cv_acml_intercept)
 
   #expect_true("residuals" %in% names(est))     # There are 2 levels!
   #expect_true("fitted.values" %in% names(est)) # There are 2 levels!
