@@ -114,7 +114,7 @@ print.odsdesign <- function(x, digits = max(3L, getOption("digits")), ...)
       "\n\n",
       "Cutpoints:\n",
       sep="")
-  print(x$cutpoints, digits=digits, ...)
+  print(round(x$cutpoints, digits=digits), ...)
   cat("\n")
   invisible(x)
 }
@@ -311,7 +311,7 @@ ods <- function(
     pmax(p_sample[as.numeric(
            cut(z_i['intercept',], c(-Inf, t(cutpoints[,'intercept']), Inf)))],
          p_sample[as.numeric(
-           cut(z_i['slope',],    c(-Inf, t(cutpoints[,'slope']),     Inf)))])
+           cut(z_i['slope',],     c(-Inf, t(cutpoints[,'slope']),     Inf)))])
   } else
   {
     p_sample[as.numeric(cut(z_i[method,], c(-Inf, t(cutpoints), Inf)))]
