@@ -101,7 +101,6 @@ plot.odsdesign <- function(
   }
 }
 
-
 #' Specify a given design for Outcome Dependent Sampling (ODS)
 #'
 #' Specify the design of an outcome dependent sampling routine.
