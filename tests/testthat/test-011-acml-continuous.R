@@ -1,8 +1,7 @@
 context("ACML Continuous Likelihood Methods")
 
-data(GroupByTimeInteraction)
+data(gbti)
 
-data <- GroupByTimeInteraction
 
 test_that("ACML continuous response intercept",
 {
@@ -10,11 +9,11 @@ test_that("ACML continuous response intercept",
     design <- ods(response ~ month|patient,
                   'intercept',
                   p_sample=c(1, 0.25, 1),
-                  data=data,
+                  data=gbti,
                   quantiles=c(0.1, 0.9)))
 
   expect_silent(
-    est <- acml(response ~ month*genotype, design, data, init=rep(1, 8))
+    est <- acml(response ~ month*genotype, design, gbti, init=rep(1, 8))
   )
 
   expect_true(inherits(est, "acml"))
@@ -39,11 +38,11 @@ test_that("ACML continuous response mean",
     design <- ods(response ~ month|patient,
                   'mean',
                   p_sample=c(1, 0.25, 1),
-                  data=data,
+                  data=gbti,
                   quantiles=c(0.1, 0.9)))
 
   expect_silent(
-    est <- acml(response ~ month*genotype, design, data, init=rep(1, 8))
+    est <- acml(response ~ month*genotype, design, gbti, init=rep(1, 8))
   )
 
   expect_true(inherits(est, "acml"))

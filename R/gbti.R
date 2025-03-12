@@ -1,6 +1,6 @@
-#' Simulated group by time interaction dataset
+#' Simulated Group by Time Interaction (gbti) dataset
 #'
-#' @name GroupByTimeInteraction
+#' @name gbti
 #' @docType data
 #' @description
 #' This is a simulated data set with known ``truth''. The dataset consists of
@@ -26,10 +26,10 @@
 #' with a 0.1 correlation them. Further,
 #'
 #' \deqn{\pi(genotype_i = 1 | ancestry_i) = 0.1 + 0.15 \cdot I(ancestry_i=1)}
-#' @usage data(GroupByTimeInteraction)
+#' @usage data(gbti)
 #' @return Patient responses, with stratified sampling of genotype in a biased manner based on outcome.
 #' @examples
-#'   data(GroupByTimeInteraction)
+#'   data(gbti)
 NULL
 
 

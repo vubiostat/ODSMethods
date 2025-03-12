@@ -1,8 +1,8 @@
 context("ACML Validated Continuous Likelihood Methods")
 
-data(GroupByTimeInteraction)
+data(gbti)
 
-data <- GroupByTimeInteraction
+data <- gbti
 data <- data[!is.na(data$genotype),]  # Drop NA data for these tests
 
 # Create a design matrix
