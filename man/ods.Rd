@@ -54,6 +54,12 @@ possible value is NULL, no action. Value na.exclude can be useful.}
 
 \item{...}{additional arguments.}
 }
+\value{
+Returns an ODS design object.
+}
 \description{
 Specify the design of an outcome dependent sampling routine.
+}
+\seealso{
+[plot.odsdesign()]
 }

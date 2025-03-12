@@ -18,6 +18,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>
 
+# NOTE: This is the editable version of ACML fitting. The tests will make
+# sure that it returns the right results.
+
 vi.calc <- function(zi, sigma0, sigma1, rho, sigmae){
   zi %*% matrix(c(sigma0^2, rho*sigma0*sigma1,rho*sigma0*sigma1,sigma1^2), nrow=2) %*% t(zi) +
     sigmae*sigmae*diag(length(zi[,2]))
@@ -282,6 +285,7 @@ acml_internal <- function(
  #
 # S3 methods for acml
 
+
 #' @exportS3Method
 coef.acml <- function(object, complete = TRUE, ...) object$Est
 
@@ -376,11 +380,11 @@ acml <- function(
   {
     init <- c(coef(lm(formula, data=data, na.action=na.action)),
       c(1, 1, 1, 1)) # FIXME: Check for transformation
-   }
+      # Intercept variance component, Slope Variance component, correlation, error variance
+  }
 
   mm <- model.matrix(formula, mf)
 
-  #browser()
   fit <- acml_internal(
     y  = matrix(mf[,1], ncol = 1),
     x  = mm,

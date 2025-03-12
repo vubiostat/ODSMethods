@@ -17,6 +17,90 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>
 
+#' Scatter plot an ODS design
+#'
+#' Generate a basic scatter plot of an ODS design and overlay the
+#' cut points.
+#'
+#' @param x the ods design object output from \code{\link{ods}}.
+#' @param xlab a title for the x axis: see \code{\link{title}}.
+#' @param ylab a title for the y axis: see \code{\link{title}}.
+#' @param main an overall title for the plot: see \code{\link{title}}.
+#' @param sub a subtitle for the plot: see \code{\link{title}}.
+#' @param col A specification for the default plotting color. See \code{\link{par}}.
+#' @param lwd The line width, a positive number, defaulting to 1. See \code{\link{par}}.
+#' @param lty The line type. Line types can either be specified as an integer
+#'   (0=blank, 1=solid (default), 2=dashed, 3=dotted, 4=dotdash, 5=longdash,
+#'    6=twodash) or as one of the character strings \code{"blank", "solid",
+#'    "dashed", "dotted", "dotdash", "longdash", or "twodash"}, where
+#'    \code{"blank"} uses ‘invisible lines’ (i.e., does not draw them).
+#'    See \code{\link{par}}.
+#' @param cutcol A specification for the cut point line plotting color.
+#'    Defaults to 'red'. See \code{\link{par}}.
+#' @param cutlwd The cut point line width, a positive number, defaulting to 2.
+#'    See \code{\link{par}}.
+#' @param cutlty The cut point line type. Line types can either be specified as an integer
+#'   (0=blank, 1=solid (default), 2=dashed, 3=dotted, 4=dotdash, 5=longdash,
+#'    6=twodash) or as one of the character strings \code{"blank", "solid",
+#'    "dashed", "dotted", "dotdash", "longdash", or "twodash"}, where
+#'    \code{"blank"} uses ‘invisible lines’ (i.e., does not draw them).
+#'    See \code{\link{par}}.
+#' @param ... Additional arguments past to \code{\link{plot}}, \code{\link{hist}},
+#'    or \code{\link{lines}} depending on context.
+#' @seealso [ods()]
+#'
+#' @exportS3Method
+#' @importFrom graphics abline hist lines
+plot.odsdesign <- function(
+  x,
+  xlab   = "Intercept",
+  ylab   = "Slope",
+  main   = format(x$formula),
+  sub    = paste(x$method, "design"),
+  col    = 'black',
+  lwd    = 1,
+  lty    = 1,
+  cutcol = 'red',
+  cutlwd = 2,
+  cutlty = 2,
+  ...)
+{
+  if(x$method == 'mean')
+  {
+    if(xlab == 'Intercept') xlab <- "Mean"
+    hist(x$z_i[1,], xlab=xlab, main=main, sub=sub,
+         col=col, lwd=lwd, lty=lty, sub=sub, ...)
+  } else
+  {
+    plot(x$z_i[2,], x$z_i[3,],
+         xlab=xlab, ylab=ylab,
+         main=main, sub=sub,
+         col=col, lwd=lwd, lty=lty, # Needed to prevent capture in call to lines below via ...
+         ...)
+  }
+
+  if (x$method != 'bivariate')
+  {
+    for(i in colnames(x$cutpoints))
+    {
+      if(i %in% c('mean', 'intercept'))
+        abline(v=x$cutpoints[,i], col=cutcol, lty=cutlty, lwd=cutlwd, ...) else
+        abline(h=x$cutpoints[,i], col=cutcol, lty=cutlty, lwd=cutlwd, ...)
+    }
+  } else # bivariate
+  {
+    square <- function(x, y)
+      lines(x[c(1, 1, 2, 2, 1)], y[c(1, 2, 2, 1, 1)],
+            col=cutcol, lty=cutlty, lwd=cutlwd, ...)
+    n <- nrow(x$cutpoints)
+    for(i in 1:(n/2))
+    {
+      sel <- c(i, n+1-i)
+      square(x$cutpoints[sel,1], x$cutpoints[sel,2])
+    }
+  }
+}
+
 
 #' Specify a given design for Outcome Dependent Sampling (ODS)
 #'
@@ -48,6 +132,8 @@
 #'   na.fail if that is unset. The ‘factory-fresh’ default is na.omit. Another
 #'   possible value is NULL, no action. Value na.exclude can be useful.
 #' @param ... additional arguments.
+#' @return Returns an ODS design object.
+#' @seealso [plot.odsdesign()]
 #' @export
 #'
 #' @importFrom checkmate makeAssertCollection
@@ -82,6 +168,14 @@ ods <- function(
   assert_true(length(terms(formula))==3, .var.name="formula must have 3 terms", add=coll)
   assert_true(any(grepl("\\|", formula)), .var.name="formula must have an id specified, e.g. y~t|id", add=coll)
   reportAssertions(coll)
+
+  # Square donut must have even number of quantiles or cutpoints
+  if(method == 'bivariate')
+  {
+    assert_true(length(quantiles) %% 2 == 0, .var.name="length(quantiles) must be even for bivariate design", add=coll)
+    assert_true(length(cutpoints) %% 2 == 0, .var.name="length(cutpoints) must be even for bivariate design", add=coll)
+    reportAssertions(coll)
+  }
 
   # Duplicate of lm behavior
   cl <- match.call()
@@ -141,6 +235,7 @@ ods <- function(
   # Return design object
   structure(list(
       call        = cl,
+      formula     = formula,
       model.frame = mf,
       method      = method,
       p_sample    = p_sample,
@@ -148,7 +243,8 @@ ods <- function(
       id          = names(mf)[3],
       quantiles   = quantiles,
       cutpoints   = cutpoints,
-      z           = as.matrix(cbind(rep(1, nrow(mf)), mf[,2]))
+      z           = as.matrix(cbind(rep(1, nrow(mf)), mf[,2])),
+      z_i         = z_i
     ),
     class="odsdesign"
   )
