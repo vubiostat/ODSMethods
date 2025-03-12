@@ -57,7 +57,7 @@ plot.odsdesign <- function(
   ylab   = "Slope",
   main   = format(x$formula),
   sub    = paste(x$method, "design"),
-  col    = 'black',
+  col    = if(x$method == 'mean') 'lightgray' else 'black',
   lwd    = 1,
   lty    = 1,
   cutcol = 'red',
@@ -69,7 +69,7 @@ plot.odsdesign <- function(
   {
     if(xlab == 'Intercept') xlab <- "Mean"
     hist(x$z_i[1,], xlab=xlab, main=main, sub=sub,
-         col=col, lwd=lwd, lty=lty, sub=sub, ...)
+         col=col, lwd=lwd, lty=lty, ...)
   } else
   {
     plot(x$z_i[2,], x$z_i[3,],
@@ -133,6 +133,29 @@ plot.odsdesign <- function(
 #' @param ... additional arguments.
 #' @return Returns an ODS design object.
 #' @seealso [plot.odsdesign()]
+#' @examples
+#' data(gbti)
+#'
+#' odsd <- ods(response ~ month|patient, 'mean', p_sample=c(1, 0.25, 1),
+#'             data=gbti, quantiles=c(0.1, 0.9))
+#' summary(odsd)
+#' plot(odsd)
+#'
+#' odsd <- ods(response ~ month|patient, 'intercept', p_sample=c(1, 0.25, 1),
+#'             data=gbti, quantiles=c(0.1, 0.9))
+#' summary(odsd)
+#' plot(odsd)
+#'
+#' odsd <- ods(response ~ month|patient, 'slope', p_sample=c(1, 0.25, 1),
+#'             data=gbti, quantiles=c(0.1, 0.9))
+#' summary(odsd)
+#' plot(odsd)
+#'
+#' odsd <- ods(response ~ month|patient, 'bivariate', p_sample=c(1, 0.25, 1),
+#'             data=gbti, quantiles=c(0.1, 0.9))
+#' summary(odsd)
+#' plot(odsd)
+#'
 #' @export
 #'
 #' @importFrom checkmate makeAssertCollection

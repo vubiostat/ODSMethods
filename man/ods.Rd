@@ -60,6 +60,30 @@ Returns an ODS design object.
 \description{
 Specify the design of an outcome dependent sampling routine.
 }
+\examples{
+data(gbti)
+
+odsd <- ods(response ~ month|patient, 'mean', p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9))
+summary(odsd)
+plot(odsd)
+
+odsd <- ods(response ~ month|patient, 'intercept', p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9))
+summary(odsd)
+plot(odsd)
+
+odsd <- ods(response ~ month|patient, 'slope', p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9))
+summary(odsd)
+plot(odsd)
+
+odsd <- ods(response ~ month|patient, 'bivariate', p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9))
+summary(odsd)
+plot(odsd)
+
+}
 \seealso{
 [plot.odsdesign()]
 }

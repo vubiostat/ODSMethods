@@ -2,7 +2,6 @@ context("ACML Continuous Likelihood Methods")
 
 data(gbti)
 
-
 test_that("ACML continuous response intercept",
 {
   expect_silent(
