@@ -14,12 +14,16 @@ This package is a draft at present to bring together a wide variety of outcome d
 * Routines in the "R" directory is the working published and polished code.
 * A routine in the "R" directory needs a tedious amount of tests that consider not only user interface, but the results and compares them with reference code.
 * Proper author reference/license in each code file, and the author needs to be part of the DESCRIPTION.
+* It should be dependency adverse. An imports for say tidyverse creates a huge dependency liability. Suggests for a package is okay, but to be avoided and should include required checks that a package is loaded if needed.
 
 ## Needs
 
+* Decide on principal maintainer.
+  * If Lucy commits, then she needs to practice a CRAN publication of this.
 * [Wide, specification] Generate example calls for every method under consideration.
 * [Deep] Finish acml to every deep corner and usage.
   * Add tests and values for slope and bivariate methods to acml.
+  * Q: Should ods formula allow for functions/transforms? model.matrix
   * Add all references and edit R/ODSMethods-package.R
   * Add format / summary to ods
   * Add format / summary to acml
@@ -89,3 +93,6 @@ This package is a draft at present to bring together a wide variety of outcome d
 39 variable.names lm    FALSE   registered S3method
 40 vcov           lm    FALSE   registered S3method
 ```
+
+it probably makes sense to add all of them, even if you have a stop message that says "this method isn't implemented yet" -- Cole Beck 3/12/25
+

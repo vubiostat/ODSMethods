@@ -99,6 +99,70 @@ plot.odsdesign <- function(
       square(x$cutpoints[sel,1], x$cutpoints[sel,2])
     }
   }
+
+  invisible(x)
+}
+
+#' @exportS3Method
+model.matrix.odsdesign <- function(object, ...) as.matrix(object$model.frame)
+
+#' @exportS3Method
+print.odsdesign <- function(x, digits = max(3L, getOption("digits")), ...)
+{
+  cat("\nCall:\n",
+      paste(deparse(x$call), collapse="\n"),
+      "\n\n",
+      "Cutpoints:\n",
+      sep="")
+  print(x$cutpoints, digits=digits, ...)
+  cat("\n")
+  invisible(x)
+}
+
+#' @exportS3Method
+#' @importFrom stats quantile
+summary.odsdesign <- function(object, digits = max(3L, getOption("digits")), ...)
+{
+  ans <- object[c("call", "cutpoints")]
+  ans$digits <- digits
+  xx <- matrix(rep(NA, 24), ncol=4,dimnames=list(
+    c("Min.", "1st Qu.", "Median", "3rd Qu.", "Max." , "Mean"),
+    c(names(object$model.frame)[1], rownames(object$z_i))
+  ))
+  xx[1:5,1] <- quantile(object$model.frame[,1], na.rm=TRUE, names=FALSE)
+  xx[6,1]   <- mean(object$model.frame[,1], na.rm=TRUE)
+  xx[1:5,2] <- quantile(object$z_i['mean',], na.rm=TRUE, names=FALSE)
+  xx[6,2]   <- mean(object$z_i['mean',], na.rm=TRUE)
+  xx[1:5,3] <- quantile(object$z_i['intercept',], na.rm=TRUE, names=FALSE)
+  xx[6,3]   <- mean(object$z_i['intercept',], na.rm=TRUE)
+  xx[1:5,4] <- quantile(object$z_i['slope',], na.rm=TRUE, names=FALSE)
+  xx[6,4]   <- mean(object$z_i['slope',], na.rm=TRUE)
+
+  ans$descriptive <- as.table(xx[c(1,2,6,3:5),])
+
+  ans$N <- c(nrow(object$z), ncol(object$z_i), sum(object$p_sample_i))
+  names(ans$N) <- c("N", names(object$model.frame)[3], "E[N_sample]")
+
+  class(ans) <- "summary.odsdesign"
+  ans
+}
+
+#' @exportS3Method
+print.summary.odsdesign <- function(x, digits = NULL, ...)
+{
+  if(is.null(digits)) digits <- x$digits
+  cat("\nCall:\n",
+      paste(deparse(x$call), collapse="\n"),
+      "\n\n",
+      "Cutpoints:\n",
+      sep="")
+  print(round(x$cutpoints, digits=digits), ...)
+  cat("\n")
+  print(round(x$descriptive, digits=digits), ...)
+  cat("\n")
+  print(round(x$N, digits=digits), ...)
+  cat("\n")
+  invisible(x)
 }
 
 #' Specify a given design for Outcome Dependent Sampling (ODS)
