@@ -306,6 +306,11 @@ robcov <- function(object, ...) UseMethod("robcov")
 #' @exportS3Method
 robcov.acml <- function(object, ...) object$robcov
 
+#' @exportS3Method
+logLik.acml <- function(object, ...)
+  structure(object$LogL, nall = nrow(object$data),
+    nobs = nrow(object$data), df=NA, class=c("logLik", "numeric"))
+
 #' Fit model using ascertainment corrected likelihood model (ACML)
 #'
 #' Outcome dependent sampling designs need to be corrected when fitting a
@@ -396,6 +401,9 @@ acml <- function(
     SampProb   = design$p_sample
   )
   class(fit) <- "acml"
+
+  fit$design <- design
+  fit$data   <- data
 
   if(fit$Code == 3) warning("last global step failed to locate a point lower than estimate. Either estimate is an approximate local minimum of the function or steptol is too small.")
   if(fit$Code == 4) warning("iteration limit exceeded.")

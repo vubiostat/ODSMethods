@@ -18,7 +18,7 @@ test_that("ACML continuous response intercept",
   expect_true(inherits(est, "acml"))
   expect_equal(est$Code,   2) # This changes based on method
   expect_close(coef(est),   estimates_acml_intercept)
-  expect_close(est$LogL,    logl_acml_intercept)
+  expect_close(logLik(est), logl_acml_intercept)
   expect_close(vcov(est),   cv_acml_intercept)
   expect_close(robcov(est), rcv_acml_intercept)
 
@@ -47,7 +47,7 @@ test_that("ACML continuous response mean",
   expect_true(inherits(est, "acml"))
   expect_equal(est$Code,   2) # This changes based on method
   expect_close(coef(est),   estimates_acml_mean)
-  expect_close(est$LogL,    logl_acml_mean)
+  expect_close(logLik(est), logl_acml_mean)
   expect_close(vcov(est),   cv_acml_mean)
   expect_close(robcov(est), rcv_acml_mean)
 
