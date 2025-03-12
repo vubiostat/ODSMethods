@@ -17,13 +17,26 @@ This package is a draft at present to bring together a wide variety of outcome d
 
 ## Needs
 
-* Go broad and outline what every method would look like in the current interface approach. Right now it's limited to acml and continuous logitudinal designs. 
-* Go deep on the existing acml routine and consider all the output possible using S3 (print, format, summary, plot, vcov, coef, resid). Use the existing 'lm' as a guide. 
-* Start optimization of acml underlying algorithms.
+* [Wide, specification] Generate example calls for every method under consideration.
+* [Deep] Finish acml to every deep corner and usage.
+  * Add all references and edit R/ODSMethods-package.R
+  * Add format / summary to ods
+  * Add format / summary to acml
+  * Add names to R estimates including the 4 additional parameters
+  * Add vcov that returns both levels in the manner of lme4
+  * Add computation of rank/df for variables
+  * Add 'fitted.values' to acml
+  * Add 'residuals' to acml (and S3 routine)
+  * Add plot to acml
+  NOTE: In general use lm() and lmer() object output and functions as guide.  
+* [Refine] acml. 
+  * Replace with ACML.LME (not the validated test version!)
+  * Add the analytical Hessian.
   * Get rid of `nlm`. This is not a recommended optimizer.
-  * Add in the later version of ACML.LME that include BLUP and other methods.
-  * Add in Lucy's analytical Hessian. 
-  * Last minute: Push things to C++. 
-* Some reference data sets to write examples from (with full documentation). Existing reference set is really a test set and should be moved to `inst` and loaded from there. 
-
+  * Optimize for speed.
+* [Document]
+  * Add reference data sets preferably from papers.
+  * Add vignette on usage. (start with acml)
+* [Expand] Fill in wide and deep for all routines identified in specification.
+* [Get Credit] Write paper for Journal of Statistical Software
 
