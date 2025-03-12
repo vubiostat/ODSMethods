@@ -25,7 +25,6 @@ This package is a draft at present to bring together a wide variety of outcome d
   * Add tests and values for slope and bivariate methods to acml.
   * Q: Should ods formula allow for functions/transforms? model.matrix
   * Add all references and edit R/ODSMethods-package.R
-  * Add format / summary to ods
   * Add format / summary to acml
   * Add names to R estimates including the 4 additional parameters
   * Add vcov that returns both levels in the manner of lme4
