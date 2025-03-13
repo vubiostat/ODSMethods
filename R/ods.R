@@ -140,7 +140,7 @@ summary.odsdesign <- function(object, digits = max(3L, getOption("digits")), ...
 
   ans$descriptive <- as.table(xx[c(1,2,6,3:5),])
 
-  ans$N <- c(nrow(object$z), ncol(object$z_i), sum(object$p_sample_i))
+  ans$N <- c(nrow(object$model.frame), ncol(object$z_i), sum(object$p_sample_i))
   names(ans$N) <- c("N", names(object$model.frame)[3], "E[N_sample]")
 
   class(ans) <- "summary.odsdesign"
