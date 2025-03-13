@@ -392,6 +392,10 @@ acml <- function(
   }
 
   mm <- model.matrix(formula2, mf, na.action=na.action)
+  assert_true(all(as.character(mm[,design$id]) %in% names(design$p_sample_i)),
+    .var.name='Group variables provided to acml that were not part of design', add=coll)
+  reportAssertions(coll)
+
   fit <- acml_internal(
     y  = matrix(mf[,design$response]),
     x  = mm[,!(colnames(mm) %in% design$id)],
