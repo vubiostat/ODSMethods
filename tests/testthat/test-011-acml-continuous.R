@@ -2,46 +2,24 @@ context("ACML Continuous Likelihood Methods")
 
 data(gbti)
 
-test_that("ACML continuous response intercept",
-{
-  expect_silent(
-    design <- ods(response ~ month|patient,
-                  'intercept',
-                  p_sample=c(1, 0.25, 1),
-                  data=gbti,
-                  quantiles=c(0.1, 0.9)))
-
-  expect_silent(
-    est <- acml(response ~ month*genotype, design, gbti, init=rep(1, 8))
-  )
-
-  expect_true(inherits(est, "acml"))
-  expect_equal(est$Code,   2) # This changes based on method
-  expect_close(coef(est),   estimates_acml_intercept)
-  expect_close(logLik(est), logl_acml_intercept)
-  expect_close(vcov(est),   cv_acml_intercept)
-  expect_close(robcov(est), rcv_acml_intercept)
-
-  #expect_true("residuals" %in% names(est))     # There are 2 levels!
-  #expect_true("fitted.values" %in% names(est)) # There are 2 levels!
-
-  # This is really complicated
-  #expect_true("rank" %in% names(est))
-  #expect_true("df.residual" %in% names(est))
-
-})
 
 test_that("ACML continuous response mean",
 {
   expect_silent(
-    design <- ods(response ~ month|patient,
+    design <- ods(Response ~ Month|Patient,
                   'mean',
                   p_sample=c(1, 0.25, 1),
                   data=gbti,
-                  quantiles=c(0.1, 0.9)))
+                  subset=Patient <= 200,
+                  quantiles=c(0.1, 0.9))
+  )
 
   expect_silent(
-    est <- acml(response ~ month*genotype, design, gbti, init=rep(1, 8))
+    est <- acml(Response ~ Month*Genotype,
+                design,
+                gbti,
+                subset=Patient <= 200,
+                init=rep(1, 8))
   )
 
   expect_true(inherits(est, "acml"))
@@ -53,17 +31,50 @@ test_that("ACML continuous response mean",
 
 })
 
+test_that("ACML continuous response intercept",
+{
+  expect_silent(
+    design <- ods(Response ~ Month|Patient,
+                  'intercept',
+                  p_sample=c(1, 0.25, 1),
+                  data=gbti,
+                  subset=Patient <= 200,
+                  quantiles=c(0.1, 0.9))
+  )
+
+  expect_silent(
+    est <- acml(Response ~ Month*Genotype,
+                design,
+                gbti,
+                subset=Patient <= 200,
+                init=rep(1, 8))
+  )
+
+  expect_true(inherits(est, "acml"))
+  expect_equal(est$Code,   2) # This changes based on method
+  expect_close(coef(est),   estimates_acml_intercept)
+  expect_close(logLik(est), logl_acml_intercept)
+  expect_close(vcov(est),   cv_acml_intercept)
+  expect_close(robcov(est), rcv_acml_intercept)
+})
+
 test_that("ACML continuous response slope",
 {
   expect_silent(
-    design <- ods(response ~ month|patient,
+    design <- ods(Response ~ Month|Patient,
                   'slope',
-                  p_sample=c(1, 0.5, 1),
+                  p_sample=c(1, 0.25, 1),
                   data=gbti,
-                  quantiles=c(0.1, 0.9)))
+                  subset=Patient <= 200,
+                  quantiles=c(0.1, 0.9))
+  )
 
   expect_silent(
-    est <- acml(response ~ month*genotype, design, gbti, init=rep(1, 8))
+    est <- acml(Response ~ Month*Genotype,
+                design,
+                gbti,
+                subset=Patient <= 200,
+                init=rep(1, 8))
   )
 
   expect_true(inherits(est, "acml"))
@@ -74,3 +85,24 @@ test_that("ACML continuous response slope",
   expect_close(robcov(est), rcv_acml_slope)
 
 })
+
+# test_that("ACML continuous response bivariate",
+# {
+#   expect_silent(
+#     design <- ods(response ~ month|patient,
+#                   'bivariate',
+#                   p_sample=c(1, 0.25, 1),
+#                   data=gbti,
+#                   quantiles=c(0.5, 0.95)))
+#
+#   expect_silent(
+#     est <- acml(response ~ month*genotype, design, gbti, init=rep(1, 8))
+#   )
+#
+#   expect_true(inherits(est, "acml"))
+#   expect_equal(est$Code,   2) # This changes based on method
+#   expect_close(coef(est),   estimates_acml_bivar)
+#   expect_close(logLik(est), logl_acml_bivar)
+#   expect_close(vcov(est),   cv_acml_bivar)
+#   expect_close(robcov(est), rcv_acml_bivar)
+# })

@@ -200,22 +200,22 @@ print.summary.odsdesign <- function(x, digits = NULL, ...)
 #' @examples
 #' data(gbti)
 #'
-#' odsd <- ods(response ~ month|patient, 'mean', p_sample=c(1, 0.25, 1),
+#' odsd <- ods(Response ~ Month|Patient, 'mean', p_sample=c(1, 0.25, 1),
 #'             data=gbti, quantiles=c(0.1, 0.9))
 #' summary(odsd)
 #' plot(odsd)
 #'
-#' odsd <- ods(response ~ month|patient, 'intercept', p_sample=c(1, 0.25, 1),
+#' odsd <- ods(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
 #'             data=gbti, quantiles=c(0.1, 0.9))
 #' summary(odsd)
 #' plot(odsd)
 #'
-#' odsd <- ods(response ~ month|patient, 'slope', p_sample=c(1, 0.25, 1),
+#' odsd <- ods(Response ~ Month|Patient, 'slope', p_sample=c(1, 0.25, 1),
 #'             data=gbti, quantiles=c(0.1, 0.9))
 #' summary(odsd)
 #' plot(odsd)
 #'
-#' odsd <- ods(response ~ month|patient, 'bivariate', p_sample=c(1, 0.25, 1),
+#' odsd <- ods(Response ~ Month|Patient, 'bivariate', p_sample=c(1, 0.25, 1),
 #'             data=gbti, quantiles=c(0.1, 0.9))
 #' summary(odsd)
 #' plot(odsd)
@@ -326,10 +326,11 @@ ods <- function(
       method      = method,
       p_sample    = p_sample,
       p_sample_i  = p_sample_i,
+      response    = names(mf)[1],
+      time        = names(mf)[2],
       id          = names(mf)[3],
       quantiles   = quantiles,
       cutpoints   = cutpoints,
-      z           = as.matrix(cbind(rep(1, nrow(mf)), mf[,2])),
       z_i         = z_i
     ),
     class="odsdesign"

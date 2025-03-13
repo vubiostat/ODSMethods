@@ -1,33 +1,45 @@
 context("ACML Validated Continuous Likelihood Methods")
 
+# Comment out to validate values versus original published acml code
+# NOTE: These are messed up and mis-specified, and only for point verification
+#skip(message = "validated original acml code")
+
 data(gbti)
 
-data <- gbti
-data <- data[!is.na(data$genotype),]  # Drop NA data for these tests
+data <- gbti[gbti$Patient <= 200,] # Only use patients 1:200
+
+b_i <-
+    sapply(
+      split(data, data$Patient),
+      function(d) c(mean(d$Response),coef(lm(Response~Month, d)))
+    )
+rownames(b_i) <- c("mean", "intercept", "slope")
+
+
+data <- data[!is.na(data$Genotype),]  # Drop NA data for these tests
 
 # Create a design matrix
 d_mat <- cbind(rep(1, nrow(data)),
-               data[,c("month", "genotype")])
-d_mat$g_t <- d_mat$month*d_mat$genotype
+               data[,c("Month", "Genotype")])
+d_mat$g_t <- d_mat$Month*d_mat$Genotype
 
-y  <- matrix(data$response,ncol = 1)
+y  <- matrix(data$Response,ncol = 1)
 x  <- as.matrix(d_mat)
-z  <- as.matrix(cbind(rep(1, length(data$month)), data$month))
-id <- matrix(data$patient,ncol = 1)
+z  <- as.matrix(cbind(rep(1, length(data$Month)), data$Month))
+id <- matrix(data$Patient,ncol = 1)
 
 test_that("Validation ACML 'mean' reference works",
 {
-  means <- quantile(
-    aggregate(data$response, list(data$patient), FUN=mean)$x,
-    probs=c(0.1, 0.9)
-  )
+  # Note: This is an incorrect practice as it's on the post-sampled data
+  # However, for a point test of the method it's fine.
+  cuts <- quantile(b_i['mean',], probs=c(0.1, 0.9))
 
   validated_acml_mean <-
     acml_validated(
       y=y, x=x, z=z, id=id,
       w.function = "mean",
       InitVals = c(1,1,1,1,1,1,1,1),
-      cutpoints = means,
+      cutpoints = cuts,
       SampProb = c(1, 0.25, 1)
     )
 
@@ -40,20 +52,14 @@ test_that("Validation ACML 'mean' reference works",
 
 test_that("Validation ACML 'intercept' reference works",
 {
-  intercepts <- quantile(
-    sapply(
-      split(data, data$patient),
-      function(d) coef(lm(response~month, d))[1]
-    ),
-    probs=c(0.1, 0.9)
-  )
+  cuts <- quantile(b_i['intercept',], probs=c(0.1, 0.9))
 
   validated_acml_intercept <-
     acml_validated(
       y=y, x=x, z=z, id=id,
       w.function = "intercept",
       InitVals = c(1,1,1,1,1,1,1,1),
-      cutpoints = intercepts,
+      cutpoints = cuts,
       SampProb = c(1, 0.25, 1)
     )
 
@@ -66,21 +72,15 @@ test_that("Validation ACML 'intercept' reference works",
 
 test_that("Validation ACML 'slope' reference works",
 {
-  slopes <- quantile(
-    sapply(
-      split(data, data$patient),
-      function(d) coef(lm(response~month, d))[2]
-    ),
-    probs=c(0.1, 0.9)
-  )
+  cuts <- quantile(b_i['slope',], probs=c(0.1, 0.9))
 
   validated_acml_slope <-
     acml_validated(
       y=y, x=x, z=z, id=id,
       w.function = "slope",
       InitVals = c(1,1,1,1,1,1,1,1),
-      cutpoints = slopes,
-      SampProb = c(1, 0.5, 1)
+      cutpoints = cuts,
+      SampProb = c(1, 0.25, 1)
     )
 
   expect_equal(validated_acml_slope$Code,   2)

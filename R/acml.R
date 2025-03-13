@@ -378,6 +378,9 @@ acml <- function(
   mf <- mf[c(1L, m)]
   mf$drop.unused.levels <- TRUE
   mf[[1L]] <- quote(stats::model.frame)
+  formula2 <- as.character(formula)
+  formula2 <- as.formula(paste(formula[2], "~", formula[3], "+", design$id, collapse=''))
+  mf[['formula']] <- formula2
   mf <- eval(mf, parent.frame())
 
   # Initial guess of coefficients
@@ -388,14 +391,13 @@ acml <- function(
       # Intercept variance component, Slope Variance component, correlation, error variance
   }
 
-  mm <- model.matrix(formula, mf)
-
+  mm <- model.matrix(formula2, mf, na.action=na.action)
   fit <- acml_internal(
-    y  = matrix(mf[,1], ncol = 1),
-    x  = mm,
-    z  = design$z,
-    id = matrix(design$model.frame[,3], ncol = 1),
-    w.function = design$method,
+    y  = matrix(mf[,design$response]),
+    x  = mm[,!(colnames(mm) %in% design$id)],
+    z  = matrix(cbind(rep(1, nrow(mf)), mf[,design$time]), ncol=2),
+    id = matrix(mf[,design$id]),
+    w.function = if(design$method=='bivariate') 'bivar' else design$method,
     InitVals   = init,
     cutpoints  = as.vector(design$cutpoints),
     SampProb   = design$p_sample

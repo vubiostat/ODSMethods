@@ -24,6 +24,7 @@ This package is a draft at present to bring together a wide variety of outcome d
 * [Deep] Finish acml to every deep corner and usage.
   * Add tests and values for bivariate methods to acml.
   * Q: Should ods formula allow for functions/transforms? model.matrix
+  * Add user interfaces tests for ods
   * Add all references and edit R/ODSMethods-package.R
   * Add names to R estimates including the 4 additional parameters
   * Add vcov that returns both levels in the manner of lme4
@@ -32,6 +33,7 @@ This package is a draft at present to bring together a wide variety of outcome d
   * Add 'residuals' to acml (and S3 routine)
   * Add format / summary to acml, coefficients, confidence intervals, p-values.
   * Add plot to acml
+  * Add user interface tests to acml
   NOTE: In general use lm() and lmer() object output and functions as guide.  
 * [Refine] acml. 
   * Replace with ACML.LME (not the validated test version!)
