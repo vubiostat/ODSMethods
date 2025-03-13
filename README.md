@@ -19,18 +19,18 @@ This package is a draft at present to bring together a wide variety of outcome d
 ## Needs
 
 * Decide on principal maintainer.
-  * If Lucy commits, then she needs to practice a CRAN publication of this.
+  * If Lucy commits, then we need to start regular publication of package.
 * [Wide, specification] Generate example calls for every method under consideration.
 * [Deep] Finish acml to every deep corner and usage.
-  * Add tests and values for slope and bivariate methods to acml.
+  * Add tests and values for bivariate methods to acml.
   * Q: Should ods formula allow for functions/transforms? model.matrix
   * Add all references and edit R/ODSMethods-package.R
-  * Add format / summary to acml
   * Add names to R estimates including the 4 additional parameters
   * Add vcov that returns both levels in the manner of lme4
   * Add computation of rank/df for variables
   * Add 'fitted.values' to acml
   * Add 'residuals' to acml (and S3 routine)
+  * Add format / summary to acml, coefficients, confidence intervals, p-values.
   * Add plot to acml
   NOTE: In general use lm() and lmer() object output and functions as guide.  
 * [Refine] acml. 
