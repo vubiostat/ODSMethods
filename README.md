@@ -22,8 +22,8 @@ This package is a draft at present to bring together a wide variety of outcome d
   * If Lucy commits, then we need to start regular publication of package.
 * [Wide, specification] Generate example calls for every method under consideration.
 * [Deep] Finish acml to every deep corner and usage.
-  * Add tests and values for bivariate methods to acml.
   * Q: Should ods formula allow for functions/transforms? model.matrix
+  * coef() should return transformed coefficients (test should be raw). Maybe coef(model, raw=TRUE)?
   * Add user interfaces tests for ods
   * Add all references and edit R/ODSMethods-package.R
   * Add names to R estimates including the 4 additional parameters
