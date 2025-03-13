@@ -89,3 +89,26 @@ test_that("Validation ACML 'slope' reference works",
   expect_close(validated_acml_slope$covar,  cv_acml_slope)
   expect_close(validated_acml_slope$robcov, rcv_acml_slope)
 })
+
+test_that("Validation ACML 'bivariate' reference works",
+{
+  cuts <- c(
+    quantile(b_i['intercept',], probs=c(0.1, 0.9)),
+    quantile(b_i['slope',], probs=c(0.1, 0.9))
+  )
+
+  validated_acml_bivar <-
+    acml_validated(
+      y=y, x=x, z=z, id=id,
+      w.function = "bivar",
+      InitVals = c(1,1,1,1,1,1,1,1),
+      cutpoints = cuts,
+      SampProb = c(1, 0.25, 1)
+    )
+
+  expect_equal(validated_acml_bivar$Code,   2)
+  expect_close(validated_acml_bivar$Ests,   estimates_acml_bivar)
+  expect_close(validated_acml_bivar$LogL,   logl_acml_bivar)
+  expect_close(validated_acml_bivar$covar,  cv_acml_bivar)
+  expect_close(validated_acml_bivar$robcov, rcv_acml_bivar)
+})
