@@ -22,7 +22,6 @@ This package is a draft at present to bring together a wide variety of outcome d
   * If Lucy commits, then we need to start regular publication of package.
     * Read "Writing R Extensions". Seriously, this is required.
     * Run tests/check remotely on development box. devtools::check_win_devel
-    
 * Need a slide show of goals / design / result.
 * [Wide, specification] Generate example calls for every method under consideration. BLUP, pseudo-likelihood, etc. 
 * [Deep] Finish acml to every deep corner and usage.
@@ -59,14 +58,21 @@ This package is a draft at present to bring together a wide variety of outcome d
 
 * Read a few sections of "Writing R Extensions"
 * Run tests/check remotely on development box. devtools::check_win_devel()
-* Accept invitation for vubiostat when it arrives.
+* ~~Accept invitation for vubiostat when it arrives.~~
+* Create 3 slides (include title and credits). 1 slide with goals/example/?
+* Generate example calls for every method under consideration. BLUP, pseudo-likelihood, etc. 
+* Add all references and edit R/ODSMethods-package.R
 
 #### Shawn
 
-* Find out/fix test-001-acml-validated breakage between platforms.
+* ~~Find out/fix test-001-acml-validated breakage between platforms.~~
 * ods xor check is wrong, and need better validation of data between ods and acml.
-* Move main repository to vubiostat and invite Lucy.
+* ~~Move main repository to vubiostat and invite Lucy.~~
 * convince Jonathan that we can start publishing.
+* Add user interfaces tests for ods
+* Add data frame size check to acml when given output of ods (can a hash sig be done on a data.frame?)
+* Add transforms for ods models (model.matrix)
+* Test non-numeric ids
 
 ### Notes on lm S3 Methods
 
