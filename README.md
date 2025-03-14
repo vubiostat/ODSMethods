@@ -20,7 +20,11 @@ This package is a draft at present to bring together a wide variety of outcome d
 
 * Decide on principal maintainer.
   * If Lucy commits, then we need to start regular publication of package.
-* [Wide, specification] Generate example calls for every method under consideration.
+    * Read "Writing R Extensions". Seriously, this is required.
+    * Run tests/check remotely on development box. devtools::check_win_devel
+    * [spg] convince Jonathan that we can start publishing.
+* Need a slide show of goals / design / result.
+* [Wide, specification] Generate example calls for every method under consideration. BLUP, pseudo-likelihood, etc. 
 * [Deep] Finish acml to every deep corner and usage.
   * Q: Should ods formula allow for functions/transforms? model.matrix
   * coef() should return transformed coefficients (test should be raw). Maybe coef(model, raw=TRUE)?
@@ -34,6 +38,8 @@ This package is a draft at present to bring together a wide variety of outcome d
   * Add format / summary to acml, coefficients, confidence intervals, p-values.
   * Add plot to acml
   * Add user interface tests to acml
+  * Add data frame size check to acml when given output of ods (can a hash sig be done on a data.frame?)
+  * Add sample method to odsdesign
   NOTE: In general use lm() and lmer() object output and functions as guide.  
 * [Refine] acml. 
   * Replace with ACML.LME (not the validated test version!)
