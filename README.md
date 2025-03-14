@@ -22,7 +22,7 @@ This package is a draft at present to bring together a wide variety of outcome d
   * If Lucy commits, then we need to start regular publication of package.
     * Read "Writing R Extensions". Seriously, this is required.
     * Run tests/check remotely on development box. devtools::check_win_devel
-    * [spg] convince Jonathan that we can start publishing.
+    
 * Need a slide show of goals / design / result.
 * [Wide, specification] Generate example calls for every method under consideration. BLUP, pseudo-likelihood, etc. 
 * [Deep] Finish acml to every deep corner and usage.
@@ -51,6 +51,22 @@ This package is a draft at present to bring together a wide variety of outcome d
   * Add vignette on usage. (start with acml)
 * [Expand] Fill in wide and deep for all routines identified in specification.
 * [Get Credit] Write paper for Journal of Statistical Software
+
+
+### TO DO LIST
+
+#### Lucy
+
+* Read a few sections of "Writing R Extensions"
+* Run tests/check remotely on development box. devtools::check_win_devel()
+* Accept invitation for vubiostat when it arrives.
+
+#### Shawn
+
+* Find out/fix test-001-acml-validated breakage between platforms.
+* ods xor check is wrong, and need better validation of data between ods and acml.
+* Move main repository to vubiostat and invite Lucy.
+* convince Jonathan that we can start publishing.
 
 ### Notes on lm S3 Methods
 
