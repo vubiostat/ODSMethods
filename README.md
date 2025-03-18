@@ -66,13 +66,13 @@ This package is a draft at present to bring together a wide variety of outcome d
 #### Shawn
 
 * ~~Find out/fix test-001-acml-validated breakage between platforms.~~
-* ods xor check is wrong, and need better validation of data between ods and acml.
+* ~~ods xor check is wrong, and need better validation of data between ods and acml.~~
 * ~~Move main repository to vubiostat and invite Lucy.~~
 * convince Jonathan that we can start publishing.
-* Add user interfaces tests for ods
-* Add data frame size check to acml when given output of ods (can a hash sig be done on a data.frame?)
-* Add transforms for ods models (model.matrix)
-* Test non-numeric ids
+* ~~Add user interfaces tests for ods~~
+* ~~Add data frame size check to acml when given output of ods (can a hash sig be done on a data.frame?)~~
+* ~~Add transforms for ods models (model.matrix)~~
+* ~~Test non-numeric ids~~
 
 ### Notes on lm S3 Methods
 

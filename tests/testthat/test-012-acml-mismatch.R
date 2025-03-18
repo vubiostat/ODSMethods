@@ -62,3 +62,70 @@ test_that("acml checks for ods mismatch",
     'Group variables provided to acml that were not part of design'
   )
 })
+
+test_that("acml checks design response variable match ",
+{
+  data <- gbti[gbti$Patient <= 200,]
+  data$Response2 <- rnorm(nrow(data))
+
+  expect_silent(
+    design <- ods(Response2 ~ Month|Patient,
+                  'mean',
+                  p_sample=c(1, 0.25, 1),
+                  data=data,
+                  quantiles=c(0.1, 0.9))
+  )
+
+  expect_error(
+    acml(Response ~ Month*Genotype,
+          design,
+          data,
+          init=rep(1, 8)),
+    "must have same response variable as design"
+  )
+
+})
+
+test_that("acml checks design time variable match",
+{
+  data <- gbti[gbti$Patient <= 200,]
+
+  expect_silent(
+    design <- ods(Response ~ log(Month)|Patient,
+                  'mean',
+                  p_sample=c(1, 0.25, 1),
+                  data=data,
+                  quantiles=c(0.1, 0.9))
+  )
+
+  expect_error(
+    acml(Response ~ Month*Genotype,
+          design,
+          data,
+          init=rep(1, 8)),
+    "must have same time variable as design"
+  )
+})
+
+
+
+test_that("ACML deals with transformed design",
+{
+  expect_silent(
+    design <- ods(log(Response) ~ log(Month)|Patient,
+                  'mean',
+                  p_sample=c(1, 0.25, 1),
+                  data=gbti,
+                  subset=Patient <= 200,
+                  quantiles=c(0.1, 0.9))
+  )
+
+  expect_silent(
+    est <- acml(log(Response) ~ log(Month)*Genotype,
+                design,
+                gbti,
+                subset=Patient <= 200,
+                init=rep(1, 8))
+  )
+
+})
