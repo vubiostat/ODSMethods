@@ -25,9 +25,9 @@ This package is a draft at present to bring together a wide variety of outcome d
 * Need a slide show of goals / design / result.
 * [Wide, specification] Generate example calls for every method under consideration. BLUP, pseudo-likelihood, etc. 
 * [Deep] Finish acml to every deep corner and usage.
-  * Q: Should ods formula allow for functions/transforms? model.matrix
+  * ~~Q: Should ods formula allow for functions/transforms? model.matrix~~
   * coef() should return transformed coefficients (test should be raw). Maybe coef(model, raw=TRUE)?
-  * Add user interfaces tests for ods
+  * ~~Add user interfaces tests for ods~~
   * Add all references and edit R/ODSMethods-package.R
   * Add names to R estimates including the 4 additional parameters
   * Add vcov that returns both levels in the manner of lme4
