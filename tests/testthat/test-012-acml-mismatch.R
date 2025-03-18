@@ -6,6 +6,31 @@ context("ACML Continuous Design / Analysis")
 
 data(gbti)
 
+test_that("acml handles character id",
+{
+  data <- gbti[gbti$Patient <= 200,]
+  data$Patient <- as.character(data$Patient)
+
+  expect_silent(
+    design <- ods(Response ~ Month|Patient,
+                  'mean',
+                  p_sample=c(1, 0.25, 1),
+                  data=data,
+                  quantiles=c(0.1, 0.9))
+  )
+
+  expect_silent(
+    est <- acml(Response ~ Month*Genotype,
+                design,
+                data,
+                init=rep(1, 8))
+  )
+
+  expect_true(inherits(est, "acml"))
+  expect_equal(est$Code,   2) # This changes based on method
+  expect_close(coef(est),   estimates_acml_mean)
+})
+
 test_that("acml checks for ods mismatch",
 {
   local_reproducible_output(width = 200)

@@ -391,6 +391,9 @@ acml <- function(
       # Intercept variance component, Slope Variance component, correlation, error variance
   }
 
+  if(!is.numeric(mf[,design$id]) && !is.integer(mf[,design$id]))
+    mf[,design$id] <- as.integer(as.factor(mf[,design$id]))
+
   mm <- model.matrix(formula2, mf, na.action=na.action)
   assert_true(all(as.character(mm[,design$id]) %in% names(design$p_sample_i)),
     .var.name='Group variables provided to acml that were not part of design', add=coll)

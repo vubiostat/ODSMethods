@@ -273,6 +273,9 @@ ods <- function(
   mf[['formula']] <- as.formula(gsub("\\|", "+", format(formula)))
   mf <- eval(mf, parent.frame())
 
+  if(!is.integer(mf[,3]) && !is.numeric(mf[,3]))
+    mf[,3] <- as.numeric(as.factor(mf[,3]))
+
   # Construct z_i
   f <- if (ncol(mf) == 4) # Treat weights?
   {
