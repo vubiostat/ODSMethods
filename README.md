@@ -19,12 +19,8 @@ This package is a draft at present to bring together a wide variety of outcome d
 ## Needs
 
 * Need a slide show of goals / design / result.
-* [Wide, specification] Generate example calls for every method under consideration. BLUP, pseudo-likelihood, etc. 
 * [Deep] Finish acml to every deep corner and usage.
-  * ~~Q: Should ods formula allow for functions/transforms? model.matrix~~
   * coef() should return transformed coefficients (test should be raw). Maybe coef(model, raw=TRUE)?
-  * ~~Add user interfaces tests for ods~~
-  * Add all references and edit R/ODSMethods-package.R
   * Add names to R estimates including the 4 additional parameters
   * Add vcov that returns both levels in the manner of lme4
   * Add computation of rank/df for variables
@@ -33,13 +29,11 @@ This package is a draft at present to bring together a wide variety of outcome d
   * Add format / summary to acml, coefficients, confidence intervals, p-values.
   * Add plot to acml
   * Add user interface tests to acml
-  * Add data frame size check to acml when given output of ods (can a hash sig be done on a data.frame?)
   * Add sample method to odsdesign
   NOTE: In general use lm() and lmer() object output and functions as guide.  
 * [Refine] acml. 
   * Replace with ACML.LME (not the validated test version!)
   * Add the analytical Hessian (Lucy)
-  * Get rid of `nlm`. This is not a recommended optimizer.
   * Optimize for speed.
 * [Document]
   * Add reference data sets preferably from papers.
@@ -52,23 +46,16 @@ This package is a draft at present to bring together a wide variety of outcome d
 
 #### Lucy
 
-* Read a few sections of "Writing R Extensions"
-* Run tests/check remotely on development box. devtools::check_win_devel()
-* ~~Accept invitation for vubiostat when it arrives.~~
+* Read a few _more_ sections of "Writing R Extensions"
+  ~~Lucy read 3 sections and will continue~~
 * Create 3 slides (include title and credits). 1 slide with goals/example/?
-* Generate example calls for every method under consideration. BLUP, pseudo-likelihood, etc. 
-* Add all references and edit R/ODSMethods-package.R
+* Get SMLE running, in the linear model settings
+* Add format / summary to acml, "print.acml function"
 
 #### Shawn
 
-* ~~Find out/fix test-001-acml-validated breakage between platforms.~~
-* ~~ods xor check is wrong, and need better validation of data between ods and acml.~~
-* ~~Move main repository to vubiostat and invite Lucy.~~
-* convince Jonathan that we can start publishing.
-* ~~Add user interfaces tests for ods~~
-* ~~Add data frame size check to acml when given output of ods (can a hash sig be done on a data.frame?)~~
-* ~~Add transforms for ods models (model.matrix)~~
-* ~~Test non-numeric ids~~
+* Investigate convergence issues with BLAS differences. specifically vcov is way off on mac.
+* Add raw=TRUE to coef, vcov
 
 ### Notes on lm S3 Methods
 
@@ -120,4 +107,27 @@ This package is a draft at present to bring together a wide variety of outcome d
 ```
 
 it probably makes sense to add all of them, even if you have a stop message that says "this method isn't implemented yet" -- Cole Beck 3/12/25
+
+## Example Updated Calls to Other Methods
+
+To include BLUP, 
+
+ods(..., BLUP="bivariate") (or "slope", or "intercept") is all that would be required. Default BLUP=NULL. 
+
+This also requires the updated Chiara code integrated.
+
+Thinking about SIEVE
+
+* Y is fine, comes from _method_(formula)
+* X is fine, comes from _method_(formula)
+* Z would come from _design_(formula) call
+
+What is Delta? Survival event, check survival packages how this is specified.
+
+Bspline_Z should come from the formula of the _method_.
+scale, maxiter, tol,  are control values.
+
+His model value, "linear", "logistic" or "coxph". 
+
+_method_ would be SMLE in this case.
 
