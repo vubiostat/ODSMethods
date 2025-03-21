@@ -21,9 +21,9 @@ This package is a draft at present to bring together a wide variety of outcome d
 * Need a slide show of goals / design / result.
 * [Wide, specification] Generate example calls for every method under consideration. BLUP, pseudo-likelihood, etc. 
 * [Deep] Finish acml to every deep corner and usage.
-  * Should ods formula allow for functions/transforms? model.matrix, Yes
+  * ~~Q: Should ods formula allow for functions/transforms? model.matrix~~
   * coef() should return transformed coefficients (test should be raw). Maybe coef(model, raw=TRUE)?
-  * Add user interfaces tests for ods
+  * ~~Add user interfaces tests for ods~~
   * Add all references and edit R/ODSMethods-package.R
   * Add names to R estimates including the 4 additional parameters
   * Add vcov that returns both levels in the manner of lme4
@@ -62,13 +62,13 @@ This package is a draft at present to bring together a wide variety of outcome d
 #### Shawn
 
 * ~~Find out/fix test-001-acml-validated breakage between platforms.~~
-* ods xor check is wrong, and need better validation of data between ods and acml.
+* ~~ods xor check is wrong, and need better validation of data between ods and acml.~~
 * ~~Move main repository to vubiostat and invite Lucy.~~
 * convince Jonathan that we can start publishing.
-* Add user interfaces tests for ods
-* Add data frame size check to acml when given output of ods (can a hash sig be done on a data.frame?)
-* Add transforms for ods models (model.matrix)
-* Test non-numeric ids
+* ~~Add user interfaces tests for ods~~
+* ~~Add data frame size check to acml when given output of ods (can a hash sig be done on a data.frame?)~~
+* ~~Add transforms for ods models (model.matrix)~~
+* ~~Test non-numeric ids~~
 
 ### Notes on lm S3 Methods
 

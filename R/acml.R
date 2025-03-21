@@ -391,6 +391,14 @@ acml <- function(
       # Intercept variance component, Slope Variance component, correlation, error variance
   }
 
+  if(!is.numeric(mf[,design$id]) && !is.integer(mf[,design$id]))
+    mf[,design$id] <- as.integer(as.factor(mf[,design$id]))
+
+  if(!design$response %in% names(mf))
+    stop("must have same response variable as design")
+  if(!design$time %in% names(mf))
+    stop("must have same time variable as design")
+
   mm <- model.matrix(formula2, mf, na.action=na.action)
   assert_true(all(as.character(mm[,design$id]) %in% names(design$p_sample_i)),
     .var.name='Group variables provided to acml that were not part of design', add=coll)
