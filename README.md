@@ -55,6 +55,8 @@ This package is a draft at present to bring together a wide variety of outcome d
 #### Shawn
 
 * Investigate convergence issues with BLAS differences. specifically vcov is way off on mac.
+  Apple M1 it fails on.
+  https://www.intel.com/content/www/us/en/developer/articles/technical/introduction-to-the-conditional-numerical-reproducibility-cnr.html
 * Add raw=TRUE to coef, vcov
 
 ### Notes on lm S3 Methods
