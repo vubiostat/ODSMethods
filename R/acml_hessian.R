@@ -1,4 +1,6 @@
 # Lucy's Analytical Hessian
+
+# Not exported, needs interface work and validation
 acml_hessian <- function(
     estimate, y, x, z, id, cutpoints, w_function,
     Weights  = rep(1,length(y)),
