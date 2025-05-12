@@ -21,7 +21,7 @@ generate_gbti <- function(N=1000, M=5, seed=1)
   )
 
   gbti$Response <- with(gbti,
-    10+0.5*Month-0.5*Genotype+0.25*Month*Genotype+0.5*(Ancestry=='Hispanic')+bi[Patient,1]+bi[Patient,2]*Month+rnorm(5000))
+    10+0.5*Month-0.5*Genotype+0.25*Month*Genotype+0.5*(Ancestry=='Hispanic')+bi[Patient,1]+bi[Patient,2]*Month+rnorm(N*M))
 
   alpha <- 0.5*(1-sqrt(0.8))
   design <- ods(Response ~ Month|Patient,
