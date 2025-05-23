@@ -1,7 +1,7 @@
 library(mvtnorm)
 library(ODSMethods)
 
-generate_gbti <- function(N=1000, M=5, seed=1)
+generate_gbti <- function(N=1000, M=5, seed=1, w_function='bivariate')
 {
   set.seed(seed)
 
@@ -24,13 +24,15 @@ generate_gbti <- function(N=1000, M=5, seed=1)
     10+0.5*Month-0.5*Genotype+0.25*Month*Genotype+0.5*(Ancestry=='Hispanic')+bi[Patient,1]+bi[Patient,2]*Month+rnorm(N*M))
 
   alpha <- 0.5*(1-sqrt(0.8))
+  quantile <- if(w_function=='bivariate') c(alpha, 1-alpha) else c(0.2, 0.8)
   design <- ods(Response ~ Month|Patient,
-                'bivariate',
+                w_function,
                 p_sample=c(1, 0.25, 1),
                 data=gbti,
-                quantiles=c(alpha, 1-alpha))
+                quantiles=quantile)
   gbti$pSample <- rep(design$p_sample_i, each=M)
 
+  # Sample it!
   gbti$Genotype[!rep(rbinom(N, 1, design$p_sample_i),each=M) == 1] <- NA
 
   gbti

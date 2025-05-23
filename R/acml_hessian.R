@@ -1,5 +1,29 @@
 # Lucy's Analytical Hessian
 
+transform_output <- function(InitVals, x = x, y = y, z = z){
+  nx <- ncol(x)
+  beta = InitVals[1:nx] # note here are with beta_0, need to change to accommodate if no beta_0
+  log_sigma_vc = InitVals[(nx+1):(nx+ncol(z))]
+  log_inv_rho_vc = InitVals[nx+3]
+  log_sigma_e = InitVals[length(InitVals)]
+  sigma_vc = exp(log_sigma_vc)
+  sigma_e = exp(log_sigma_e)
+  rho_vc = tanh(log_inv_rho_vc)
+  list(beta = beta, sigma_vc = sigma_vc, rho_vc = rho_vc, sigma_e = sigma_e)
+}
+
+vi_calc = function(zi, sigma_vc, rho_vc, sigma_e){
+  SDMat_RE  = diag(sigma_vc)
+  ncolzi    = ncol(zi) ## make sure this equals length(sigma.vc)
+  nrowzi    = nrow(zi)
+  nERRsd    = length(sigma_e)
+  b         = matrix(0,ncolzi,ncolzi)
+  b[lower.tri(b, diag=FALSE)] = rho_vc
+  CorMat_RE = t(b)+b+diag(rep(1,ncolzi))
+  CovMat_RE = SDMat_RE %*% CorMat_RE %*% SDMat_RE
+  zi %*% CovMat_RE %*% t(zi) + diag(rep(sigma_e^2, each=nrowzi/nERRsd))
+}
+
 # Not exported, needs interface work and validation
 acml_hessian <- function(
     estimate, y, x, z, id, cutpoints, w_function,
@@ -19,10 +43,10 @@ acml_hessian <- function(
     yi = y[id == i]
     Weight_i = unique(Weights[id == i])
 
-    xi = as.matrix(cbind(1, x[id == i,]))
-    zi = as.matrix(cbind(1, z[id == i]))
+    xi = as.matrix(x[id == i,])
+    zi = as.matrix(z[id == i,])
     resid   = yi - xi %*% beta
-    vi      = vi_calc(zi, sigma_vc, rho_vc, sigma_e)# check condition number
+    vi      = vi_calc(zi, sigma_vc, rho_vc, sigma_e)
     inv_vi  = solve(vi)
     mu      = xi %*% beta
     if (w_function == "intercept"){
