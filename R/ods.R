@@ -165,6 +165,20 @@ print.summary.odsdesign <- function(x, digits = NULL, ...)
   invisible(x)
 }
 
+#' @exportS3Method
+print.acml <- function(x, digits = max(3L, getOption("digits")), ...)
+{
+  cat("\nCall:\n",
+      paste(deparse(x$design$call), collapse="\n"),
+      "\n\n",
+      "Cutpoints:\n",
+      sep="")
+  print(round(x$design$cutpoints, digits=digits), ...)
+  cat("\nCoefficients:\n")
+  print(round(x$Ests, digits=digits), ...)
+  invisible(x)
+}
+
 #' Specify a given design for Outcome Dependent Sampling (ODS)
 #'
 #' Specify the design of an outcome dependent sampling routine.
