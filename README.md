@@ -1,6 +1,6 @@
 # ODSMethods
 
-This package is a draft at present to bring together a wide variety of outcome dependent sampling (ODS) methods led by professors at Vanderbilt University Medical Center. 
+This package is a draft at present to bring together a wide variety of outcome dependent sampling (ODS) methods led by professors at Vanderbilt University.
 
 ## Healthy Package Development
 
