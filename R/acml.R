@@ -277,8 +277,9 @@ acml_internal <- function(
     ObsInfo <- ObsInfo[-ProfileCol, -ProfileCol]
     Cheese  <- Cheese[-ProfileCol, -ProfileCol]
   }
-
-  list(Ests=out$estimate, covar=solve(ObsInfo), LogL= -out$minimum,  Code=out$code, robcov=solve(ObsInfo)%*%Cheese%*%solve(ObsInfo))
+  Ests = out$estimate# Lucy updated on 5/30/2025
+  names(Ests) = c(colnames(x), "log_sigma0","log_sigma1","trans_rho","log_sigmae")
+  list(Ests=Ests, covar=solve(ObsInfo), LogL= -out$minimum,  Code=out$code, robcov=solve(ObsInfo)%*%Cheese%*%solve(ObsInfo))
 }
 
   ##############################################################################
