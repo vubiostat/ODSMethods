@@ -4,7 +4,8 @@ context("ACML Continuous Design / Analysis")
 # NOTE: These are messed up and mis-specified, and only for point verification
 #skip(message = "validated original acml code")
 
-data(gbti)
+data <- gbti[!is.na(gbti$Genotype),]  # Drop NA data for these tests
+
 
 test_that("acml checks for ods mismatch",
 {
@@ -15,7 +16,7 @@ test_that("acml checks for ods mismatch",
                 'mean',
                 p_sample=c(1, 0.25, 1),
                 data=gbti,
-                subset=Patient <= 200,
+                subset=Patient <= 100,
                 quantiles=c(0.1, 0.9))
   )
 
@@ -23,7 +24,6 @@ test_that("acml checks for ods mismatch",
     acml( Response ~ Month*Genotype,
           design,
           gbti,
-          subset=Patient <= 300,
           init=rep(1, 8)),
     'Group variables provided to acml that were not part of design'
   )
@@ -32,7 +32,7 @@ test_that("acml checks for ods mismatch",
     acml( Response ~ Month*Genotype,
           design,
           gbti,
-          subset=Patient >= 700,
+          subset=Patient >= 200,
           init=rep(1, 8)),
     'Group variables provided to acml that were not part of design'
   )
