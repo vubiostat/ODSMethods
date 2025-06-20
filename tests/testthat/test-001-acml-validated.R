@@ -101,16 +101,20 @@ test_that("Validation ACML 'bivariate' reference works",
     c(10.7655571285408, 0.246129113385224, -2.98989684370386, 0.801707586626488,
       1.27691825783006, -0.137203695930768, -0.0408259494816768, 0.0343661614845943
     )
+  logl_acml_bivar <- 1214.58723417167
+  gradient_acml_bivar <- c(0.430732452414889, -17.8598196167201,
+                           -0.98725870359207, 2.387990523425, 5.48468228857626, 17.3081935840506,
+                           8.2789001784875, 92.7896770053413)
 
   cuts <- c(
     quantile(b_i['intercept',], probs=c(0.1, 0.9)),
     quantile(b_i['slope',], probs=c(0.1, 0.9))
   )
 
-  # result <- LogLikeAndScore(
-  #   estimates_acml_bivar, y, x, z, id, 'bivariate', cuts, c(1, 0.25, 1),
-  #   rep(1, length(y)), NA)
-  #
-  # expect_close(result,                   logl_acml_bivar)
-  # expect_close(attr(result, "gradient"), gradient_acml_bivar)
+  result <- LogLikeAndScore(
+    estimates_acml_bivar, y, x, z, id, 'bivar', cuts, c(1, 0.25, 1),
+    rep(1, length(y)), NA)
+
+  expect_close(result,                   logl_acml_bivar)
+  expect_close(attr(result, "gradient"), gradient_acml_bivar)
 })
