@@ -26,36 +26,36 @@
 library(MASS)
 library(mvtnorm)
 
-vi.calc <- function(zi, sigma0, sigma1, rho, sigmae){
+av_vi.calc <- function(zi, sigma0, sigma1, rho, sigmae){
   zi %*% matrix(c(sigma0^2, rho*sigma0*sigma1,rho*sigma0*sigma1,sigma1^2), nrow=2) %*% t(zi) +
     sigmae*sigmae*diag(length(zi[,2]))
 }
 ## Ascertainment correction piece for univariate sampling
-lci <- function(cutpoints, SampProb, mu_q, sigma_q){
+av_lci <- function(cutpoints, SampProb, mu_q, sigma_q){
   CDFs <- pnorm(c(-Inf, cutpoints, Inf), mu_q, sigma_q)
   sum( SampProb*(CDFs[2:length(CDFs)] - CDFs[1:(length(CDFs)-1)]) )
 }
 ## Ascertainment correction piece for bivariate sampling
-lci.bivar <- function(cutpoints, SampProb, mu_q, sigma_q){
+av_lci.bivar <- function(cutpoints, SampProb, mu_q, sigma_q){
   (SampProb[1]-SampProb[2])*pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q, sigma=sigma_q)[[1]] + SampProb[2]
   #print("blah2")
 }
-subject.ll.lme <- function(yi, xi, beta, vi){
+av_subject.ll.lme <- function(yi, xi, beta, vi){
   resid <- yi - xi %*% beta
   -(1/2) * (length(xi[,1])*log(2*pi) + log(det(vi)) + t(resid) %*% solve(vi) %*% resid )[1,1]
 }
 
 ## Calculate log of the ascertainment correction for the univariate sampling case
-ascertainment.correction <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
-  vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+av_ascertainment.correction <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
+  vi      <- av_vi.calc(zi, sigma0, sigma1, rho, sigmae)
   mu      <- xi %*% beta
   mu_q    <- (wi %*% mu)[,1]
   sigma_q <- sqrt((wi %*% vi %*% t(wi))[1,1])
-  log(lci(cutpoints, SampProb, mu_q, sigma_q))
+  log(av_lci(cutpoints, SampProb, mu_q, sigma_q))
 }
 ## Calculate log of the ascertainment correction for the bivariate sampling case
-ascertainment.correction.bivar <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
-  vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+av_ascertainment.correction.bivar <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
+  vi      <- av_vi.calc(zi, sigma0, sigma1, rho, sigmae)
   mu      <- xi %*% beta
   mu_q    <- as.vector(wi %*% mu)
   sigma_q <- wi %*% vi %*% t(wi)
@@ -64,7 +64,7 @@ ascertainment.correction.bivar <- function(yi, xi, zi, wi, beta, sigma0, sigma1,
 }
 
 ## Calculate conditional likelihood for the univariate and bivariate sampling cases
-total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi){
+av_total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi){
   total <- 0
   for(i in unique(id)){
     yi <- y[id==i]
@@ -77,25 +77,25 @@ total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, si
       if (w.function=="slope")     wi<- (solve(t(zi[,1:2])%*% zi[,1:2]) %*% t(zi[,1:2]))[2,]
       wi    <- matrix(wi, 1, ni)
       IPWi  <- 1/ unique(SampProbi[id==i])
-      vi    <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
-      total <- total + subject.ll.lme(yi, xi, beta, vi)*IPWi -
-        ascertainment.correction(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+      vi    <- av_vi.calc(zi, sigma0, sigma1, rho, sigmae)
+      total <- total + av_subject.ll.lme(yi, xi, beta, vi)*IPWi -
+        av_ascertainment.correction(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
     }else{
       wi    <- (solve(t(zi[,1:2])%*% zi[,1:2]) %*% t(zi[,1:2]))
       IPWi  <- 1/ unique(SampProbi[id==i])
-      vi    <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
-      total <- total + subject.ll.lme(yi, xi, beta, vi)*IPWi -
-        ascertainment.correction.bivar(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+      vi    <- av_vi.calc(zi, sigma0, sigma1, rho, sigmae)
+      total <- total + av_subject.ll.lme(yi, xi, beta, vi)*IPWi -
+        av_ascertainment.correction.bivar(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
     }
   }
   -total
 }
 
-ascertainment.gradient.correction.bivar <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
+av_ascertainment.gradient.correction.bivar <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
   eps     <- 1e-6
   param   <- c(beta, sigma0, sigma1, rho, sigmae)
   npar    <- length(param)
-  vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+  vi      <- av_vi.calc(zi, sigma0, sigma1, rho, sigmae)
   mu      <- xi %*% beta
   mu_q    <- as.vector(wi %*% mu)
   sigma_q <- wi %*% vi %*% t(wi)
@@ -106,24 +106,24 @@ ascertainment.gradient.correction.bivar <- function(yi, xi, zi, wi, beta, sigma0
   eps.mtx <- diag(c(rep(eps,npar)))
   for (rr in 1:npar){
     par.new      <- param+eps.mtx[rr,]
-    vi.tmp       <- vi.calc(zi, par.new[(npar-3)], par.new[(npar-2)], par.new[(npar-1)], par.new[npar])
+    vi.tmp       <- av_vi.calc(zi, par.new[(npar-3)], par.new[(npar-2)], par.new[(npar-1)], par.new[npar])
     mu.tmp       <- xi %*% par.new[1:(npar-4)]
     mu_q.tmp     <- as.vector(wi %*% mu.tmp)
     sigma_q.tmp  <- wi %*% vi.tmp %*% t(wi)
     new.area <- c(new.area, pmvnorm(lower=c(cutpoints[c(1,3)]), upper=c(cutpoints[c(2,4)]), mean=mu_q.tmp, sigma=sigma_q.tmp)[[1]])
   }
   Deriv <- (new.area-start)/eps
-  out <- (SampProb[1]-SampProb[2])*Deriv / lci.bivar(cutpoints, SampProb, mu_q, sigma_q)
+  out <- (SampProb[1]-SampProb[2])*Deriv / av_lci.bivar(cutpoints, SampProb, mu_q, sigma_q)
   out
 }
 
-ascertainment.gradient.correction <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
-  vi      <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+av_ascertainment.gradient.correction <- function(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb){
+  vi      <- av_vi.calc(zi, sigma0, sigma1, rho, sigmae)
   mu      <- xi %*% beta
   mu_q    <- (wi %*% mu)[,1]
   sigma_q <- sqrt((wi %*% vi %*% t(wi))[1,1])
 
-  l <- lci(cutpoints, SampProb, mu_q, sigma_q)
+  l <- av_lci(cutpoints, SampProb, mu_q, sigma_q)
   p <- SampProb[1:(length(SampProb)-1)] - SampProb[2:(length(SampProb))]
   f <- dnorm(cutpoints, mu_q, sigma_q)
 
@@ -137,9 +137,9 @@ ascertainment.gradient.correction <- function(yi, xi, zi, wi, beta, sigma0, sigm
   c(d_li_beta, c(f_alpha_k * c(a5, a6, a7, a8)))
 }
 
-subject.gradient.ll.lme <- function(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae){
+av_subject.gradient.ll.lme <- function(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae){
   resid <- yi - xi %*% beta
-  vi    <- vi.calc(zi, sigma0, sigma1, rho, sigmae)
+  vi    <- av_vi.calc(zi, sigma0, sigma1, rho, sigmae)
   inv.v <- solve(vi)
 
   dvk5 <- zi %*% matrix(c(2*sigma0, rho*sigma1, rho*sigma1, 0),nrow=2) %*% t(zi)
@@ -158,7 +158,7 @@ subject.gradient.ll.lme <- function(yi, xi, zi, beta, sigma0, sigma1, rho, sigma
 
 #
 
-gradient.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, CheeseCalc=FALSE){
+av_gradient.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, CheeseCalc=FALSE){
   total <- 0
   param.vec <- c(beta, log(sigma0),log(sigma1),log((1+rho)/(1-rho)),log(sigmae))
   n.par <- length(param.vec)
@@ -174,14 +174,14 @@ gradient.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho,
       if (w.function=="intercept") wi<- (solve(t(xi[,1:2])%*% xi[,1:2]) %*% t(xi[,1:2]))[1,]
       if (w.function=="slope")     wi<- (solve(t(xi[,1:2])%*% xi[,1:2]) %*% t(xi[,1:2]))[2,]
       wi   <- matrix(wi, 1, ni)
-      subject <- subject.gradient.ll.lme(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae)
-      correct <- ascertainment.gradient.correction(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+      subject <- av_subject.gradient.ll.lme(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae)
+      correct <- av_ascertainment.gradient.correction(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
       Gradi  <- subject[['gr']]*IPWi  + correct ## Gradient for ith subject
       total  <- total + Gradi
     }else{
       wi   <- (solve(t(zi[,1:2])%*% zi[,1:2]) %*% t(zi[,1:2]))
-      subject <- subject.gradient.ll.lme(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae)
-      correct <- ascertainment.gradient.correction.bivar(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+      subject <- av_subject.gradient.ll.lme(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae)
+      correct <- av_ascertainment.gradient.correction.bivar(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
       Gradi  <- subject[['gr']]*IPWi  - correct ## Gradient for ith subject: Notice the minus here versus the plus in the univariate case
       total  <- total + Gradi
     }
@@ -205,7 +205,7 @@ gradient.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho,
 }
 
 
-LogLikeAndScore <- function(params, y, x, z, id, w.function, cutpoints, SampProb, SampProbi, ProfileCol=NA){
+av_LogLikeAndScore <- function(params, y, x, z, id, w.function, cutpoints, SampProb, SampProbi, ProfileCol=NA){
   npar   <- length(params)
   beta   <- params[1:(npar-4)]
   sigma0 <- exp(params[(npar-3)])
@@ -213,8 +213,8 @@ LogLikeAndScore <- function(params, y, x, z, id, w.function, cutpoints, SampProb
   rho    <- (exp(params[(npar-1)])-1) / (exp(params[(npar-1)])+1)
   sigmae <- exp(params[npar])
 
-  out     <- total.nll.lme(   y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi)
-  GRAD    <- gradient.nll.lme(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi)
+  out     <- av_total.nll.lme(   y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi)
+  GRAD    <- av_gradient.nll.lme(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi)
 
   ## Need to use the chain rule: note that params is on the unconstrained scale but GRAD was calculated on the constrained parameters
   GRAD[(npar-3)] <- GRAD[(npar-3)]*exp(params[(npar-3)])
@@ -243,7 +243,7 @@ acml_validated <- function(
   SampProbi=rep(1, length(y)), ## Subject specific sampling probabilities to only be used if doing IPWL.  Note if doing IPWL, only use robcov (robust variances) and not covar
   ProfileCol=NA)               ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
 {
-  out <- nlm(LogLikeAndScore, InitVals, y=y, x=x, z=z, id=id, w.function=w.function, cutpoints=cutpoints, SampProb=SampProb,
+  out <- nlm(av_LogLikeAndScore, InitVals, y=y, x=x, z=z, id=id, w.function=w.function, cutpoints=cutpoints, SampProb=SampProb,
              SampProbi=SampProbi, ProfileCol=ProfileCol, gradtol=1e-12,
              stepmax=4, iterlim=250, check.analyticals = TRUE) #, print.level=1)
 
@@ -256,13 +256,13 @@ acml_validated <- function(
 
   ## Observed Information
   for (j in 1:npar){
-    temp        <- LogLikeAndScore(out$estimate+eps.mtx[j,], y=y, x=x, z=z, id=id,
+    temp        <- av_LogLikeAndScore(out$estimate+eps.mtx[j,], y=y, x=x, z=z, id=id,
                                    w.function=w.function, cutpoints=cutpoints,
                                    SampProb=SampProb,SampProbi=SampProbi, ProfileCol=ProfileCol)
     ObsInfo[j,] <- (attr(temp,"gradient")-grad.at.max)/(Hessian.eps)
   }
   ## Cheese part of the sandwich estimator
-  Cheese <- gradient.nll.lme(y=y, x=x, z=z, w.function=w.function,
+  Cheese <- av_gradient.nll.lme(y=y, x=x, z=z, w.function=w.function,
                              id=id, beta=out$estimate[c(1:(npar-4))],
                              sigma0=exp(out$estimate[(npar-3)]),
                              sigma1=exp(out$estimate[(npar-2)]),

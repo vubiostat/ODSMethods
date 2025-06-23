@@ -26,7 +26,7 @@ test_that("Validation ACML 'mean' reference works",
 {
   cuts <- quantile(b_i['mean',], probs=c(0.1, 0.9))
 
-  result <- LogLikeAndScore(
+  result <- av_LogLikeAndScore(
     estimates_acml_mean, y, x, z, id, 'mean', cuts, c(1, 0.25, 1),
     rep(1, length(y)), NA)
 
@@ -38,7 +38,7 @@ test_that("Validation ACML 'intercept' reference works",
 {
   cuts <- quantile(b_i['intercept',], probs=c(0.1, 0.9))
 
-  result <- LogLikeAndScore(
+  result <- av_LogLikeAndScore(
     estimates_acml_intercept, y, x, z, id, 'intercept', cuts, c(1, 0.25, 1),
     rep(1, length(y)), NA)
 
@@ -50,7 +50,7 @@ test_that("Validation ACML 'slope' reference works",
 {
   cuts <- quantile(b_i['slope',], probs=c(0.1, 0.9))
 
-  result <- LogLikeAndScore(
+  result <- av_LogLikeAndScore(
     estimates_acml_slope, y, x, z, id, 'slope', cuts, c(1, 0.25, 1),
     rep(1, length(y)), NA)
 
@@ -65,7 +65,7 @@ test_that("Validation ACML 'bivariate' reference works",
     quantile(b_i['slope',], probs=c(0.1, 0.9))
   )
 
-  result <- LogLikeAndScore(
+  result <- av_LogLikeAndScore(
     estimates_acml_bivar, y, x, z, id, 'bivar', cuts, c(1, 0.25, 1),
     rep(1, length(y)), NA)
 
