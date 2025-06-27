@@ -176,6 +176,7 @@ print.summary.odsdesign <- function(x, digits = NULL, ...)
   invisible(x)
 }
 
+
 #' Specify a given design for Outcome Dependent Sampling (ODS)
 #'
 #' Specify the design of an outcome dependent sampling routine.
