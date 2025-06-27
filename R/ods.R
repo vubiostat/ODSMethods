@@ -103,6 +103,17 @@ plot.odsdesign <- function(
   invisible(x)
 }
 
+transform_output <- function(InitVals, x = x, y = y, z = z){
+  beta = InitVals[1:(ncol(x))] # note here are with beta_0, need to change to accommodate if no beta_0
+  log_sigma_vc = InitVals[(ncol(x)+1):(ncol(x)+ncol(z))]
+  log_inv_rho_vc = InitVals[(ncol(x)+ncol(z)+1):(ncol(x)+ncol(z) + choose(ncol(z), 2))]
+  log_sigma_e = InitVals[(ncol(x)+ncol(z) + choose(ncol(z), 2)+1):length(InitVals)]
+  sigma_vc = ifelse(is.infinite(exp(log_sigma_vc)), 100000, exp(log_sigma_vc))
+  sigma_e = ifelse(is.infinite(exp(log_sigma_e)), 100000, exp(log_sigma_e))
+  rho_vc = ifelse(is.infinite(exp(log_inv_rho_vc)), 1, (exp(log_inv_rho_vc) - 1)/(exp(log_inv_rho_vc) + 1))
+  list(beta = beta, sigma_vc = sigma_vc, rho_vc = rho_vc, sigma_e = sigma_e)
+}
+
 #' @exportS3Method
 model.matrix.odsdesign <- function(object, ...) as.matrix(object$model.frame)
 
@@ -166,17 +177,109 @@ print.summary.odsdesign <- function(x, digits = NULL, ...)
 }
 
 #' @exportS3Method
-print.acml <- function(x, digits = max(3L, getOption("digits")), ...)
+print.acml <- function(x, digits = max(3L, getOption("digits")), transformed = FALSE, ...) # Need to add transformed = TRUE
 {
+  if (transformed == TRUE) {
+    print("Working in progress") # need to add x,y,z
+  } else {
   cat("\nCall:\n",
       paste(deparse(x$design$call), collapse="\n"),
       "\n\n",
       "Cutpoints:\n",
       sep="")
   print(round(x$design$cutpoints, digits=digits), ...)
-  cat("\nCoefficients:\n")
-  print(round(x$Ests, digits=digits), ...)
+  cat("\nFixed Effects:\n")
+  print(round(x$Ests[1:(length(x$Ests)-4)], digits=digits), ...) # Note that we only allowed 4 random effects parameters here
+  cat("\nRandom Effects:\n")
+  print(round(x$Ests[(length(x$Ests)-3):length(x$Ests)], digits=digits), ...)
+  cat("\nNumber of Subjects:\n")
+  print(length(unique(x$design$model.frame[,x$design$id])))
   invisible(x)
+  }
+}
+
+#' @exportS3Method
+coef.acml <- function(x, complete = TRUE, transformed = FALSE, ...) { # Need to add transformed = TRUE
+  if (transformed == TRUE) {
+    print("Working in progress") # need to add x,y,z
+  } else {
+    cat("\nFixed Effects:\n")
+    print(round(x$Ests[1:(length(x$Ests)-4)], digits=digits), ...) # Note that we only allowed 4 random effects parameters here
+    cat("\nRandom Effects:\n")
+    print(round(x$Ests[(length(x$Ests)-3):length(x$Ests)], digits=digits), ...)
+    invisible(x)
+  }
+}
+
+#' @exportS3Method
+vcov.acml <- function(x, complete = TRUE, robust = FALSE, ...) {
+  if (robust == TRUE) {
+    matrix(x$robcov, nrow = length(x$Ests), dimnames=list(
+      names(x$Ests),
+      names(x$Ests)))
+  } else {
+    matrix(x$covar, nrow = length(x$Ests), dimnames=list(
+      names(x$Ests),
+      names(x$Ests)))
+  }
+}
+
+#' @exportS3Method
+summary.acml <- function(object, digits = max(3L, getOption("digits")), transformed = TRUE, robust = FALSE, ...) {
+  ans <- object$design[c("call","cutpoints")]
+  ans$cutpoints <- round(ans$cutpoints, digits = digits )
+
+  ans$vcov <- matrix(object$covar, nrow = length(object$Ests), dimnames=list(
+    names(object$Ests),
+    names(object$Ests)))
+  names(ans$vcov) <- "Variance-Covariance Matrix"
+
+  ans$robcov <- matrix(object$robcov, nrow = length(object$Ests), dimnames=list(
+    names(object$Ests),
+    names(object$Ests)))
+  names(ans$vcov) <- "Robust Variance-Covariance Matrix"
+
+  fixed <- matrix(rep(NA, 3*(length(object$Ests)-4)), ncol=3, dimnames=list(
+    c(names(object$Ests)[1:(length(object$Ests)-4)]),
+    c("Estimate", "Std. Error", "95% CI")
+  ))
+  if (robust == TRUE) {
+    fixed[1:(length(object$Ests)-4),1] <- round(object$Ests[1:(length(x$Ests)-4)], digits = digits)
+    fixed[1:(length(object$Ests)-4),2]   <- ifelse(is.na(sqrt(object$covar)[1:(length(x$Ests)-4)]), NaN, round(sqrt(object$covar)[1:(length(x$Ests)-4)], digits = digits))
+    fixed[1:(length(object$Ests)-4),3] <- mapply(paste, round(object$Ests[1:(length(x$Ests)-4)] - 1.96*sqrt(object$covar)[1:(length(x$Ests)-4)], digits = digits), round(object$Ests[1:(length(x$Ests)-4)] + 1.96*sqrt(object$covar)[1:(length(x$Ests)-4)], digits = digits), MoreArgs = list(sep = ", "))
+  } else {
+    fixed[1:(length(object$Ests)-4),1] <- round(object$Ests[1:(length(x$Ests)-4)], digits = digits)
+    fixed[1:(length(object$Ests)-4),2]   <- ifelse(is.na(sqrt(object$robcov)[1:(length(x$Ests)-4)]), NaN, round(sqrt(object$robcov)[1:(length(x$Ests)-4)], digits = digits))
+    fixed[1:(length(object$Ests)-4),3] <- mapply(paste, round(object$Ests[1:(length(x$Ests)-4)] - 1.96*sqrt(object$robcov)[1:(length(x$Ests)-4)], digits = digits), round(object$Ests[1:(length(x$Ests)-4)] + 1.96*sqrt(object$robcov)[1:(length(x$Ests)-4)], digits = digits), MoreArgs = list(sep = ", "))
+  }
+
+  ans$fixed <- as.table(fixed)
+  names(ans$fixed) <- "Fixed Effects:"
+
+  random <- matrix(rep(NA, 4), nrow = 1, dimnames=list(c(""),
+    c(names(object$Ests)[(length(object$Ests)-3):length(object$Ests)])
+  ))
+  random[1,] <- round(object$Ests[(length(object$Ests)-3):length(object$Ests)], digits = digits)
+
+  ans$random <- as.table(random)
+  names(ans$fixed) <- "Random Effects:"
+
+  class(ans) <- "summary.acml"
+  ans
+}
+
+#' @exportS3Method
+print.summary.acml <- function(object, digits = max(3L, getOption("digits")), ...)
+{
+  print(object$call, ...)
+  cat("\n")
+  print(object$cutpoints, ...)
+  cat("\n")
+  print(object$fixed, ...)
+  cat("\n")
+  print(object$random, ...)
+  cat("\n")
+  invisible(object)
 }
 
 #' Specify a given design for Outcome Dependent Sampling (ODS)

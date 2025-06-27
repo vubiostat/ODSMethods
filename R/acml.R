@@ -158,7 +158,7 @@ subject.gradient.ll.lme <- function(yi, xi, zi, beta, sigma0, sigma1, rho, sigma
 
 gradient.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, CheeseCalc=FALSE){
   total <- 0
-  param.vec <- c(beta, log(sigma0),log(sigma1),log((1+rho)/(1-rho)),log(sigmae))
+  param.vec <- c(beta, log(sigma0),log(sigma1),log((1+rho)/(1-rho)),log(sigmae)) # atanh(rho)*2
   n.par <- length(param.vec)
   cheese <- matrix(0,n.par,n.par)
   for(i in unique(id)){
