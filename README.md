@@ -21,14 +21,15 @@ This package is a draft at present to bring together a wide variety of outcome d
 * Need a slide show of goals / design / result.
 * [Deep] Finish acml to every deep corner and usage.
   * coef() should return transformed coefficients (test should be raw). Maybe coef(model, raw=TRUE)?
-  * Add names to R estimates including the 4 additional parameters
-  * Add vcov that returns both levels in the manner of lme4
-  * Add computation of rank/df for variables
-  * Add 'fitted.values' to acml
-  * Add 'residuals' to acml (and S3 routine)
-  * Add format / summary to acml, coefficients, confidence intervals, p-values.
-  * Add plot to acml
-  * Add user interface tests to acml
+  * ~~Add names to R estimates including the 4 additional parameters~~
+  * spg: Add tests for S3 method
+  * spg: Add vcov that returns both levels in the manner of lme4 (what does this mean)
+  * Would DO. ~~Punted for now: Add computation of rank/df for variables~~
+  * lucy: Add 'fitted.values' to acml
+  * lucy: Add 'residuals' to acml (and S3 routine)
+  * lucy: Add format / summary to acml, coefficients, confidence intervals, p-values.
+  * lucy: Add plot to acml
+  * spg: Add user interface tests to acml
   * Add sample method to odsdesign
   NOTE: In general use lm() and lmer() object output and functions as guide.  
 * [Refine] acml. 
@@ -40,6 +41,7 @@ This package is a draft at present to bring together a wide variety of outcome d
   * Add vignette on usage. (start with acml)
 * [Expand] Fill in wide and deep for all routines identified in specification.
 * [Get Credit] Write paper for Journal of Statistical Software
+
 
 
 ### TO DO LIST
