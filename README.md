@@ -30,6 +30,7 @@ This package is a draft at present to bring together a wide variety of outcome d
   * lucy: Add format / summary to acml, coefficients, confidence intervals, p-values.
   * lucy: Add plot to acml
   * spg: Add user interface tests to acml
+  * ~~spg: Get CHECK Working~~ / Documentation of new S3
   * Add sample method to odsdesign
   NOTE: In general use lm() and lmer() object output and functions as guide.  
 * [Refine] acml. 

@@ -158,7 +158,7 @@ subject.gradient.ll.lme <- function(yi, xi, zi, beta, sigma0, sigma1, rho, sigma
 
 gradient.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi, CheeseCalc=FALSE){
   total <- 0
-  param.vec <- c(beta, log(sigma0),log(sigma1),log((1+rho)/(1-rho)),log(sigmae)) # atanh(rho)*2
+  param.vec <- c(beta, log(sigma0),log(sigma1),2*atanh(rho),log(sigmae))
   n.par <- length(param.vec)
   cheese <- matrix(0,n.par,n.par)
   for(i in unique(id)){
@@ -278,7 +278,7 @@ acml_internal <- function(
     Cheese  <- Cheese[-ProfileCol, -ProfileCol]
   }
   Ests = out$estimate# Lucy updated on 5/30/2025
-  names(Ests) = c(colnames(x), "log_sigma0","log_sigma1","trans_rho","log_sigmae")
+  names(Ests) = c(colnames(x), "log(sigma_0)","log(sigma_1)","2*atanh(rho)","log(sigmae)")
   list(Ests=Ests, covar=solve(ObsInfo), LogL= -out$minimum,  Code=out$code, robcov=solve(ObsInfo)%*%Cheese%*%solve(ObsInfo))
 }
 
@@ -299,46 +299,39 @@ coef.acml <- function(object, complete = TRUE, transform = FALSE, ...)
 
 #' @exportS3Method
 # FIXME: Should we be transforming? Decision needed? If so, finish code.
-vcov.acml <- function(x, complete = TRUE, robust = FALSE, transform=FALSE, ...)
+vcov.acml <- function(object, complete = TRUE, robust = FALSE, transform=FALSE, ...)
 {
   if(transform) stop("Work in progress")
 
-  if (robust == TRUE) {
-    matrix(x$robcov, nrow = length(x$Ests), dimnames=list(
-      names(x$Ests),
-      names(x$Ests)))
-  } else {
-    matrix(x$covar, nrow = length(x$Ests), dimnames=list(
-      names(x$Ests),
-      names(x$Ests)))
-  }
+  matrix(ifelse(robust, object$robcov, object$covar),
+         nrow = length(object$Ests),
+         dimnames=list(names(object$Ests), names(object$Ests)))
 }
 
 #' @exportS3Method
-print.acml <- function(x, digits = max(3L, getOption("digits")), transformed = FALSE, ...) # Need to add transformed = TRUE
+print.acml <- function(x, digits = max(3L, getOption("digits")), transform = FALSE, ...)
 {
-  if (transformed == TRUE) {
-    print("Working in progress") # need to add x,y,z
-  } else {
-    cat("\nCall:\n",
-        paste(deparse(x$design$call), collapse="\n"),
-        "\n\n",
-        "Cutpoints:\n",
-        sep="")
-    print(round(x$design$cutpoints, digits=digits), ...)
-    cat("\nFixed Effects:\n")
-    print(round(x$Ests[1:(length(x$Ests)-4)], digits=digits), ...) # Note that we only allowed 4 random effects parameters here
-    cat("\nRandom Effects:\n")
-    print(round(x$Ests[(length(x$Ests)-3):length(x$Ests)], digits=digits), ...)
-    cat("\nNumber of Subjects:\n")
-    print(length(unique(x$design$model.frame[,x$design$id])))
-    invisible(x)
-  }
+  if (transform == TRUE) stop("Work in progress") # need to add x,y,z
+
+  cat("\nCall:\n",
+      paste(deparse(x$design$call), collapse="\n"),
+      "\n\n",
+      "Cutpoints:\n",
+      sep="")
+  print(round(x$design$cutpoints, digits=digits), ...)
+  cat("\nFixed Effects:\n")
+  print(round(x$Ests[1:(length(x$Ests)-4)], digits=digits), ...) # FIXME that we only allowed 4 random effects parameters here
+  cat("\nRandom Effects:\n")
+  print(round(x$Ests[(length(x$Ests)-3):length(x$Ests)], digits=digits), ...)
+  cat("\nNumber of Subjects:\n")
+  print(length(unique(x$design$model.frame[,x$design$id])))
+  invisible(x)
 }
 
 
 #' @exportS3Method
-summary.acml <- function(object, digits = max(3L, getOption("digits")), transformed = TRUE, robust = FALSE, ...) {
+summary.acml <- function(object, digits = max(3L, getOption("digits")), transform = TRUE, robust = FALSE, ...)
+{
   ans <- object$design[c("call","cutpoints")]
   ans$cutpoints <- round(ans$cutpoints, digits = digits )
 
@@ -382,17 +375,17 @@ summary.acml <- function(object, digits = max(3L, getOption("digits")), transfor
 }
 
 #' @exportS3Method
-print.summary.acml <- function(object, digits = max(3L, getOption("digits")), ...)
+print.summary.acml <- function(x, digits = max(3L, getOption("digits")), ...)
 {
-  print(object$call, ...)
+  print(x$call, ...)
   cat("\n")
-  print(object$cutpoints, ...)
+  print(x$cutpoints, ...)
   cat("\n")
-  print(object$fixed, ...)
+  print(x$fixed, ...)
   cat("\n")
-  print(object$random, ...)
+  print(x$random, ...)
   cat("\n")
-  invisible(object)
+  invisible(x)
 }
 
 #' Retrieve the robust variance covariance matrix
