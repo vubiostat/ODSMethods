@@ -357,13 +357,13 @@ summary.acml <- function(object, digits = max(3L, getOption("digits")), transfor
     c("Estimate", "Std. Error", "95% CI")
   ))
   if (robust == TRUE) {
-    fixed[1:(length(object$Ests)-4),1] <- round(object$Ests[1:(length(x$Ests)-4)], digits = digits)
-    fixed[1:(length(object$Ests)-4),2]   <- ifelse(is.na(sqrt(object$covar)[1:(length(x$Ests)-4)]), NaN, round(sqrt(object$covar)[1:(length(x$Ests)-4)], digits = digits))
-    fixed[1:(length(object$Ests)-4),3] <- mapply(paste, round(object$Ests[1:(length(x$Ests)-4)] - 1.96*sqrt(object$covar)[1:(length(x$Ests)-4)], digits = digits), round(object$Ests[1:(length(x$Ests)-4)] + 1.96*sqrt(object$covar)[1:(length(x$Ests)-4)], digits = digits), MoreArgs = list(sep = ", "))
+    fixed[1:(length(object$Ests)-4),1] <- round(object$Ests[1:(length(object$Ests)-4)], digits = digits)
+    fixed[1:(length(object$Ests)-4),2]   <- ifelse(is.na(sqrt(object$covar)[1:(length(object$Ests)-4)]), NaN, round(sqrt(object$covar)[1:(length(object$Ests)-4)], digits = digits))
+    fixed[1:(length(object$Ests)-4),3] <- mapply(paste, round(object$Ests[1:(length(object$Ests)-4)] - 1.96*sqrt(object$covar)[1:(length(object$Ests)-4)], digits = digits), round(object$Ests[1:(length(object$Ests)-4)] + 1.96*sqrt(object$covar)[1:(length(object$Ests)-4)], digits = digits), MoreArgs = list(sep = ", "))
   } else {
-    fixed[1:(length(object$Ests)-4),1] <- round(object$Ests[1:(length(x$Ests)-4)], digits = digits)
-    fixed[1:(length(object$Ests)-4),2]   <- ifelse(is.na(sqrt(object$robcov)[1:(length(x$Ests)-4)]), NaN, round(sqrt(object$robcov)[1:(length(x$Ests)-4)], digits = digits))
-    fixed[1:(length(object$Ests)-4),3] <- mapply(paste, round(object$Ests[1:(length(x$Ests)-4)] - 1.96*sqrt(object$robcov)[1:(length(x$Ests)-4)], digits = digits), round(object$Ests[1:(length(x$Ests)-4)] + 1.96*sqrt(object$robcov)[1:(length(x$Ests)-4)], digits = digits), MoreArgs = list(sep = ", "))
+    fixed[1:(length(object$Ests)-4),1] <- round(object$Ests[1:(length(object$Ests)-4)], digits = digits)
+    fixed[1:(length(object$Ests)-4),2]   <- ifelse(is.na(sqrt(object$robcov)[1:(length(object$Ests)-4)]), NaN, round(sqrt(object$robcov)[1:(length(object$Ests)-4)], digits = digits))
+    fixed[1:(length(object$Ests)-4),3] <- mapply(paste, round(object$Ests[1:(length(object$Ests)-4)] - 1.96*sqrt(object$robcov)[1:(length(object$Ests)-4)], digits = digits), round(object$Ests[1:(length(object$Ests)-4)] + 1.96*sqrt(object$robcov)[1:(length(object$Ests)-4)], digits = digits), MoreArgs = list(sep = ", "))
   }
 
   ans$fixed <- as.table(fixed)
