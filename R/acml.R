@@ -445,8 +445,9 @@ print.summary.acml <- function(x, digits=NULL,signif.stars = getOption("show.sig
   print(round(x$design$cutpoints, digits=digits), ...)
   printCoefmat(x$coefficients, digits = digits, signif.stars = signif.stars,
                na.print = "NA", ...)
-  cat("\nNumber of Subjects:\n")
-  print(length(unique(x$design$model.frame[,x$design$id])))
+  cat("\nNumber of Subjects: ", length(unique(x$design$model.frame[,x$design$id])))
+  cat("\n")
+  if(x$transform) cat("\nStd. Errors approximated via delta method.\n\n")
   invisible(x)
 }
 
