@@ -299,6 +299,15 @@ fixef.acml <- function(object, ...)
   est[1:(length(est)-triangle(object$design$n_rand)-1)]
 }
 
+ranef_transform <- function(ran, n_rand)
+{
+  x        <- exp(ran)
+  rng      <- (n_rand+1):(length(ran) - 1)
+  x[rng]   <- tanh(ran[rng]/2)
+  names(x) <- gsub(".*\\((.*)\\).*", "\\1", names(x), perl=TRUE)
+  x
+}
+
 #' @export
 #' @rdname coef
 ranef <- function(object, transform=FALSE, ...) UseMethod("ranef")
@@ -310,13 +319,7 @@ ranef.acml <- function(object, transform=FALSE, ...)
   le  <- length(est)
   ran <- est[(le - triangle(object$design$n_rand)):le]
 
-  if(!transform) return(ran)
-
-  x        <- exp(ran)
-  rng      <- (object$design$n_rand+1):(length(ran) - 1)
-  x[rng]   <- tanh(ran[rng]/2)
-  names(x) <- gsub(".*\\((.*)\\).*", "\\1", names(x), perl=TRUE)
-  x
+  if(transform) ranef_transform(ran, object$design$n_rand) else ran
 }
 
 #' Extract parameters from fitted models
@@ -361,8 +364,10 @@ vcov.acml <- function(object, complete = TRUE, robust = FALSE, ...)
 #' @exportS3Method
 print.acml <- function(x, digits = max(3L, getOption("digits")), transform = FALSE, ...)
 {
-  cat("\nCall:\n",
+  cat("\nCalls:\n",
       paste(deparse(x$design$call), collapse="\n"),
+      "\n",
+      paste(deparse(x$call), collapse="\n"),
       "\n\n",
       "Cutpoints:\n",
       sep="")
@@ -381,21 +386,42 @@ print.acml <- function(x, digits = max(3L, getOption("digits")), transform = FAL
 summary.acml <- function(object, digits = max(3L, getOption("digits")),
                          transform = FALSE, robust = FALSE, ...)
 {
-  fef              <- fixef(object, ...)
+  raw              <- coef(object, ...)
+  beta             <- coef(object, transform=transform, ...)
   se               <- sqrt(diag(vcov(object)))
   object$transform <- transform
   object$robust    <- robust
   object$digits    <- digits
-  z                <- fef/(se/sqrt(nrow(object$design$model.frame))) # FIXME: REVIEW FOR CORRECTNESS!!!
+  z                <- raw/se
 
   object$coefficients  <- cbind(
-    Estimate     = fef,
+    Estimate     = beta,
     `Std. Error` = se,
-    L95          = fef + se*qnorm(0.025),
-    U95          = fef + se*qnorm(0.975),
+    L95          = raw + se*qnorm(0.025),
+    U95          = raw + se*qnorm(0.975),
     `z value`    = z,
     `Pr(>|z|)`   = 2 * pnorm(abs(z), lower.tail=FALSE)
   )
+
+  if(transform)
+  {
+    n_rand <- object$design$n_rand
+    le  <- length(beta)
+    ran <- (le - triangle(n_rand)):nrow(object$coefficients)
+
+    object$coefficients[ran, 'L95'] <- ranef_transform(object$coefficients[ran, 'L95'], n_rand)
+    object$coefficients[ran, 'U95'] <- ranef_transform(object$coefficients[ran, 'U95'], n_rand)
+
+    # Delta Method SE[f(x_hat)] ~= |g'(x_hat)| * SE[x_hat]
+
+    # The one with special handling is the rho(s)
+    rhos <- ran[(n_rand+1):(length(ran) - 1)] # Find rho(s)
+    object$coefficients[rhos, 2] <- abs(1/cosh(coef(object)[rhos]/2)^2/2) *object$coefficients[rhos, 2]
+
+    # This works for rest coefficients since they are just exp(x) and D(exp(x)) = exp(x)
+    ran <- ran[!ran %in% rhos]
+    object$coefficients[ran, 2] <- object$coefficients[ran, 1]*object$coefficients[ran, 2]
+  }
 
   # object$residuals <- residuals(object)
 
@@ -409,8 +435,9 @@ print.summary.acml <- function(x, digits=NULL,signif.stars = getOption("show.sig
 {
   if(is.null(digits)) digits <- x$digits
 
-  cat("\nCall:\n",
+  cat("\nCalls:\n",
       paste(deparse(x$design$call), collapse="\n"),
+      "\n",
       paste(deparse(x$call), collapse="\n"),
       "\n\n",
       "Cutpoints:\n",
@@ -418,8 +445,6 @@ print.summary.acml <- function(x, digits=NULL,signif.stars = getOption("show.sig
   print(round(x$design$cutpoints, digits=digits), ...)
   printCoefmat(x$coefficients, digits = digits, signif.stars = signif.stars,
                na.print = "NA", ...)
-  cat("\nRandom Effects:\n")
-  print(round(ranef(x, transform=x$transform), digits=digits), ...)
   cat("\nNumber of Subjects:\n")
   print(length(unique(x$design$model.frame[,x$design$id])))
   invisible(x)
@@ -558,6 +583,7 @@ acml <- function(
 
   fit$design <- design
   fit$data   <- data
+  fit$call   <- cl
 
   if(fit$Code == 3) warning("last global step failed to locate a point lower than estimate. Either estimate is an approximate local minimum of the function or steptol is too small.")
   if(fit$Code == 4) warning("iteration limit exceeded.")
