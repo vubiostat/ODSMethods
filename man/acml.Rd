@@ -57,3 +57,11 @@ Outcome dependent sampling designs need to be corrected when fitting a
 statistical model for proper inferences. This routine will fit and return
 the model fit using ascertainment corrected likelihood.
 }
+\examples{
+data(gbti)
+design <- ods(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
+              data=gbti, quantiles=c(0.1, 0.9))
+est <- acml(Response ~ Month*Genotype, design, gbti)
+est
+summary(est)
+}

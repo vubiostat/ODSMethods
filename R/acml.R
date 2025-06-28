@@ -286,33 +286,81 @@ acml_internal <- function(
  #
 # S3 methods for acml
 
+triangle <- function(n) n*(n+1)/2
 
+#' @export
+#' @rdname coef
+fixef <- function(object, ...) UseMethod("fixef")
+
+#' @export
+fixef.acml <- function(object, ...)
+{
+  est <- object$Est
+  est[1:(length(est)-triangle(object$design$n_rand)-1)]
+}
+
+#' @export
+#' @rdname coef
+ranef <- function(object, transform=FALSE, ...) UseMethod("ranef")
+
+#' @export
+ranef.acml <- function(object, transform=FALSE, ...)
+{
+  est <- object$Est
+  le  <- length(est)
+  ran <- est[(le - triangle(object$design$n_rand)):le]
+
+  if(!transform) return(ran)
+
+  x        <- exp(ran)
+  rng      <- (object$design$n_rand+1):(length(ran) - 1)
+  x[rng]   <- tanh(ran[rng]/2)
+  names(x) <- gsub(".*\\((.*)\\).*", "\\1", names(x), perl=TRUE)
+  x
+}
+
+#' Extract parameters from fitted models
+#'
+#' These are S3 methods to extract the entire parameter set, just the fixed
+#' effects, or just the random effects. They are by default returned on the
+#' unconstrained optimization scale.
+#'
 #' @exportS3Method
-# FIXME: where does transform get documented?
-# FIXME: need to add transform
+#' @rdname coef
+#' @param object the fitted model object to extract model coefficients.
+#' @param complete Not used at present, required for S3
+#' @param transform logical(1); If TRUE the coefficients will be inverse
+#' transformed back to their original scale, this is `exp` for deviation
+#' components and Fisher transformed for correlation.
+#' @param ... Additional arguments passed along
+#' @return A named vector of desired coeffients.
+#' @examples
+#' data(gbti)
+#' design <- ods(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
+#'               data=gbti, quantiles=c(0.1, 0.9))
+#' est <- acml(Response ~ Month*Genotype, design, gbti)
+#' coef(est)
+#' ranef(est)
+#' fixef(est)
 coef.acml <- function(object, complete = TRUE, transform = FALSE, ...)
 {
-  if(transform) stop("Work in progress")
-
-  object$Est
+  c(fixef(object, ...),
+    ranef(object, transform=transform, ...))
 }
 
 #' @exportS3Method
-# FIXME: Should we be transforming? Decision needed? If so, finish code.
-vcov.acml <- function(object, complete = TRUE, robust = FALSE, transform=FALSE, ...)
+vcov.acml <- function(object, complete = TRUE, robust = FALSE, ...)
 {
-  if(transform) stop("Work in progress")
-
-  matrix(ifelse(robust, object$robcov, object$covar),
-         nrow = length(object$Ests),
-         dimnames=list(names(object$Ests), names(object$Ests)))
+  nm <- names(coef(object))
+  vc <- if(robust) object$robcov else object$covar
+  rownames(vc) <- nm
+  colnames(vc) <- nm
+  vc
 }
 
 #' @exportS3Method
 print.acml <- function(x, digits = max(3L, getOption("digits")), transform = FALSE, ...)
 {
-  if (transform == TRUE) stop("Work in progress") # need to add x,y,z
-
   cat("\nCall:\n",
       paste(deparse(x$design$call), collapse="\n"),
       "\n\n",
@@ -320,71 +368,60 @@ print.acml <- function(x, digits = max(3L, getOption("digits")), transform = FAL
       sep="")
   print(round(x$design$cutpoints, digits=digits), ...)
   cat("\nFixed Effects:\n")
-  print(round(x$Ests[1:(length(x$Ests)-4)], digits=digits), ...) # FIXME that we only allowed 4 random effects parameters here
+  print(round(fixef(x), digits=digits), ...)
   cat("\nRandom Effects:\n")
-  print(round(x$Ests[(length(x$Ests)-3):length(x$Ests)], digits=digits), ...)
+  print(round(ranef(x, transform=transform), digits=digits), ...)
   cat("\nNumber of Subjects:\n")
   print(length(unique(x$design$model.frame[,x$design$id])))
   invisible(x)
 }
 
-
 #' @exportS3Method
-summary.acml <- function(object, digits = max(3L, getOption("digits")), transform = TRUE, robust = FALSE, ...)
+#' @importFrom stats qnorm vcov
+summary.acml <- function(object, digits = max(3L, getOption("digits")),
+                         transform = FALSE, robust = FALSE, ...)
 {
-  ans <- object$design[c("call","cutpoints")]
-  ans$cutpoints <- round(ans$cutpoints, digits = digits )
+  fef              <- fixef(object, ...)
+  se               <- sqrt(diag(vcov(object)))
+  object$transform <- transform
+  object$robust    <- robust
+  object$digits    <- digits
+  z                <- fef/(se/sqrt(nrow(object$design$model.frame))) # FIXME: REVIEW FOR CORRECTNESS!!!
 
-  ans$vcov <- matrix(object$covar, nrow = length(object$Ests), dimnames=list(
-    names(object$Ests),
-    names(object$Ests)))
-  names(ans$vcov) <- "Variance-Covariance Matrix"
+  object$coefficients  <- cbind(
+    Estimate     = fef,
+    `Std. Error` = se,
+    L95          = fef + se*qnorm(0.025),
+    U95          = fef + se*qnorm(0.975),
+    `z value`    = z,
+    `Pr(>|z|)`   = 2 * pnorm(abs(z), lower.tail=FALSE)
+  )
 
-  ans$robcov <- matrix(object$robcov, nrow = length(object$Ests), dimnames=list(
-    names(object$Ests),
-    names(object$Ests)))
-  names(ans$vcov) <- "Robust Variance-Covariance Matrix"
+  # object$residuals <- residuals(object)
 
-  fixed <- matrix(rep(NA, 3*(length(object$Ests)-4)), ncol=3, dimnames=list(
-    c(names(object$Ests)[1:(length(object$Ests)-4)]),
-    c("Estimate", "Std. Error", "95% CI")
-  ))
-  if (robust == TRUE) {
-    fixed[1:(length(object$Ests)-4),1] <- round(object$Ests[1:(length(object$Ests)-4)], digits = digits)
-    fixed[1:(length(object$Ests)-4),2]   <- ifelse(is.na(sqrt(object$covar)[1:(length(object$Ests)-4)]), NaN, round(sqrt(object$covar)[1:(length(object$Ests)-4)], digits = digits))
-    fixed[1:(length(object$Ests)-4),3] <- mapply(paste, round(object$Ests[1:(length(object$Ests)-4)] - 1.96*sqrt(object$covar)[1:(length(object$Ests)-4)], digits = digits), round(object$Ests[1:(length(object$Ests)-4)] + 1.96*sqrt(object$covar)[1:(length(object$Ests)-4)], digits = digits), MoreArgs = list(sep = ", "))
-  } else {
-    fixed[1:(length(object$Ests)-4),1] <- round(object$Ests[1:(length(object$Ests)-4)], digits = digits)
-    fixed[1:(length(object$Ests)-4),2]   <- ifelse(is.na(sqrt(object$robcov)[1:(length(object$Ests)-4)]), NaN, round(sqrt(object$robcov)[1:(length(object$Ests)-4)], digits = digits))
-    fixed[1:(length(object$Ests)-4),3] <- mapply(paste, round(object$Ests[1:(length(object$Ests)-4)] - 1.96*sqrt(object$robcov)[1:(length(object$Ests)-4)], digits = digits), round(object$Ests[1:(length(object$Ests)-4)] + 1.96*sqrt(object$robcov)[1:(length(object$Ests)-4)], digits = digits), MoreArgs = list(sep = ", "))
-  }
-
-  ans$fixed <- as.table(fixed)
-  names(ans$fixed) <- "Fixed Effects:"
-
-  random <- matrix(rep(NA, 4), nrow = 1, dimnames=list(c(""),
-                                                       c(names(object$Ests)[(length(object$Ests)-3):length(object$Ests)])
-  ))
-  random[1,] <- round(object$Ests[(length(object$Ests)-3):length(object$Ests)], digits = digits)
-
-  ans$random <- as.table(random)
-  names(ans$fixed) <- "Random Effects:"
-
-  class(ans) <- "summary.acml"
-  ans
+  class(object)    <- c("summary.acml", "acml")
+  object
 }
 
 #' @exportS3Method
-print.summary.acml <- function(x, digits = max(3L, getOption("digits")), ...)
+#' @importFrom stats printCoefmat
+print.summary.acml <- function(x, digits=NULL,signif.stars = getOption("show.signif.stars"), ...)
 {
-  print(x$call, ...)
-  cat("\n")
-  print(x$cutpoints, ...)
-  cat("\n")
-  print(x$fixed, ...)
-  cat("\n")
-  print(x$random, ...)
-  cat("\n")
+  if(is.null(digits)) digits <- x$digits
+
+  cat("\nCall:\n",
+      paste(deparse(x$design$call), collapse="\n"),
+      paste(deparse(x$call), collapse="\n"),
+      "\n\n",
+      "Cutpoints:\n",
+      sep="")
+  print(round(x$design$cutpoints, digits=digits), ...)
+  printCoefmat(x$coefficients, digits = digits, signif.stars = signif.stars,
+               na.print = "NA", ...)
+  cat("\nRandom Effects:\n")
+  print(round(ranef(x, transform=x$transform), digits=digits), ...)
+  cat("\nNumber of Subjects:\n")
+  print(length(unique(x$design$model.frame[,x$design$id])))
   invisible(x)
 }
 
@@ -450,6 +487,13 @@ logLik.acml <- function(object, ...)
 #' @importFrom checkmate assert_formula assert_numeric assert_class
 #' @importFrom checkmate reportAssertions
 #' @importFrom stats lm model.matrix model.frame
+#' @examples
+#' data(gbti)
+#' design <- ods(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
+#'               data=gbti, quantiles=c(0.1, 0.9))
+#' est <- acml(Response ~ Month*Genotype, design, gbti)
+#' est
+#' summary(est)
 acml <- function(
   formula,
   design,

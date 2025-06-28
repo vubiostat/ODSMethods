@@ -176,7 +176,6 @@ print.summary.odsdesign <- function(x, digits = NULL, ...)
   invisible(x)
 }
 
-
 #' Specify a given design for Outcome Dependent Sampling (ODS)
 #'
 #' Specify the design of an outcome dependent sampling routine.
@@ -346,7 +345,8 @@ ods <- function(
       id          = names(mf)[3],
       quantiles   = quantiles,
       cutpoints   = cutpoints,
-      z_i         = z_i
+      z_i         = z_i,
+      n_rand      = 2     # Number of random effects, slope + intercept
     ),
     class="odsdesign"
   )
