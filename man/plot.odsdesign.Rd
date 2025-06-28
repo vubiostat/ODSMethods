@@ -62,5 +62,5 @@ Generate a basic scatter plot of an ODS design and overlay the
 cut points.
 }
 \seealso{
-[ods()]
+\code{\link{ods}}
 }

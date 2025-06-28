@@ -47,7 +47,7 @@
 #'    See \code{\link{par}}.
 #' @param ... Additional arguments past to \code{\link{plot}}, \code{\link{hist}},
 #'    or \code{\link{lines}} depending on context.
-#' @seealso [ods()]
+#' @seealso \code{\link{ods}}
 #'
 #' @exportS3Method
 #' @importFrom graphics abline hist lines
