@@ -4,14 +4,14 @@
 #' @docType data
 #' @description
 #' This is a simulated data set with known ``truth''. The dataset consists of
-#' 402 patients and a measured response to a hypothetical drug over the course
+#' 1000 patients and a measured response to a hypothetical drug over the course
 #' of 5 months. Further, some ethnicity information is available if
 #' Hispanic origin or not. An expensive genotype analysis exists, and to
 #' minimize exposure a biased sample is performed. Patients that are in the
 #' outer 20% of responses for intercept and slope are sampled for the genotyping
 #' with a probability of 1. Patients that are in the inner 80% of responses for
 #' intercept and slope are sampled with a probability of 0.25 for genotyping.
-#' Thus on average 304 patients of the 1000 would be genotyped.
+#' Thus on average 400 patients of the 1000 would be genotyped.
 #'
 #' @details
 #' The model was generated using the following:

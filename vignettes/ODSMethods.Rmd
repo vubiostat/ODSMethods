@@ -1,0 +1,95 @@
+---
+title: "ODSMethods"
+author: "Shawn Garbett, Lucy Bailu, Jonathan Schildcrout"
+date: "2025-06-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ODSMethods)
+```
+
+## Introduction
+
+When outcome covariates are available one can perform biased
+sampling to maximize information returned, or outcome dependent sampling
+(ODS). This is especially helpful
+to minimize exposure or an expensive test. The statistical analysis
+requires correction and this package has routines to assist in this
+process via multiple methods. See 'Two-Phase, Generalized Case-Control
+Designs for the Study of Quantitative Longitudinal Outcomes' Schildcrout,
+et al. (2020) <doi: 10.1093/aje/kwz127>.
+
+This process is similar to mixed effect modeling in that sampling is done
+on an outcome that is a random effect, in the case of ascertainment corrected
+maximum likelihood (ACML), the slope, intercept, mean or bivariate slope and intercept of a longitudinal response is used to inform sampling for the 
+more expensive covariate. Cases in the tails of this random effect distribution are considered more informative and the "hump" in the middle
+is less informative so sampling is biased.
+
+
+## Design
+
+### Simulated Dataset
+
+The package includes a small simulated data set with known "truth". 
+
+This is a simulated data set with known ``truth''. The dataset consists of
+1000 patients and a measured response to a hypothetical drug over the course
+of 5 months. Further, some ethnicity information is available if
+Hispanic origin or not. An expensive genotype analysis exists, and to
+minimize exposure a biased sample is performed. Patients that are in the
+outer 20% of responses for intercept and slope are sampled for the genotyping
+with a probability of 1. Patients that are in the inner 80% of responses for
+intercept and slope are sampled with a probability of 0.25 for genotyping.
+Thus on average 400 patients of the 1000 would be genotyped.
+
+The model was generated using the following:
+
+$$Y_{ij} = 10 + 0.5 \cdot Month - 0.5 \cdot Genotype  + 0.25 \cdot Month
+\cdot Genotype + 0.5 \cdot Ancestry + b_{0i} + b_{1i} \cdot Month + \epsilon_{ij}$$
+
+where
+
+$$b_{0i} \sim \mathcal{N}(\mu=0, \sigma^2_0=4)$$
+$$b_{1i} \sim \mathcal{N}(\mu=0, \sigma^2_1=0.25)$$
+$$\rho(b_{0i}, b_{1i}) = 0.1$$
+$$\epsilon_{ij} \sim \mathcal{N}(\mu=0, \sigma^2=1)$$
+
+Further,
+
+$$\pi(genotype_i = 1 | ancestry_i) = 0.1 + 0.15 \cdot I(ancestry_i=1)$$
+
+```{r data}
+data(gbti)
+```
+
+### Specify the Design
+
+To specify the design, we'll using a simple intercept sampling model. The
+design to sample assumes that the slope is the most informative. One
+can plot the result of this design versus it's quantiles. 
+
+```{r }
+design <- ods(Response ~ Month|Patient, 'slope',
+            p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9))
+summary(design)
+plot(design)
+```
+
+## ACML
+
+To fit the model using ascertainment corrected likelihood (ACML) a simple call
+specifying the fixed effects. The random effects will be pulled from the
+specified design. 
+
+```{r pressure}
+est <- acml(Response ~ Month*Genotype, design, gbti)
+summary(est)
+#plot(est)
+```
+
+## Reference
+
+

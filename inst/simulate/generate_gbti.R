@@ -38,4 +38,4 @@ generate_gbti <- function(N=1000, M=5, seed=1, w_function='bivariate')
   gbti
 }
 
-gbti <- generate_gbti()
+gbti <- generate_gbti(seed=70)
