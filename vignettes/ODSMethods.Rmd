@@ -78,18 +78,30 @@ summary(design)
 plot(design)
 ```
 
+## Sample
+
+```{r sampling_acml}
+data <- gbti[gbti$Patient %in% design$sample_ids,]
+
+```
+
 ## ACML
 
 To fit the model using ascertainment corrected likelihood (ACML) a simple call
 specifying the fixed effects. The random effects will be pulled from the
 specified design. 
 
-```{r pressure}
-est <- acml(Response ~ Month*Genotype, design, gbti)
-summary(est)
-#plot(est)
+```{r acml, R.options=list(width=100)}
+est <- acml(Response ~ Month*Genotype, design, data)
+summary(est, digits=3)
 ```
 
-## Reference
+One can also look at the coefficients transformed back to the original data scale.
+
+```{r transform_back}
+summary(est, digits=3, transform=TRUE)
+```
+
+## References
 
 

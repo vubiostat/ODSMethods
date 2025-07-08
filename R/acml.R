@@ -431,7 +431,7 @@ summary.acml <- function(object, digits = max(3L, getOption("digits")),
 
 #' @exportS3Method
 #' @importFrom stats printCoefmat
-print.summary.acml <- function(x, digits=NULL,signif.stars = getOption("show.signif.stars"), ...)
+print.summary.acml <- function(x, digits=NULL, signif.stars = getOption("show.signif.stars"), ...)
 {
   if(is.null(digits)) digits <- x$digits
 
@@ -443,7 +443,7 @@ print.summary.acml <- function(x, digits=NULL,signif.stars = getOption("show.sig
       "Cutpoints:\n",
       sep="")
   print(round(x$design$cutpoints, digits=digits), ...)
-  printCoefmat(x$coefficients, digits = digits, signif.stars = signif.stars,
+  printCoefmat(x$coefficients, digits = digits-1, dig.tst=digits, signif.stars = signif.stars,
                na.print = "NA", ...)
   cat("\nNumber of Subjects: ", length(unique(x$design$model.frame[,x$design$id])))
   cat("\n")

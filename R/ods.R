@@ -57,7 +57,7 @@ plot.odsdesign <- function(
   ylab   = "Slope",
   main   = format(x$formula),
   sub    = paste(x$method, "design"),
-  col    = if(x$method == 'mean') 'lightgray' else 'black',
+  col    = if(x$method == 'mean') 'lightgray' else rgb(0,0,0,x$p_sample_i),
   lwd    = 1,
   lty    = 1,
   cutcol = 'red',
@@ -332,6 +332,8 @@ ods <- function(
   }
   names(p_sample_i) <- colnames(z_i)
 
+  smpl <- names(p_sample_i)[rbinom(length(p_sample_i), 1, p_sample_i) > 0]
+
   # Return design object
   structure(list(
       call        = cl,
@@ -340,6 +342,7 @@ ods <- function(
       method      = method,
       p_sample    = p_sample,
       p_sample_i  = p_sample_i,
+      sample_ids  = smpl,
       response    = names(mf)[1],
       time        = names(mf)[2],
       id          = names(mf)[3],
@@ -351,3 +354,6 @@ ods <- function(
     class="odsdesign"
   )
 }
+
+
+
