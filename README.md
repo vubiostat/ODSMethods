@@ -16,23 +16,31 @@ This package is a draft at present to bring together a wide variety of outcome d
 * Proper author reference/license in each code file, and the author needs to be part of the DESCRIPTION.
 * It should be dependency adverse. An imports for say tidyverse creates a huge dependency liability. Suggests for a package is okay, but to be avoided and should include required checks that a package is loaded if needed.
 
-## Needs
+## TODO
+
+Things that must be done.
 
 * Need a slide show of goals / design / result.
 * [Deep] Finish acml to every deep corner and usage.
-  * coef() should return transformed coefficients (test should be raw). Maybe coef(model, raw=TRUE)?
+  * ~~coef() should return transformed coefficients (test should be raw). Maybe coef(model, raw=TRUE)?~~
   * ~~Add names to R estimates including the 4 additional parameters~~
-  * spg: Add tests for S3 method
+  * ~~Fix issue with testing / numerical BLAS reproducibility issue~~
+  * ~~Add tests for S3 method, done via examples in CHECK~~
   * spg: Add vcov that returns both levels in the manner of lme4 (what does this mean)
-  * Would DO. ~~Punted for now: Add computation of rank/df for variables~~
   * lucy: Add 'fitted.values' to acml
   * lucy: Add 'residuals' to acml (and S3 routine)
-  * lucy: Add format / summary to acml, coefficients, confidence intervals, p-values.
+  * ~~lucy: Add format / summary to acml, coefficients, confidence intervals, p-values.~~
   * lucy: Add plot to acml
   * spg: Add user interface tests to acml
-  * ~~spg: Get CHECK Working~~ / Documentation of new S3
+  * ~~Get CHECK Working~~ / Documentation of new S3
   * Add sample method to odsdesign
-  NOTE: In general use lm() and lmer() object output and functions as guide.  
+  NOTE: In general use lm() and lmer() object output and functions as guide.
+* [Multiple Imputation]
+  * Add multiple imputation method
+  * Figure out what this task list is composed of.
+* [Pseudo Likelihood]
+  * Add Pseudo Likelihood Method
+  * Figure out what this taks list is composed of.
 * [Refine] acml. 
   * Replace with ACML.LME (not the validated test version!)
   * Add the analytical Hessian (Lucy)
@@ -40,12 +48,16 @@ This package is a draft at present to bring together a wide variety of outcome d
 * [Document]
   * Add reference data sets preferably from papers.
   * Add vignette on usage. (start with acml)
-* [Expand] Fill in wide and deep for all routines identified in specification.
 * [Get Credit] Write paper for Journal of Statistical Software
 
+### Punts
 
+MoSCoW => Must, Should, Could, Would
 
-### TO DO LIST
+The above 
+
+* Would DO. Punted for now: Add computation of rank/df for variables for acml test.
+
 
 #### Lucy
 
