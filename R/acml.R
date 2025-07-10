@@ -393,6 +393,9 @@ summary.acml <- function(object, digits = max(3L, getOption("digits")),
   object$robust    <- robust
   object$digits    <- digits
   z                <- raw/se
+  le               <- length(beta)
+  object$n_random  <- triangle(object$design$n_rand)+1
+  object$n_fixed   <- le - object$n_random
 
   object$coefficients  <- cbind(
     Estimate     = beta,
@@ -406,7 +409,7 @@ summary.acml <- function(object, digits = max(3L, getOption("digits")),
   if(transform)
   {
     n_rand <- object$design$n_rand
-    le  <- length(beta)
+
     ran <- (le - triangle(n_rand)):nrow(object$coefficients)
 
     object$coefficients[ran, 'L95'] <- ranef_transform(object$coefficients[ran, 'L95'], n_rand)
@@ -424,6 +427,7 @@ summary.acml <- function(object, digits = max(3L, getOption("digits")),
   }
 
   # object$residuals <- residuals(object)
+
 
   class(object)    <- c("summary.acml", "acml")
   object
@@ -443,11 +447,41 @@ print.summary.acml <- function(x, digits=NULL, signif.stars = getOption("show.si
       "Cutpoints:\n",
       sep="")
   print(round(x$design$cutpoints, digits=digits), ...)
-  printCoefmat(x$coefficients, digits = digits-1, dig.tst=digits, signif.stars = signif.stars,
+  cat("\nFixed Effects:\n")
+  printCoefmat(x$coefficients[1:x$n_fixed,], digits = digits-1, dig.tst=digits, signif.stars = signif.stars,
                na.print = "NA", ...)
-  cat("\nNumber of Subjects: ", length(unique(x$design$model.frame[,x$design$id])))
+
+  cat("\nRandom Effects:\n")
+  random <- x$coefficients[(x$n_fixed+1):nrow(x$coefficients),]
+  nt     <- max(nchar(x$design$id)+1, 7) # Groups and a space is minimum
+  pad <- paste0(rep(" ", nt), collapse="")
+  rownames(random) <-
+    if(x$transform)
+    {
+      c(
+        paste(x$design$id, "(Intercept)"),
+        paste0(pad, x$design$time),
+        paste0(pad, "rho"),
+        "Residual"
+      )
+    } else
+    {
+      c(
+        paste(x$design$id, "log(Intercept)"),
+        paste0(pad, "log(", x$design$time, ")"),
+        paste0(pad, "2*atanh(rho)"),
+        "log(Residual)"
+      )
+    }
+
+
+  printCoefmat(random, digits = digits-1, dig.tst=digits, signif.stars = signif.stars,
+               na.print = "NA", ...)
+
+  cat("\nNumber of Subjects:", length(unique(x$design$model.frame[,x$design$id])))
+  cat("\nNumber of Observations:", nrow(x$design$model.frame))
   cat("\n")
-  if(x$transform) cat("\nStd. Errors approximated via delta method.\n\n")
+  if(x$transform) cat("\nStd. errors approximated via delta method. Confidence intervals are computed on transformed scale and transformed back and will not be symmetric.\n\n")
   invisible(x)
 }
 
