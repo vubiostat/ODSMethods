@@ -474,9 +474,7 @@ print.summary.acml <- function(x, digits=NULL, signif.stars = getOption("show.si
       )
     }
 
-
-  printCoefmat(random, digits = digits-1, dig.tst=digits, signif.stars = signif.stars,
-               na.print = "NA", ...)
+  print(round(random[,1:4], digits))
 
   cat("\nNumber of Subjects:", length(unique(x$design$model.frame[,x$design$id])))
   cat("\nNumber of Observations:", nrow(x$design$model.frame))
