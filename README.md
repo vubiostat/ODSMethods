@@ -26,14 +26,21 @@ Things that must be done.
   * ~~Add names to R estimates including the 4 additional parameters~~
   * ~~Fix issue with testing / numerical BLAS reproducibility issue~~
   * ~~Add tests for S3 method, done via examples in CHECK~~
-  * spg: Add vcov that returns both levels in the manner of lme4 (what does this mean)
-  * lucy: Add 'fitted.values' to acml
-  * lucy: Add 'residuals' to acml (and S3 routine)
+  * ~~spg: Add vcov~~
+  * lucy: Add 'fitted.values', 'predict' to acml
+     Estimate of predicted value at population level.
+     Uncertaintanty comes from vcov matrix. 
+     Mean value given covariates, and a confidence value.
+     Individual prediction uses the BLUP. <== For predict this should be default.
+  * lucy: Add 'residuals' to acml (and S3 routine), specify level (1 or 2)
+     Look at notes to determine meaning of level 1 and level 2.
+     Concern about residuals getting distorted by ACML. Simulation could answer the question. Lucy would like
+     to pursue this after fitted.value, predict.
   * ~~lucy: Add format / summary to acml, coefficients, confidence intervals, p-values.~~
   * lucy: Add plot to acml
   * spg: Add user interface tests to acml
   * ~~Get CHECK Working~~ / Documentation of new S3
-  * Add sample method to odsdesign
+  * ~~Add sample method to odsdesign~~
   NOTE: In general use lm() and lmer() object output and functions as guide.
 * [Multiple Imputation]
   * Add multiple imputation method

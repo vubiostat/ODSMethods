@@ -80,6 +80,8 @@ plot(design)
 
 ## Sample
 
+The design object contains a recommended sample for ACML.
+
 ```{r sampling_acml}
 data <- gbti[gbti$Patient %in% design$sample_ids,]
 
@@ -101,6 +103,28 @@ One can also look at the coefficients transformed back to the original data scal
 ```{r transform_back}
 summary(est, digits=3, transform=TRUE)
 ```
+
+## Visual summary
+
+Let's look at a visual summary of the model.
+
+```{r plot_acml}
+#plot(est, which=1)
+```
+
+From this one can see, XXXX. 
+
+Further, it's good to check the assumption that random effects are normal.
+
+```{r plot_diagnostics}
+#plot(est, which=2)
+```
+
+Finally, checking the residuals of the final model.
+```{r plot_residuals}
+#plot(est, which=3)
+```
+
 
 ## References
 
