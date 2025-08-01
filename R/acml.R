@@ -362,23 +362,23 @@ vcov.acml <- function(object, complete = TRUE, robust = FALSE, ...)
 }
 
 #' @exportS3Method
-print.acml <- function(x, digits = max(3L, getOption("digits")), transform = FALSE, ...)
+print.acml <- function(object, digits = max(3L, getOption("digits")), transform = FALSE, ...)
 {
   cat("\nCalls:\n",
-      paste(deparse(x$design$call), collapse="\n"),
+      paste(deparse(object$design$call), collapse="\n"),
       "\n",
-      paste(deparse(x$call), collapse="\n"),
+      paste(deparse(object$call), collapse="\n"),
       "\n\n",
       "Cutpoints:\n",
       sep="")
-  print(round(x$design$cutpoints, digits=digits), ...)
+  print(round(object$design$cutpoints, digits=digits), ...)
   cat("\nFixed Effects:\n")
-  print(round(fixef(x), digits=digits), ...)
+  print(round(fixef(object), digits=digits), ...)
   cat("\nRandom Effects:\n")
-  print(round(ranef(x, transform=transform), digits=digits), ...)
+  print(round(ranef(object, transform=transform), digits=digits), ...)
   cat("\nNumber of Subjects:\n")
-  print(length(unique(x$design$model.frame[,x$design$id])))
-  invisible(x)
+  print(length(unique(object$design$model.frame[,object$design$id])))
+  invisible(object)
 }
 
 #' @exportS3Method
@@ -435,40 +435,40 @@ summary.acml <- function(object, digits = max(3L, getOption("digits")),
 
 #' @exportS3Method
 #' @importFrom stats printCoefmat
-print.summary.acml <- function(x, digits=NULL, signif.stars = getOption("show.signif.stars"), ...)
+print.summary.acml <- function(object, digits=NULL, signif.stars = getOption("show.signif.stars"), ...)
 {
-  if(is.null(digits)) digits <- x$digits
+  if(is.null(digits)) digits <- object$digits
 
   cat("\nCalls:\n",
-      paste(deparse(x$design$call), collapse="\n"),
+      paste(deparse(object$design$call), collapse="\n"),
       "\n",
-      paste(deparse(x$call), collapse="\n"),
+      paste(deparse(object$call), collapse="\n"),
       "\n\n",
       "Cutpoints:\n",
       sep="")
-  print(round(x$design$cutpoints, digits=digits), ...)
+  print(round(object$design$cutpoints, digits=digits), ...)
   cat("\nFixed Effects:\n")
-  printCoefmat(x$coefficients[1:x$n_fixed,], digits = digits-1, dig.tst=digits, signif.stars = signif.stars,
+  printCoefmat(object$coefficients[1:object$n_fixed,], digits = digits-1, dig.tst=digits, signif.stars = signif.stars,
                na.print = "NA", ...)
 
   cat("\nRandom Effects:\n")
-  random <- x$coefficients[(x$n_fixed+1):nrow(x$coefficients),]
-  nt     <- max(nchar(x$design$id)+1, 7) # Groups and a space is minimum
+  random <- object$coefficients[(object$n_fixed+1):nrow(object$coefficients),]
+  nt     <- max(nchar(object$design$id)+1, 7) # Groups and a space is minimum
   pad <- paste0(rep(" ", nt), collapse="")
   rownames(random) <-
-    if(x$transform)
+    if(object$transform)
     {
       c(
-        paste(x$design$id, "(Intercept)"),
-        paste0(pad, x$design$time),
+        paste(object$design$id, "(Intercept)"),
+        paste0(pad, object$design$time),
         paste0(pad, "rho"),
         "Residual"
       )
     } else
     {
       c(
-        paste(x$design$id, "log(Intercept)"),
-        paste0(pad, "log(", x$design$time, ")"),
+        paste(object$design$id, "log(Intercept)"),
+        paste0(pad, "log(", object$design$time, ")"),
         paste0(pad, "2*atanh(rho)"),
         "log(Residual)"
       )
@@ -476,11 +476,88 @@ print.summary.acml <- function(x, digits=NULL, signif.stars = getOption("show.si
 
   print(round(random[,1:4], digits))
 
-  cat("\nNumber of Subjects:", length(unique(x$design$model.frame[,x$design$id])))
-  cat("\nNumber of Observations:", nrow(x$design$model.frame))
+  cat("\nNumber of Subjects:", length(unique(object$design$model.frame[,object$design$id])))
+  cat("\nNumber of Observations:", nrow(object$design$model.frame))
   cat("\n")
-  if(x$transform) cat("\nStd. errors approximated via delta method. Confidence intervals are computed on transformed scale and transformed back and will not be symmetric.\n\n")
-  invisible(x)
+  if(object$transform) cat("\nStd. errors approximated via delta method. Confidence intervals are computed on transformed scale and transformed back and will not be symmetric.\n\n")
+  invisible(object)
+}
+
+#' @exportS3Method
+predict.acml <- function(object, digits=NULL, ...) {
+  x_mm <- model.matrix(object$formula, df, na.action=na.action)
+  fixed_beta_hat <- object$Ests[1:(length(object$Ests)-4)]
+  y_hat_fixed <- x_mm %*% matrix(fixed_beta_hat, ncol = 1)
+
+  sigma_0 <- exp(object$Ests[length(object$Ests)-3])
+  sigma_1 <- exp(object$Ests[length(object$Ests)-2])
+  rho <- tanh(object$Ests[length(object$Ests)-1] / 2)
+  G = diag(c(sigma_0, sigma_1)) %*% matrix(c(1, rho, rho, 1), 2, 2) %*% diag(c(sigma_0, sigma_1))
+  sigma2  = exp(object$Ests[length(object$Ests)])^2
+  df = object$data
+  y = df[, object$design$response]
+  subject_ids = unique(df[, object$design$id])
+  n_subjects = length(unique(subject))
+  # randeff <- matrix(NA, nrow = n_subjects, ncol = 2)
+  y_hat_random <- matrix(NA, nrow = nrow(df), ncol = 1)
+  for (j in 1:n_subjects){
+    subject_id = subject_ids[j]
+    y_j     = y[subject_ids == subject_id] # observed y for subject j (vector)
+    X_j     = x_mm[subject_ids == subject_id,] # fixed-effect design matrix for subject j (matrix)
+    if (is.null(object$design$time)){Z_j    = model.matrix(as.formula("~ 1"), df)[subject_ids == subject_id,]} else {Z_j     = model.matrix(as.formula(paste0("~ 1+",object$design$time)), df)[subject_ids == subject_id,]}
+    V_j <- Z_j %*% G %*% t(Z_j) + sigma2 * diag(nrow(X_j))
+    randeff <- (G %*% t(Z_j) %*% solve(V_j, y_j - X_j %*% fixed_beta_hat))[,1]
+    y_hat_random[subject_ids == subject_id,] <- Z_j %*% randeff
+  }
+
+  y_hat <- y_hat_fixed + y_hat_random
+  pred_y <- NULL
+  pred_y$y_hat <- y_hat
+  pred_y$y_hat_random <- y_hat_random
+  pred_y$y_hat_fixed <- y_hat_fixed
+  class(pred_y) <- "predict.acml"
+  pred_y
+}
+
+
+#' @exportS3Method
+residuals.acml <- function(object, digits=NULL, ...) {
+  df = object$data
+  y = df[, object$design$response]
+  y_pred <- predict(object)
+  resid_type1 <- y - y_pred$y_hat_fixed
+  resid_type2 <- y - y_pred$y_hat
+  resid <- NULL
+  resid$resid_type1 <- resid_type1
+  resid$resid_type2 <- resid_type2
+  class(resid) <- "residuals.acml"
+  resid
+}
+
+#' @exportS3Method
+plot.acml <- function(object, digits=NULL, ...) {
+  y_pred <- predict(object)
+  resid <- residuals(object)
+  oldpar <- par(ask = TRUE)
+  on.exit(par(oldpar))
+
+  # Type I residual plot
+  plot(y_pred$y_hat_fixed, resid$resid_type1,
+       xlab = "Fitted (marginal)", ylab = "Residuals (Type I)",
+       main = "Type I (Marginal) Residual Plot")
+  abline(h = 0, col = "blue")
+  # Type I Q-Q plot
+  qqnorm(resid$resid_type1, main = "QQ Plot - Type I (Marginal) Residuals")
+  qqline(resid$resid_type1, col = "blue")
+
+  # Type II residual plot
+  plot(y_pred$y_hat, resid$resid_type2,
+       xlab = "Fitted (conditional)", ylab = "Residuals (Type II)",
+       main = "Type II (Conditional) Residual Plot")
+  abline(h = 0, col = "red")
+  # Type II Q-Q plot
+  qqnorm(resid$resid_type2, main = "QQ Plot - Type II (Conditional) Residuals")
+  qqline(resid$resid_type2, col = "red")
 }
 
 #' Retrieve the robust variance covariance matrix
@@ -612,11 +689,12 @@ acml <- function(
     cutpoints  = as.vector(design$cutpoints),
     SampProb   = design$p_sample
   )
-  class(fit) <- "acml"
-
+  fit$formula <- formula
   fit$design <- design
   fit$data   <- data
   fit$call   <- cl
+
+  class(fit) <- "acml"
 
   if(fit$Code == 3) warning("last global step failed to locate a point lower than estimate. Either estimate is an approximate local minimum of the function or steptol is too small.")
   if(fit$Code == 4) warning("iteration limit exceeded.")
