@@ -10,7 +10,7 @@
   ylab = "Slope",
   main = format(x$formula),
   sub = paste(x$method, "design"),
-  col = if (x$method == "mean") "lightgray" else "black",
+  col = if (x$method == "mean") "lightgray" else rgb(0, 0, 0, x$p_sample_i),
   lwd = 1,
   lty = 1,
   cutcol = "red",

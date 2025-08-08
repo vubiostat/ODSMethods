@@ -10,6 +10,8 @@ acml(
   data = NULL,
   subset = NULL,
   weights = NULL,
+  MI = FALSE,
+  MImethod = "direct",
   na.action = getOption("na.action"),
   verbose = 0L,
   init = NULL,
@@ -38,6 +40,10 @@ about how this argument interacts with data-dependent bases in the
 process. Should be NULL or a numeric vector. If non-NULL, weighted least
 squares is used with weights weights (that is, minimizing sum(w*e^2));
 otherwise ordinary least squares is used. See also ‘Details’,}
+
+\item{MI}{`logical(1)`; Is multiple imputation to be performed. Defaults to FALSE.}
+
+\item{MImethod}{`character(1)`; Specifies multiple imputation method, defaults to 'direct'. Can also be 'indirect'.}
 
 \item{na.action}{`function`; an optional vector specifying a subset of
 observations to be used in the fitting process. (See additional details

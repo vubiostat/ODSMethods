@@ -362,8 +362,9 @@ vcov.acml <- function(object, complete = TRUE, robust = FALSE, ...)
 }
 
 #' @exportS3Method
-print.acml <- function(object, digits = max(3L, getOption("digits")), transform = FALSE, ...)
+print.acml <- function(x, digits = max(3L, getOption("digits")), transform = FALSE, ...)
 {
+  object <- x
   cat("\nCalls:\n",
       paste(deparse(object$design$call), collapse="\n"),
       "\n",
@@ -435,8 +436,9 @@ summary.acml <- function(object, digits = max(3L, getOption("digits")),
 
 #' @exportS3Method
 #' @importFrom stats printCoefmat
-print.summary.acml <- function(object, digits=NULL, signif.stars = getOption("show.signif.stars"), ...)
+print.summary.acml <- function(x, digits=NULL, signif.stars = getOption("show.signif.stars"), ...)
 {
+  object <- x
   if(is.null(digits)) digits <- object$digits
 
   cat("\nCalls:\n",
@@ -484,8 +486,11 @@ print.summary.acml <- function(object, digits=NULL, signif.stars = getOption("sh
 }
 
 #' @exportS3Method
+#' @importFrom stats na.action predict
 predict.acml <- function(object, digits=NULL, ...) {
+# FIXME?: I think the model matrix is part of the object
   x_mm <- model.matrix(object$formula, df, na.action=na.action)
+# FIXME: Use fixef and ranef calls instead
   fixed_beta_hat <- object$Ests[1:(length(object$Ests)-4)]
   y_hat_fixed <- x_mm %*% matrix(fixed_beta_hat, ncol = 1)
 
@@ -497,6 +502,7 @@ predict.acml <- function(object, digits=NULL, ...) {
   df = object$data
   y = df[, object$design$response]
   subject_ids = unique(df[, object$design$id])
+# FIXME: subject does not exist
   n_subjects = length(unique(subject))
   # randeff <- matrix(NA, nrow = n_subjects, ncol = 2)
   y_hat_random <- matrix(NA, nrow = nrow(df), ncol = 1)
@@ -521,6 +527,7 @@ predict.acml <- function(object, digits=NULL, ...) {
 
 
 #' @exportS3Method
+#' @importFrom stats residuals predict
 residuals.acml <- function(object, digits=NULL, ...) {
   df = object$data
   y = df[, object$design$response]
@@ -535,7 +542,11 @@ residuals.acml <- function(object, digits=NULL, ...) {
 }
 
 #' @exportS3Method
-plot.acml <- function(object, digits=NULL, ...) {
+#' @importFrom graphics par
+#' @importFrom grDevices rgb
+#' @importFrom stats qqline qqnorm rbinom
+plot.acml <- function(x, digits=NULL, ...) {
+  object <- x
   y_pred <- predict(object)
   resid <- residuals(object)
   oldpar <- par(ask = TRUE)
@@ -607,6 +618,8 @@ logLik.acml <- function(object, ...)
 #'   observations to be used in the fitting process. (See additional details
 #'   about how this argument interacts with data-dependent bases in the
 #'   ‘Details’ section of the model.frame documentation.)
+#' @param MI `logical(1)`; Is multiple imputation to be performed. Defaults to FALSE.
+#' @param MImethod `character(1)`; Specifies multiple imputation method, defaults to 'direct'. Can also be 'indirect'.
 #' @param na.action `function`; an optional vector specifying a subset of
 #'   observations to be used in the fitting process. (See additional details
 #'   about how this argument interacts with data-dependent bases in the
@@ -619,7 +632,7 @@ logLik.acml <- function(object, ...)
 #'
 #' @export
 #' @importFrom checkmate makeAssertCollection
-#' @importFrom checkmate assert_formula assert_numeric assert_class
+#' @importFrom checkmate assert_formula assert_numeric assert_class assert_logical assert_choice
 #' @importFrom checkmate reportAssertions
 #' @importFrom stats lm model.matrix model.frame
 #' @examples
@@ -635,6 +648,8 @@ acml <- function(
   data = NULL,
   subset = NULL,
   weights = NULL,
+  MI = FALSE,
+  MImethod = "direct",
   na.action = getOption('na.action'),
   verbose = 0L,
   init = NULL,
@@ -644,6 +659,8 @@ acml <- function(
   coll <- makeAssertCollection()
   assert_formula(formula, add=coll)
   assert_class(design, "odsdesign", add=coll)
+  assert_logical(MI, len=1, add=coll)
+  assert_choice(MImethod, c("direct", "indirect"))
   reportAssertions(coll)
 
   # Duplicate of lm behavior
