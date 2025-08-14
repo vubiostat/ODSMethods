@@ -487,31 +487,26 @@ print.summary.acml <- function(x, digits=NULL, signif.stars = getOption("show.si
 
 #' @exportS3Method
 #' @importFrom stats na.action predict
-predict.acml <- function(object, digits=NULL, ...) {
-# FIXME?: I think the model matrix is part of the object
-  x_mm <- model.matrix(object$formula, df, na.action=na.action)
-# FIXME: Use fixef and ranef calls instead
-  fixed_beta_hat <- object$Ests[1:(length(object$Ests)-4)]
-  y_hat_fixed <- x_mm %*% matrix(fixed_beta_hat, ncol = 1)
-
-  sigma_0 <- exp(object$Ests[length(object$Ests)-3])
-  sigma_1 <- exp(object$Ests[length(object$Ests)-2])
-  rho <- tanh(object$Ests[length(object$Ests)-1] / 2)
+predict.acml <- function(object, digits=NULL,  ...) {
+  mf = model.frame(as.formula(paste0(deparse(object$formula), "+",object$design$id)), data = object$data, na.action = na.action)
+  x_mm <- model.matrix(object$formula, data = mf, na.action = na.action)
+  y <- model.response(mf)
+  y_hat_fixed <- x_mm %*% matrix(fixef(object), ncol = 1)
+  sigma_0 <- exp(ranef(object)[1])
+  sigma_1 <- exp(ranef(object)[2])
+  rho <- tanh(ranef(object)[3] / 2)
   G = diag(c(sigma_0, sigma_1)) %*% matrix(c(1, rho, rho, 1), 2, 2) %*% diag(c(sigma_0, sigma_1))
-  sigma2  = exp(object$Ests[length(object$Ests)])^2
-  df = object$data
-  y = df[, object$design$response]
-  subject_ids = unique(df[, object$design$id])
-# FIXME: subject does not exist
-  n_subjects = length(unique(subject))
-  # randeff <- matrix(NA, nrow = n_subjects, ncol = 2)
-  y_hat_random <- matrix(NA, nrow = nrow(df), ncol = 1)
+  sigmae2  = exp(ranef(object)[4])^2
+  subject_ids = mf[,object$design$id]
+  n_subjects = length(unique(subject_ids))
+  y_hat_random <- matrix(NA, nrow = nrow(mf), ncol = 1)
+  fixed_beta_hat <- fixef(object)
   for (j in 1:n_subjects){
-    subject_id = subject_ids[j]
+    subject_id = unique(subject_ids)[j]
     y_j     = y[subject_ids == subject_id] # observed y for subject j (vector)
     X_j     = x_mm[subject_ids == subject_id,] # fixed-effect design matrix for subject j (matrix)
-    if (is.null(object$design$time)){Z_j    = model.matrix(as.formula("~ 1"), df)[subject_ids == subject_id,]} else {Z_j     = model.matrix(as.formula(paste0("~ 1+",object$design$time)), df)[subject_ids == subject_id,]}
-    V_j <- Z_j %*% G %*% t(Z_j) + sigma2 * diag(nrow(X_j))
+    if (is.null(object$design$time)){Z_j    = model.matrix(as.formula("~ 1"), mf, na.action = na.action)[subject_ids == subject_id,]} else {Z_j     = model.matrix(as.formula(paste0("~ 1+",object$design$time)), mf, na.action = na.action)[subject_ids == subject_id,]}
+    V_j <- Z_j %*% G %*% t(Z_j) + sigmae2 * diag(nrow(X_j))
     randeff <- (G %*% t(Z_j) %*% solve(V_j, y_j - X_j %*% fixed_beta_hat))[,1]
     y_hat_random[subject_ids == subject_id,] <- Z_j %*% randeff
   }
