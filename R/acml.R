@@ -545,30 +545,60 @@ residuals.acml <- function(object, digits=NULL, ...) {
 #' @importFrom graphics par
 #' @importFrom grDevices rgb
 #' @importFrom stats qqline qqnorm rbinom
-plot.acml <- function(x, digits=NULL, ...) {
+plot.acml <- function(
+  x, digits=NULL, which=1:2,
+  caption = list("Type I (Marginal) Residual Plot",
+                 "Type II (Conditional) Residual Plot"),
+  ask = prod(par("mfcol")) < length(which) && dev.interactive(),
+  ...)
+{
   object <- x
   y_pred <- predict(object)
-  resid <- residuals(object)
+  resid  <- residuals(object)
   oldpar <- par(ask = TRUE)
   on.exit(par(oldpar))
 
+  show <- rep(FALSE, 2)
+  show(which) <- TRUE
+
+  if (ask)
+  {
+  	oask <- devAskNewPage(TRUE)
+  	on.exit(devAskNewPage(oask))
+  }
+
   # Type I residual plot
-  plot(y_pred$y_hat_fixed, resid$resid_type1,
-       xlab = "Fitted (marginal)", ylab = "Residuals (Type I)",
-       main = "Type I (Marginal) Residual Plot")
-  abline(h = 0, col = "blue")
-  # Type I Q-Q plot
-  qqnorm(resid$resid_type1, main = "QQ Plot - Type I (Marginal) Residuals")
-  qqline(resid$resid_type1, col = "blue")
+  if(show[1])
+  {
+    dev.hold()
+    plot(y_pred$y_hat_fixed, resid$resid_type1,
+         xlab = "Fitted (marginal)",
+         ylab = "Residuals (Type I)",
+         main = caption[1],
+         ...)
+    abline(h = 0, col = "blue")
+    # Type I Q-Q plot
+    qqnorm(resid$resid_type1, main = "QQ Plot - Type I (Marginal) Residuals")
+    qqline(resid$resid_type1, col = "blue")
+    dev.flush()
+  }
 
   # Type II residual plot
-  plot(y_pred$y_hat, resid$resid_type2,
-       xlab = "Fitted (conditional)", ylab = "Residuals (Type II)",
-       main = "Type II (Conditional) Residual Plot")
-  abline(h = 0, col = "red")
-  # Type II Q-Q plot
-  qqnorm(resid$resid_type2, main = "QQ Plot - Type II (Conditional) Residuals")
-  qqline(resid$resid_type2, col = "red")
+  if(show[2])
+  {
+    dev.hold()
+    plot(y_pred$y_hat, resid$resid_type2,
+         xlab = "Fitted (conditional)",
+         ylab = "Residuals (Type II)",
+         main = caption[2],
+         ...)
+    abline(h = 0, col = "red")
+    # Type II Q-Q plot
+    qqnorm(resid$resid_type2, main = "QQ Plot - Type II (Conditional) Residuals")
+    qqline(resid$resid_type2, col = "red")
+    dev.flush()
+  }
+  invisible()
 }
 
 #' Retrieve the robust variance covariance matrix
