@@ -2,11 +2,21 @@
 title: "ODSMethods"
 author: "Shawn Garbett, Lucy Bailu, Jonathan Schildcrout"
 date: "2025-06-30"
-output: html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ODSMethods}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
 library(ODSMethods)
 ```
 

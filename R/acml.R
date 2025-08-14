@@ -543,7 +543,7 @@ residuals.acml <- function(object, digits=NULL, ...) {
 
 #' @exportS3Method
 #' @importFrom graphics par
-#' @importFrom grDevices rgb
+#' @importFrom grDevices rgb dev.flush dev.hold dev.interactive devAskNewPage
 #' @importFrom stats qqline qqnorm rbinom
 plot.acml <- function(
   x, digits=NULL, which=1:2,
@@ -559,7 +559,7 @@ plot.acml <- function(
   on.exit(par(oldpar))
 
   show <- rep(FALSE, 2)
-  show(which) <- TRUE
+  show[which] <- TRUE
 
   if (ask)
   {
