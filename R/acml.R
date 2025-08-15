@@ -485,29 +485,39 @@ print.summary.acml <- function(x, digits=NULL, signif.stars = getOption("show.si
   invisible(object)
 }
 
+rand.effect.matrix <- function(gamma)
+{
+  sigma_0 <- gamma[1]
+  sigma_1 <- gamma[2]
+  rho     <- gamma[3]
+
+  diag(c(sigma_0, sigma_1)) %*% matrix(c(1, rho, rho, 1), 2, 2) %*% diag(c(sigma_0, sigma_1))
+}
+
 #' @exportS3Method
 #' @importFrom stats na.action predict
-predict.acml <- function(object, digits=NULL,  ...) {
-  mf = model.frame(as.formula(paste0(deparse(object$formula), "+",object$design$id)), data = object$data, na.action = na.action)
-  x_mm <- model.matrix(object$formula, data = mf, na.action = na.action)
-  y <- model.response(mf)
-  y_hat_fixed <- x_mm %*% matrix(fixef(object), ncol = 1)
-  sigma_0 <- exp(ranef(object)[1])
-  sigma_1 <- exp(ranef(object)[2])
-  rho <- tanh(ranef(object)[3] / 2)
-  G = diag(c(sigma_0, sigma_1)) %*% matrix(c(1, rho, rho, 1), 2, 2) %*% diag(c(sigma_0, sigma_1))
-  sigmae2  = exp(ranef(object)[4])^2
-  subject_ids = mf[,object$design$id]
-  n_subjects = length(unique(subject_ids))
-  y_hat_random <- matrix(NA, nrow = nrow(mf), ncol = 1)
-  fixed_beta_hat <- fixef(object)
-  for (j in 1:n_subjects){
+predict.acml <- function(object, digits=NULL,  ...)
+{
+  x_mm           <- object$model.matrix
+  y              <- object$response
+  beta           <- fixef(object)
+  y_hat_fixed    <- x_mm %*% matrix(beta, ncol = 1)
+  gamma          <- ranef(object, transform=TRUE)
+  G              <- rand.effect.matrix(gamma)
+  sigmae2        <- gamma[length(gamma)]^2
+  subject_ids    <- object$ids
+  n_subjects     <- length(unique(subject_ids))
+  y_hat_random   <- matrix(NA, nrow = nrow(x_mm), ncol = 1)
+
+  for (j in 1:n_subjects)
+  {
     subject_id = unique(subject_ids)[j]
-    y_j     = y[subject_ids == subject_id] # observed y for subject j (vector)
+    y_j     = y[subject_ids == subject_id,] # observed y for subject j (vector)
     X_j     = x_mm[subject_ids == subject_id,] # fixed-effect design matrix for subject j (matrix)
-    if (is.null(object$design$time)){Z_j    = model.matrix(as.formula("~ 1"), mf, na.action = na.action)[subject_ids == subject_id,]} else {Z_j     = model.matrix(as.formula(paste0("~ 1+",object$design$time)), mf, na.action = na.action)[subject_ids == subject_id,]}
+    Z_j     = object$rand.covar[subject_ids == subject_id,]
+
     V_j <- Z_j %*% G %*% t(Z_j) + sigmae2 * diag(nrow(X_j))
-    randeff <- (G %*% t(Z_j) %*% solve(V_j, y_j - X_j %*% fixed_beta_hat))[,1]
+    randeff <- (G %*% t(Z_j) %*% solve(V_j, y_j - X_j %*% beta))[,1]
     y_hat_random[subject_ids == subject_id,] <- Z_j %*% randeff
   }
 
@@ -523,9 +533,9 @@ predict.acml <- function(object, digits=NULL,  ...) {
 
 #' @exportS3Method
 #' @importFrom stats residuals predict
-residuals.acml <- function(object, digits=NULL, ...) {
-  df = object$data
-  y = df[, object$design$response]
+residuals.acml <- function(object, digits=NULL, ...)
+{
+  y = object$response
   y_pred <- predict(object)
   resid_type1 <- y - y_pred$y_hat_fixed
   resid_type2 <- y - y_pred$y_hat
@@ -735,6 +745,10 @@ acml <- function(
   fit$design <- design
   fit$data   <- data
   fit$call   <- cl
+  fit$model.matrix <- mm[,!(colnames(mm) %in% design$id)]
+  fit$response     <- matrix(mf[,design$response])
+  fit$rand.covar   <- matrix(cbind(rep(1, nrow(mf)), mf[,design$time]), ncol=2)
+  fit$ids          <- matrix(mf[,design$id])
 
   class(fit) <- "acml"
 

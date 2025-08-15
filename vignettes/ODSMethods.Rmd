@@ -119,7 +119,7 @@ summary(est, digits=3, transform=TRUE)
 Let's look at a visual summary of the model.
 
 ```{r plot_acml}
-#plot(est, which=1)
+plot(est, which=1)
 ```
 
 From this one can see, XXXX. 
@@ -127,13 +127,9 @@ From this one can see, XXXX.
 Further, it's good to check the assumption that random effects are normal.
 
 ```{r plot_diagnostics}
-#plot(est, which=2)
+plot(est, which=2)
 ```
 
-Finally, checking the residuals of the final model.
-```{r plot_residuals}
-#plot(est, which=3)
-```
 
 
 ## References
