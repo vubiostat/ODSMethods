@@ -551,9 +551,11 @@ residuals.acml <- function(object, digits=NULL, ...)
 #' @importFrom grDevices rgb dev.flush dev.hold dev.interactive devAskNewPage
 #' @importFrom stats qqline qqnorm rbinom
 plot.acml <- function(
-  x, digits=NULL, which=1:2,
-  caption = list("Type I (Marginal) Residual Plot",
-                 "Type II (Conditional) Residual Plot"),
+  x, digits=NULL, which=1:4,
+  caption = list("Marginal Residuals",
+                 "Marginal Residuals QQ",
+                 "Conditional Residuals",
+                 "Conditional Residuals QQ"),
   ask = prod(par("mfcol")) < length(which) && dev.interactive(),
   ...)
 {
@@ -563,7 +565,7 @@ plot.acml <- function(
   oldpar <- par(ask = TRUE)
   on.exit(par(oldpar))
 
-  show <- rep(FALSE, 2)
+  show <- rep(FALSE, 4)
   show[which] <- TRUE
 
   if (ask)
@@ -582,24 +584,36 @@ plot.acml <- function(
          main = caption[1],
          ...)
     abline(h = 0, col = "blue")
+    dev.flush()
+  }
+
+  if(show[2])
+  {
+    dev.hold()
     # Type I Q-Q plot
-    qqnorm(resid$resid_type1, main = "QQ Plot - Type I (Marginal) Residuals")
+    qqnorm(resid$resid_type1, main = caption[2])
     qqline(resid$resid_type1, col = "blue")
     dev.flush()
   }
 
   # Type II residual plot
-  if(show[2])
+  if(show[3])
   {
     dev.hold()
     plot(y_pred$y_hat, resid$resid_type2,
          xlab = "Fitted (conditional)",
          ylab = "Residuals (Type II)",
-         main = caption[2],
+         main = caption[3],
          ...)
     abline(h = 0, col = "red")
+    dev.flush()
+  }
+
+  if(show[4])
+  {
+    dev.hold()
     # Type II Q-Q plot
-    qqnorm(resid$resid_type2, main = "QQ Plot - Type II (Conditional) Residuals")
+    qqnorm(resid$resid_type2, main = caption[4])
     qqline(resid$resid_type2, col = "red")
     dev.flush()
   }

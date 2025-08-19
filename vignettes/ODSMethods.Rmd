@@ -42,9 +42,7 @@ is less informative so sampling is biased.
 
 ### Simulated Dataset
 
-The package includes a small simulated data set with known "truth". 
-
-This is a simulated data set with known ``truth''. The dataset consists of
+The package includes a small simulated data set with known "truth". The dataset consists of
 1000 patients and a measured response to a hypothetical drug over the course
 of 5 months. Further, some ethnicity information is available if
 Hispanic origin or not. An expensive genotype analysis exists, and to
@@ -80,7 +78,7 @@ To specify the design, we'll using a simple intercept sampling model. The
 design to sample assumes that the slope is the most informative. One
 can plot the result of this design versus it's quantiles. 
 
-```{r }
+```{r, fig.dim=c(6,4) }
 design <- ods(Response ~ Month|Patient, 'slope',
             p_sample=c(1, 0.25, 1),
             data=gbti, quantiles=c(0.1, 0.9))
@@ -116,22 +114,21 @@ summary(est, digits=3, transform=TRUE)
 
 ## Visual summary
 
-Let's look at a visual summary of the model.
+Let's look at a visual summary of the residuals to see that assumptions are met.
 
 ```{r plot_acml}
-plot(est, which=1)
+plot(est, which=1:2)
 ```
 
-From this one can see, XXXX. 
+From this one can see, excellent conformance to the normality assumption.
 
-Further, it's good to check the assumption that random effects are normal.
+Further, it's good to check the same assumption for conditional effects.
 
 ```{r plot_diagnostics}
-plot(est, which=2)
+plot(est, which=3:4)
 ```
-
 
 
 ## References
 
-
+Schildcrout JS, Haneuse S, Tao R, Zelnick LR, Schisterman EF, Garbett SP, Mercaldo ND, Rathouz PJ, Heagerty PJ. Two-Phase, Generalized Case-Control Designs for the Study of Quantitative Longitudinal Outcomes. Am J Epidemiol. 2020 Feb 28;189(2):81-90. doi: 10.1093/aje/kwz127. PMID: 31165875; PMCID: PMC7298772.
