@@ -17,12 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>
 
-#' Scatter plot an ODS design
+#' Scatter plot an BDS design
 #'
-#' Generate a basic scatter plot of an ODS design and overlay the
+#' Generate a basic scatter plot of an BDS design and overlay the
 #' cut points.
 #'
-#' @param x the ods design object output from \code{\link{ods}}.
+#' @param x the bds design object output from \code{\link{bds}}.
 #' @param xlab a title for the x axis: see \code{\link{title}}.
 #' @param ylab a title for the y axis: see \code{\link{title}}.
 #' @param main an overall title for the plot: see \code{\link{title}}.
@@ -47,18 +47,17 @@
 #'    See \code{\link{par}}.
 #' @param ... Additional arguments past to \code{\link{plot}}, \code{\link{hist}},
 #'    or \code{\link{lines}} depending on context.
-#' @seealso \code{\link{ods}}
+#' @seealso \code{\link{bds}}
 #'
 #' @exportS3Method
 #' @importFrom graphics abline hist lines
-#' @importFrom lme4 lmer ranef
 plot.bdsdesign <- function(
   x,
   xlab   = "Intercept",
   ylab   = "Slope",
-  main   = format(x$main_formula),
+  main   = format(x$formula),
   sub    = paste(x$method, "design"),
-  col    = if(x$method == 'mean') 'lightgray' else rgb(0,0,0,x$p_sample_i),
+  col    = rgb(0,0,0,x$p_sample_i),
   lwd    = 1,
   lty    = 1,
   cutcol = 'red',
@@ -66,19 +65,11 @@ plot.bdsdesign <- function(
   cutlty = 2,
   ...)
 {
-  if(x$method == 'mean')
-  {
-    if(xlab == 'Intercept') xlab <- "Mean"
-    hist(x$z_i[1,], xlab=xlab, main=main, sub=sub,
-         col=col, lwd=lwd, lty=lty, ...)
-  } else
-  {
-    plot(x$z_i[2,], x$z_i[3,],
+  plot(x$z_i[,1], x$z_i[,2],
          xlab=xlab, ylab=ylab,
          main=main, sub=sub,
          col=col, lwd=lwd, lty=lty, # Needed to prevent capture in call to lines below via ...
          ...)
-  }
 
   if (x$method != 'bivariate')
   {
@@ -137,18 +128,16 @@ summary.bdsdesign <- function(object, digits = max(3L, getOption("digits")), ...
 {
   ans <- object[c("call", "cutpoints")]
   ans$digits <- digits
-  xx <- matrix(rep(NA, 24), ncol=4,dimnames=list(
+  xx <- matrix(rep(NA, 18), ncol=3,dimnames=list(
     c("Min.", "1st Qu.", "Median", "3rd Qu.", "Max." , "Mean"),
-    c(names(object$model.frame)[1], rownames(object$z_i))
+    c(names(object$model.frame)[1], colnames(object$z_i))
   ))
   xx[1:5,1] <- quantile(object$model.frame[,1], na.rm=TRUE, names=FALSE)
   xx[6,1]   <- mean(object$model.frame[,1], na.rm=TRUE)
-  xx[1:5,2] <- quantile(object$z_i['mean',], na.rm=TRUE, names=FALSE)
-  xx[6,2]   <- mean(object$z_i['mean',], na.rm=TRUE)
-  xx[1:5,3] <- quantile(object$z_i['intercept',], na.rm=TRUE, names=FALSE)
-  xx[6,3]   <- mean(object$z_i['intercept',], na.rm=TRUE)
-  xx[1:5,4] <- quantile(object$z_i['slope',], na.rm=TRUE, names=FALSE)
-  xx[6,4]   <- mean(object$z_i['slope',], na.rm=TRUE)
+  xx[1:5,2] <- quantile(object$z_i[,'intercept'], na.rm=TRUE, names=FALSE)
+  xx[6,2]   <- mean(object$z_i[,'intercept'], na.rm=TRUE)
+  xx[1:5,3] <- quantile(object$z_i[,'slope'], na.rm=TRUE, names=FALSE)
+  xx[6,3]   <- mean(object$z_i[,'slope'], na.rm=TRUE)
 
   ans$descriptive <- as.table(xx[c(1,2,6,3:5),])
 
@@ -177,7 +166,7 @@ print.summary.bdsdesign <- function(x, digits = NULL, ...)
   invisible(x)
 }
 
-#' Specify a given design for Outcome Dependent Sampling (ODS)
+#' Specify a given design for BLUP Dependent Sampling (BDS)
 #'
 #' Specify the design of an outcome dependent sampling routine.
 #'
@@ -207,27 +196,27 @@ print.summary.bdsdesign <- function(x, digits = NULL, ...)
 #'   na.fail if that is unset. The ‘factory-fresh’ default is na.omit. Another
 #'   possible value is NULL, no action. Value na.exclude can be useful.
 #' @param ... additional arguments.
-#' @return Returns an ODS design object.
+#' @return Returns an BDS design object.
 #' @seealso [plot.bdsdesign()]
 #' @examples
 #' data(gbti)
 #'
-#' odsd <- ods(Response ~ Month|Patient, 'mean', p_sample=c(1, 0.25, 1),
+#' odsd <- bds(Response ~ Month|Patient, 'mean', p_sample=c(1, 0.25, 1),
 #'             data=gbti, quantiles=c(0.1, 0.9))
 #' summary(odsd)
 #' plot(odsd)
 #'
-#' odsd <- ods(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
+#' odsd <- bds(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
 #'             data=gbti, quantiles=c(0.1, 0.9))
 #' summary(odsd)
 #' plot(odsd)
 #'
-#' odsd <- ods(Response ~ Month|Patient, 'slope', p_sample=c(1, 0.25, 1),
+#' odsd <- bds(Response ~ Month|Patient, 'slope', p_sample=c(1, 0.25, 1),
 #'             data=gbti, quantiles=c(0.1, 0.9))
 #' summary(odsd)
 #' plot(odsd)
 #'
-#' odsd <- ods(Response ~ Month|Patient, 'bivariate', p_sample=c(1, 0.25, 1),
+#' odsd <- bds(Response ~ Month|Patient, 'bivariate', p_sample=c(1, 0.25, 1),
 #'             data=gbti, quantiles=c(0.1, 0.9))
 #' summary(odsd)
 #' plot(odsd)
@@ -239,8 +228,7 @@ print.summary.bdsdesign <- function(x, digits = NULL, ...)
 #' @importFrom checkmate reportAssertions
 #' @importFrom stats model.frame terms as.formula quantile coef
 bds <- function(
-  main_formula,
-  blup_formula,
+  formula,
   method,
   p_sample,
   data      = NULL,
@@ -256,19 +244,16 @@ bds <- function(
   if(!is.null(method) && inherits(method, "character") && method == 'bivariate')
     n_c <- 2*n_c
 
-  # Validate main_formula arguments
+  # Validate arguments
   coll <- makeAssertCollection()
-  assert_formula(main_formula, add=coll)
-  assert_formula(blup_formula, add=coll)
+  assert_formula(formula, add=coll)
   assert_numeric(p_sample,  add=coll, lower=0, upper=1, min.len=2, any.missing=FALSE)
   assert_numeric(quantiles, add=coll, lower=0, upper=1, len=length(p_sample)-1, null.ok=TRUE, any.missing=FALSE)
   assert_numeric(cutpoints, add=coll, len=n_c, null.ok=TRUE, any.missing=FALSE)
   assert_character(method,  add=coll, len=1, any.missing=FALSE, pattern="slope|intercept|bivariate|mean")
   assert_true(xor(is.null(quantiles), is.null(cutpoints)), .var.name="only one of quantiles or cutpoints can be specified", add=coll)
-  assert_true(length(terms(main_formula))>=3, .var.name="main_formula must have at least 3 terms", add=coll)
-  assert_true(any(grepl("\\|", main_formula)), .var.name="main_formula must have an id specified, e.g. y~t|id", add=coll)
-  assert_true(length(terms(blup_formula))>=3, .var.name="blup_formula must have at least 3 terms", add=coll)
-  assert_true(any(grepl("\\|", blup_formula)), .var.name="blup_formula must have an id specified, e.g. y~t|id", add=coll)
+  assert_true(length(terms(formula))==3, .var.name="formula must have 3 terms", add=coll)
+  assert_true(any(grepl("\\|", formula)), .var.name="formula must have an id specified, e.g. y~t|id", add=coll)
   reportAssertions(coll)
 
   # Square donut must have even number of quantiles or cutpoints
@@ -282,20 +267,19 @@ bds <- function(
   # Duplicate of lm behavior
   cl <- match.call()
   mf <- match.call(expand.dots = FALSE)
-  m  <- match(c("main_formula", "data", "subset", "weights", "na.action"), names(mf), 0L)
+  m  <- match(c("formula", "data", "subset", "weights", "na.action"), names(mf), 0L)
   mf <- mf[c(1L, m)]
   mf$drop.unused.levels <- TRUE
   mf[[1L]] <- quote(stats::model.frame)
-  mf[['main_formula']] <- as.formula(gsub("\\|", "+", format(main_formula)))
-  names(mf)[names(mf) == "main_formula"] <- "formula"
+  mf[['formula']] <- as.formula(gsub("\\|", "+", format(formula)))
   mf <- eval(mf, parent.frame())
 
   if(!is.integer(mf[,3]) && !is.numeric(mf[,3]))
     mf[,3] <- as.numeric(as.factor(mf[,3]))
 
-  # Construct BLUP estimator
-  blup_model <- lmer(blup_formula, data = data, ...)
-  z_i <- lme4::ranef(blup_model)[[1]]
+  # Construct z_i (not treating weights here)
+  lme_mod = lmer(formula = formula, data = data, na.action=na.action)
+  z_i <- lme4::ranef(lme_mod)[[1]] # from lme4
   names(z_i) <- c("intercept", "slope")
 
   # Devise cutpoints if not specified
@@ -323,34 +307,33 @@ bds <- function(
   {
     # Square donut(s)
     pmax(p_sample[as.numeric(
-           cut(z_i[,'intercept'], c(-Inf, t(cutpoints[,'intercept']), Inf)))],
+           cut(z_i[,'intercept'], c(-Inf, t(cutpoints['intercept',]), Inf)))],
          p_sample[as.numeric(
-           cut(z_i[,'slope'],     c(-Inf, t(cutpoints[,'slope']),     Inf)))])
+           cut(z_i[,'slope'],     c(-Inf, t(cutpoints['slope',]),     Inf)))])
   } else
   {
     p_sample[as.numeric(cut(z_i[,method], c(-Inf, t(cutpoints), Inf)))]
   }
-  names(p_sample_i) <- rownames(z_i)
+  names(p_sample_i) <- colnames(z_i)
 
   smpl <- names(p_sample_i)[rbinom(length(p_sample_i), 1, p_sample_i) > 0]
 
   # Return design object
   structure(list(
-      call         = cl,
-      main_formula = main_formula,
-      blup_formula = blup_formula,
-      model.frame  = mf,
-      method       = method,
-      p_sample     = p_sample,
-      p_sample_i   = p_sample_i,
-      sample_ids   = smpl,
-      response     = names(mf)[1],
-      time         = names(mf)[2],
-      id           = names(mf)[3],
-      quantiles    = quantiles,
-      cutpoints    = cutpoints,
-      z_i          = z_i,
-      n_rand       = 2     # Number of random effects, slope + intercept
+      call        = cl,
+      formula     = formula,
+      model.frame = mf,
+      method      = method,
+      p_sample    = p_sample,
+      p_sample_i  = p_sample_i,
+      sample_ids  = smpl,
+      response    = names(mf)[1],
+      time        = names(mf)[2],
+      id          = names(mf)[3],
+      quantiles   = quantiles,
+      cutpoints   = cutpoints,
+      z_i         = z_i,
+      n_rand      = 2     # Number of random effects, slope + intercept
     ),
     class="bdsdesign"
   )
