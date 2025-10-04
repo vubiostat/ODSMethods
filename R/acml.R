@@ -1,5 +1,5 @@
-  ##############################################################################
- #
+##############################################################################
+#
 # ODSMethods Statistical methods in outcome dependent sampling
 #
 # Copyright (c) 2017 Jonathan Schildcrout
