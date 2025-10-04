@@ -72,7 +72,7 @@ plot.odsdesign <- function(
          col=col, lwd=lwd, lty=lty, ...)
   } else
   {
-    plot(x$z_i[2,], x$z_i[3,],
+    plot(x$z_i["intercept",], x$z_i["slope",],  # Lucy changed to rownames
          xlab=xlab, ylab=ylab,
          main=main, sub=sub,
          col=col, lwd=lwd, lty=lty, # Needed to prevent capture in call to lines below via ...

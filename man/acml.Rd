@@ -5,7 +5,8 @@
 \title{Fit model using ascertainment corrected likelihood model (ACML)}
 \usage{
 acml(
-  formula,
+  formula.fixed,
+  formula.random,
   design,
   data = NULL,
   subset = NULL,
@@ -19,10 +20,6 @@ acml(
 )
 }
 \arguments{
-\item{formula}{`formula`; (or an object that can be
-coerced to that class): a symbolic description of the model to be fitted.
-The details of model specification are given under ‘Details’.}
-
 \item{design}{an object of class 'odsdesign'. This specifies the
 design of sampling used for the fitting algorithm.}
 
@@ -57,6 +54,10 @@ about how this argument interacts with data-dependent bases in the
 via the optimizer.}
 
 \item{...}{Optional additional parameters passed to sub methods.}
+
+\item{formula}{`formula`; (or an object that can be
+coerced to that class): a symbolic description of the model to be fitted.
+The details of model specification are given under ‘Details’.}
 }
 \description{
 Outcome dependent sampling designs need to be corrected when fitting a

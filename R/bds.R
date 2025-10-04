@@ -1,5 +1,5 @@
-  ##############################################################################
- #
+##############################################################################
+#
 # ODSMethods Statistical methods in outcome dependent sampling
 #
 # Copyright (C) 2025 Shawn P. Garbett, Bailu Yan
@@ -17,154 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>
 
-#' Scatter plot an BDS design
-#'
-#' Generate a basic scatter plot of an BDS design and overlay the
-#' cut points.
-#'
-#' @param x the bds design object output from \code{\link{bds}}.
-#' @param xlab a title for the x axis: see \code{\link{title}}.
-#' @param ylab a title for the y axis: see \code{\link{title}}.
-#' @param main an overall title for the plot: see \code{\link{title}}.
-#' @param sub a subtitle for the plot: see \code{\link{title}}.
-#' @param col A specification for the default plotting color. See \code{\link{par}}.
-#' @param lwd The line width, a positive number, defaulting to 1. See \code{\link{par}}.
-#' @param lty The line type. Line types can either be specified as an integer
-#'   (0=blank, 1=solid (default), 2=dashed, 3=dotted, 4=dotdash, 5=longdash,
-#'    6=twodash) or as one of the character strings \code{"blank", "solid",
-#'    "dashed", "dotted", "dotdash", "longdash", or "twodash"}, where
-#'    \code{"blank"} uses ‘invisible lines’ (i.e., does not draw them).
-#'    See \code{\link{par}}.
-#' @param cutcol A specification for the cut point line plotting color.
-#'    Defaults to 'red'. See \code{\link{par}}.
-#' @param cutlwd The cut point line width, a positive number, defaulting to 2.
-#'    See \code{\link{par}}.
-#' @param cutlty The cut point line type. Line types can either be specified as an integer
-#'   (0=blank, 1=solid (default), 2=dashed, 3=dotted, 4=dotdash, 5=longdash,
-#'    6=twodash) or as one of the character strings \code{"blank", "solid",
-#'    "dashed", "dotted", "dotdash", "longdash", or "twodash"}, where
-#'    \code{"blank"} uses ‘invisible lines’ (i.e., does not draw them).
-#'    See \code{\link{par}}.
-#' @param ... Additional arguments past to \code{\link{plot}}, \code{\link{hist}},
-#'    or \code{\link{lines}} depending on context.
-#' @seealso \code{\link{bds}}
-#'
-#' @exportS3Method
-#' @importFrom graphics abline hist lines
-plot.bdsdesign <- function(
-  x,
-  xlab   = "Intercept",
-  ylab   = "Slope",
-  main   = format(x$formula),
-  sub    = paste(x$method, "design"),
-  col    = rgb(0,0,0,x$p_sample_i),
-  lwd    = 1,
-  lty    = 1,
-  cutcol = 'red',
-  cutlwd = 2,
-  cutlty = 2,
-  ...)
-{
-  plot(x$z_i[,1], x$z_i[,2],
-         xlab=xlab, ylab=ylab,
-         main=main, sub=sub,
-         col=col, lwd=lwd, lty=lty, # Needed to prevent capture in call to lines below via ...
-         ...)
-
-  if (x$method != 'bivariate')
-  {
-    for(i in colnames(x$cutpoints))
-    {
-      if(i %in% c('mean', 'intercept'))
-        abline(v=x$cutpoints[,i], col=cutcol, lty=cutlty, lwd=cutlwd, ...) else
-        abline(h=x$cutpoints[,i], col=cutcol, lty=cutlty, lwd=cutlwd, ...)
-    }
-  } else # bivariate
-  {
-    square <- function(x, y)
-      lines(x[c(1, 1, 2, 2, 1)], y[c(1, 2, 2, 1, 1)],
-            col=cutcol, lty=cutlty, lwd=cutlwd, ...)
-    n <- nrow(x$cutpoints)
-    for(i in 1:(n/2))
-    {
-      sel <- c(i, n+1-i)
-      square(x$cutpoints[sel,1], x$cutpoints[sel,2])
-    }
-  }
-
-  invisible(x)
-}
-
-transform_output <- function(InitVals, x = x, y = y, z = z){
-  beta = InitVals[1:(ncol(x))] # note here are with beta_0, need to change to accommodate if no beta_0
-  log_sigma_vc = InitVals[(ncol(x)+1):(ncol(x)+ncol(z))]
-  log_inv_rho_vc = InitVals[(ncol(x)+ncol(z)+1):(ncol(x)+ncol(z) + choose(ncol(z), 2))]
-  log_sigma_e = InitVals[(ncol(x)+ncol(z) + choose(ncol(z), 2)+1):length(InitVals)]
-  sigma_vc = ifelse(is.infinite(exp(log_sigma_vc)), 100000, exp(log_sigma_vc))
-  sigma_e = ifelse(is.infinite(exp(log_sigma_e)), 100000, exp(log_sigma_e))
-  rho_vc = ifelse(is.infinite(exp(log_inv_rho_vc)), 1, (exp(log_inv_rho_vc) - 1)/(exp(log_inv_rho_vc) + 1))
-  list(beta = beta, sigma_vc = sigma_vc, rho_vc = rho_vc, sigma_e = sigma_e)
-}
-
-#' @exportS3Method
-model.matrix.bdsdesign <- function(object, ...) as.matrix(object$model.frame)
-
-#' @exportS3Method
-print.bdsdesign <- function(x, digits = max(3L, getOption("digits")), ...)
-{
-  cat("\nCall:\n",
-      paste(deparse(x$call), collapse="\n"),
-      "\n\n",
-      "Cutpoints:\n",
-      sep="")
-  print(round(x$cutpoints, digits=digits), ...)
-  cat("\n")
-  invisible(x)
-}
-
-#' @exportS3Method
-#' @importFrom stats quantile
-summary.bdsdesign <- function(object, digits = max(3L, getOption("digits")), ...)
-{
-  ans <- object[c("call", "cutpoints")]
-  ans$digits <- digits
-  xx <- matrix(rep(NA, 18), ncol=3,dimnames=list(
-    c("Min.", "1st Qu.", "Median", "3rd Qu.", "Max." , "Mean"),
-    c(names(object$model.frame)[1], colnames(object$z_i))
-  ))
-  xx[1:5,1] <- quantile(object$model.frame[,1], na.rm=TRUE, names=FALSE)
-  xx[6,1]   <- mean(object$model.frame[,1], na.rm=TRUE)
-  xx[1:5,2] <- quantile(object$z_i[,'intercept'], na.rm=TRUE, names=FALSE)
-  xx[6,2]   <- mean(object$z_i[,'intercept'], na.rm=TRUE)
-  xx[1:5,3] <- quantile(object$z_i[,'slope'], na.rm=TRUE, names=FALSE)
-  xx[6,3]   <- mean(object$z_i[,'slope'], na.rm=TRUE)
-
-  ans$descriptive <- as.table(xx[c(1,2,6,3:5),])
-
-  ans$N <- c(nrow(object$model.frame), ncol(object$z_i), sum(object$p_sample_i))
-  names(ans$N) <- c("N", names(object$model.frame)[3], "E[N_sample]")
-
-  class(ans) <- "summary.bdsdesign"
-  ans
-}
-
-#' @exportS3Method
-print.summary.bdsdesign <- function(x, digits = NULL, ...)
-{
-  if(is.null(digits)) digits <- x$digits
-  cat("\nCall:\n",
-      paste(deparse(x$call), collapse="\n"),
-      "\n\n",
-      "Cutpoints:\n",
-      sep="")
-  print(round(x$cutpoints, digits=digits), ...)
-  cat("\n")
-  print(round(x$descriptive, digits=digits), ...)
-  cat("\n")
-  print(round(x$N, digits=digits), ...)
-  cat("\n")
-  invisible(x)
-}
 
 #' Specify a given design for BLUP Dependent Sampling (BDS)
 #'
@@ -279,14 +131,14 @@ bds <- function(
 
   # Construct z_i (not treating weights here)
   lme_mod = lmer(formula = formula, data = data, na.action=na.action)
-  z_i <- lme4::ranef(lme_mod)[[1]] # from lme4
-  names(z_i) <- c("intercept", "slope")
+  z_i <- t(lme4::ranef(lme_mod)[[1]]) # from lme4
+  rownames(z_i) <- c("intercept", "slope")
 
   # Devise cutpoints if not specified
   if(is.null(cutpoints))
   {
     sel <- if(method == 'bivariate') c("intercept", "slope") else method
-    cutpoints <- apply(z_i, 2, quantile, quantiles)[,sel, drop=FALSE]
+    cutpoints <- apply(z_i, 1, quantile, quantiles)[,sel, drop=FALSE]
   } else if(method == 'bivariate')
   {
     cutpoints <- matrix(
@@ -307,12 +159,12 @@ bds <- function(
   {
     # Square donut(s)
     pmax(p_sample[as.numeric(
-           cut(z_i[,'intercept'], c(-Inf, t(cutpoints['intercept',]), Inf)))],
-         p_sample[as.numeric(
-           cut(z_i[,'slope'],     c(-Inf, t(cutpoints['slope',]),     Inf)))])
+      cut(z_i['intercept',], c(-Inf, t(cutpoints[,'intercept']), Inf)))],
+      p_sample[as.numeric(
+        cut(z_i['slope',],     c(-Inf, t(cutpoints[,'slope']),     Inf)))])
   } else
   {
-    p_sample[as.numeric(cut(z_i[,method], c(-Inf, t(cutpoints), Inf)))]
+    p_sample[as.numeric(cut(z_i[method,], c(-Inf, t(cutpoints), Inf)))]
   }
   names(p_sample_i) <- colnames(z_i)
 
@@ -335,7 +187,7 @@ bds <- function(
       z_i         = z_i,
       n_rand      = 2     # Number of random effects, slope + intercept
     ),
-    class="bdsdesign"
+    class=c("bdsdesign") #"odsdesign",
   )
 }
 
