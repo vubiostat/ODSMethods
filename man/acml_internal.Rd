@@ -4,33 +4,20 @@
 \alias{acml_internal}
 \title{Fitting function: ACML or WL for a linear mixed effects model (random intercept and slope)}
 \usage{
-acml_internal(
-  formula.fixed,
-  formula.random,
-  data,
-  id,
-  w.function = "mean",
-  InitVals,
-  cutpoints,
-  SampProb,
-  Weights,
-  ProfileCol = NA,
-  xcol.phase1 = NULL,
-  ests.phase1 = NULL
-)
+acml_internal(formula, design, data, InitVals)
 }
 \arguments{
+\item{data}{data frame that should contain everything in formula.fixed, formula.random, id, and Weights.  It does not include: w.function, cutpoints, SampProb}
+
+\item{InitVals}{starting values for c(beta, log(sigma0), log(sigma1), log((1+rho)/(1-rho)), log(sigmae))}
+
 \item{formula.fixed}{formula for the fixed effects (of the form y~x)}
 
 \item{formula.random}{formula for the random effects (of the form ~z).  Right now this model only fits random intercept and slope models.}
 
-\item{data}{data frame that should contain everything in formula.fixed, formula.random, id, and Weights.  It does not include: w.function, cutpoints, SampProb}
-
 \item{id}{sum(n_i) vector of subject ids (a variable contained in data)}
 
 \item{w.function}{sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi* zi) * t.zi)[1,]), "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[1,]). "intercept2" (second intercept of the regression of the Yi ~}
-
-\item{InitVals}{starting values for c(beta, log(sigma0), log(sigma1), log((1+rho)/(1-rho)), log(sigmae))}
 
 \item{cutpoints}{A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions for individual subjects.  If using a low, medium, high, sampling scheme, this is a sum(n_i) by 2 matrix that must be a distinct object not contained in the dat dataframe.  Each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high.  If using a square doughnut design this should be sum(n_i) by 4 matrix (var1lower, var1upper, var2lower, var2upper). Each subject should have n_i rows of the same values.}
 

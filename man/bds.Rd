@@ -14,7 +14,9 @@ bds(
   subset = NULL,
   weights = NULL,
   na.action = getOption("na.action"),
-  ...
+  xcol.phase1 = NULL,
+  ests.phase1 = NULL,
+  ProfileCol = NULL
 )
 }
 \arguments{

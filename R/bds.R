@@ -18,6 +18,33 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>
 
 
+#' @exportS3Method
+#' @importFrom stats quantile
+summary.bdsdesign <- function(object, digits = max(3L, getOption("digits")), ...)
+{
+  ans <- object[c("call", "cutpoints")]
+  ans$digits <- digits
+  xx <- matrix(rep(NA, 18), ncol=3,dimnames=list(
+    c("Min.", "1st Qu.", "Median", "3rd Qu.", "Max." , "Mean"),
+    c(names(object$model.frame)[1], rownames(object$z_i))
+  ))
+  xx[1:5,1] <- quantile(object$model.frame[,1], na.rm=TRUE, names=FALSE)
+  xx[6,1]   <- mean(object$model.frame[,1], na.rm=TRUE)
+  xx[1:5,2] <- quantile(object$z_i['intercept',], na.rm=TRUE, names=FALSE)
+  xx[6,2]   <- mean(object$z_i['intercept',], na.rm=TRUE)
+  xx[1:5,3] <- quantile(object$z_i['slope',], na.rm=TRUE, names=FALSE)
+  xx[6,3]   <- mean(object$z_i['slope',], na.rm=TRUE)
+
+  ans$descriptive <- as.table(xx[c(1,2,6,3:5),])
+
+  ans$N <- c(nrow(object$model.frame), ncol(object$z_i), sum(object$p_sample_i))
+  names(ans$N) <- c("N", names(object$model.frame)[3], "E[N_sample]")
+
+  class(ans) <- "summary.bdsdesign"
+  ans
+}
+
+
 #' Specify a given design for BLUP Dependent Sampling (BDS)
 #'
 #' Specify the design of an outcome dependent sampling routine.
@@ -83,13 +110,16 @@ bds <- function(
   formula,
   method,
   p_sample,
-  data      = NULL,
-  quantiles = NULL,
-  cutpoints = NULL,
-  subset    = NULL,
-  weights   = NULL,
-  na.action = getOption('na.action'),
-  ...
+  data       = NULL,
+  quantiles  = NULL,
+  cutpoints  = NULL,
+  subset     = NULL,
+  weights    = NULL,
+  na.action  = getOption('na.action'),
+  xcol.phase1= NULL,  ## only used for blup sampling
+  ests.phase1= NULL,  ## only used for blup sampling
+  ProfileCol = NULL  ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
+  # ... #FIXME: this doesn't work for now
 )
 {
   n_c <- length(p_sample)-1 # Number of cuts
@@ -134,6 +164,8 @@ bds <- function(
   z_i <- t(lme4::ranef(lme_mod)[[1]]) # from lme4
   rownames(z_i) <- c("intercept", "slope")
 
+  z_mf <- model.matrix(reformulate(names(mf)[2], intercept = TRUE), data = mf)
+
   # Devise cutpoints if not specified
   if(is.null(cutpoints))
   {
@@ -170,24 +202,33 @@ bds <- function(
 
   smpl <- names(p_sample_i)[rbinom(length(p_sample_i), 1, p_sample_i) > 0]
 
+  if(is.null(ProfileCol)){
+    ProfileCol = NA
+  }
+
   # Return design object
   structure(list(
-      call        = cl,
-      formula     = formula,
-      model.frame = mf,
-      method      = method,
-      p_sample    = p_sample,
-      p_sample_i  = p_sample_i,
-      sample_ids  = smpl,
-      response    = names(mf)[1],
-      time        = names(mf)[2],
-      id          = names(mf)[3],
-      quantiles   = quantiles,
-      cutpoints   = cutpoints,
-      z_i         = z_i,
-      n_rand      = 2     # Number of random effects, slope + intercept
+    call        = cl,
+    formula     = formula,
+    model.frame = mf,
+    method      = method,
+    p_sample    = p_sample,
+    p_sample_i  = p_sample_i,
+    sample_ids  = smpl,
+    response    = names(mf)[1],
+    time        = names(mf)[2],
+    id          = names(mf)[3],
+    quantiles   = quantiles,
+    cutpoints   = cutpoints,
+    z_i         = z_i,
+    z_mf        = z_mf,
+    weights     = weights,
+    n_rand      = 2,     # Number of random effects, slope + intercept
+    ProfileCol  = ProfileCol, ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
+    xcol.phase1 = xcol.phase1,  ## only used for blup sampling
+    ests.phase1 = ests.phase1  ## only used for blup sampling
     ),
-    class=c("bdsdesign") #"odsdesign",
+    class=c("bdsdesign","odsdesign")
   )
 }
 

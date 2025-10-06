@@ -247,7 +247,8 @@ ods <- function(
   subset    = NULL,
   weights   = NULL,
   na.action = getOption('na.action'),
-  ...
+  ProfileCol= NULL     ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
+  # ... #FIXME: this doesn't work for now
 )
 {
   n_c <- length(p_sample)-1 # Number of cuts
@@ -298,6 +299,8 @@ ods <- function(
   z_i <- sapply(split(mf, mf[,3]), f)
   rownames(z_i) <- c("mean", "intercept", "slope")
 
+  z_mf <- model.matrix(reformulate(names(mf)[2], intercept = TRUE), data = mf)
+
   # Devise cutpoints if not specified
   if(is.null(cutpoints))
   {
@@ -334,6 +337,10 @@ ods <- function(
 
   smpl <- names(p_sample_i)[rbinom(length(p_sample_i), 1, p_sample_i) > 0]
 
+  if(is.null(ProfileCol)){
+    ProfileCol = NA
+  }
+
   # Return design object
   structure(list(
       call        = cl,
@@ -349,7 +356,10 @@ ods <- function(
       quantiles   = quantiles,
       cutpoints   = cutpoints,
       z_i         = z_i,
-      n_rand      = 2     # Number of random effects, slope + intercept
+      z_mf        = z_mf,      #FIXME: only appropriate for one intercept and one slope
+      weights     = weights,
+      n_rand      = 2,     # Number of random effects, slope + intercept
+      ProfileCol  = ProfileCol ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
     ),
     class="odsdesign"
   )
