@@ -1067,7 +1067,7 @@ fixef <- function(object, ...) UseMethod("fixef")
 #' @export
 fixef.acml <- function(object, ...)
 {
-  est <- object$Est
+  est <- object$coefficients
   est[1:(length(est)-triangle(object$design$n_rand)-1)]
 }
 
@@ -1087,7 +1087,7 @@ ranef <- function(object, transform=FALSE, ...) UseMethod("ranef")
 #' @export
 ranef.acml <- function(object, transform=FALSE, ...)
 {
-  est <- object$Est
+  est <- object$coefficients
   le  <- length(est)
   ran <- est[(le - triangle(object$design$n_rand)):le]
 
@@ -1468,7 +1468,7 @@ acml <- function(
   design,
   data,
   subset = NULL,
-  weights = NULL,
+  # weights = NULL,
   MI = FALSE,
   MImethod = "direct",
   na.action = getOption('na.action'),
@@ -1477,24 +1477,12 @@ acml <- function(
   ...)
 {
   # Validate arguments
-  coll <- makeAssertCollection()
-  assert_formula(formula, add=coll)
-  assert_class(design, "odsdesign", add=coll)
-  assert_logical(MI, len=1, add=coll)
-  assert_choice(MImethod, c("direct", "indirect"))
-  reportAssertions(coll)
-
-  # Duplicate of lm behavior
-  cl <- match.call()
-  mf <- match.call(expand.dots = FALSE)
-  m  <- match(c("formula", "data", "subset", "weights", "na.action"), names(mf), 0L)
-  mf <- mf[c(1L, m)]
-  mf$drop.unused.levels <- TRUE
-  mf[[1L]] <- quote(stats::model.frame)
-  formula2 <- as.character(formula)
-  formula2 <- as.formula(paste(formula[2], "~", formula[3], "+", design$id, collapse=''))
-  mf[['formula']] <- formula2
-  mf <- eval(mf, parent.frame())
+  # coll <- makeAssertCollection()
+  # assert_formula(formula, add=coll)
+  # assert_class(design, "odsdesign", add=coll)
+  # assert_logical(MI, len=1, add=coll)
+  # assert_choice(MImethod, c("direct", "indirect"))
+  # reportAssertions(coll)
 
   # Initial guess of coefficients
   if(is.null(init))
@@ -1504,18 +1492,15 @@ acml <- function(
       # Intercept variance component, Slope Variance component, correlation, error variance
   }
 
-  if(!is.numeric(mf[,design$id]) && !is.integer(mf[,design$id]))
-    mf[,design$id] <- as.integer(as.factor(mf[,design$id]))
+  if(!is.numeric(data[,design$id]) && !is.integer(data[,design$id]))
+    data[,design$id] <- as.integer(as.factor(data[,design$id]))
 
-  if(!design$response %in% names(mf))
+  if(!design$response %in% names(data))
     stop("must have same response variable as design")
-  if(!design$time %in% names(mf))
+  if(!design$time %in% names(data))
     stop("must have same time variable as design")
 
-  mm <- model.matrix(formula2, mf, na.action=na.action)
-  assert_true(all(as.character(mm[,design$id]) %in% names(design$p_sample_i)),
-    .var.name='Group variables provided to acml that were not part of design', add=coll)
-  reportAssertions(coll)
+  mm <- model.matrix(formula, data)
 
   fit <- acml_internal(
     formula  = formula,
@@ -1526,17 +1511,18 @@ acml <- function(
   fit$formula <- formula
   fit$design <- design
   fit$data   <- data
-  fit$call   <- cl
+  # fit$call   <- cl
   fit$model.matrix <- mm[,!(colnames(mm) %in% design$id)]
-  fit$response     <- matrix(mf[,design$response])
-  fit$rand.covar   <- matrix(cbind(rep(1, nrow(mf)), mf[,design$time]), ncol=2)
-  fit$ids          <- matrix(mf[,design$id])
+  fit$response     <- matrix(data[,design$response])
+  fit$rand.covar   <- matrix(cbind(rep(1, nrow(mm)), mm[,design$time]), ncol=2)
+  fit$ids          <- matrix(data[,design$id])
+  fit$n_fixed      <- ncol(mm) - 1
 
   class(fit) <- "acml"
 
-  if(fit$Code == 3) warning("last global step failed to locate a point lower than estimate. Either estimate is an approximate local minimum of the function or steptol is too small.")
-  if(fit$Code == 4) warning("iteration limit exceeded.")
-  if(fit$Code == 5) warning("maximum step size stepmax exceeded five consecutive times. Either the function is unbounded below, becomes asymptotic to a finite value from above in some direction or stepmax is too small.")
+  # if(fit$Code == 3) warning("last global step failed to locate a point lower than estimate. Either estimate is an approximate local minimum of the function or steptol is too small.")
+  # if(fit$Code == 4) warning("iteration limit exceeded.")
+  # if(fit$Code == 5) warning("maximum step size stepmax exceeded five consecutive times. Either the function is unbounded below, becomes asymptotic to a finite value from above in some direction or stepmax is too small.")
 
   fit
 }
