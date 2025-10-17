@@ -1477,12 +1477,24 @@ acml <- function(
   ...)
 {
   # Validate arguments
-  # coll <- makeAssertCollection()
-  # assert_formula(formula, add=coll)
-  # assert_class(design, "odsdesign", add=coll)
-  # assert_logical(MI, len=1, add=coll)
-  # assert_choice(MImethod, c("direct", "indirect"))
-  # reportAssertions(coll)
+  coll <- makeAssertCollection()
+  assert_formula(formula, add=coll)
+  assert_class(design, "odsdesign", add=coll)
+  assert_logical(MI, len=1, add=coll)
+  assert_choice(MImethod, c("direct", "indirect"))
+  reportAssertions(coll)
+
+  # Duplicate of lm behavior
+  cl <- match.call()
+  mf <- match.call(expand.dots = FALSE)
+  m  <- match(c("formula", "data", "subset", "weights", "na.action"), names(mf), 0L)
+  mf <- mf[c(1L, m)]
+  mf$drop.unused.levels <- TRUE
+  mf[[1L]] <- quote(stats::model.frame)
+  formula2 <- as.character(formula)
+  formula2 <- as.formula(paste(formula[2], "~", formula[3], "+", design$id, collapse=''))
+  mf[['formula']] <- formula2
+  mf <- eval(mf, parent.frame())
 
   # Initial guess of coefficients
   if(is.null(init))
@@ -1511,7 +1523,7 @@ acml <- function(
   fit$formula <- formula
   fit$design <- design
   fit$data   <- data
-  # fit$call   <- cl
+  fit$call   <- cl
   fit$model.matrix <- mm[,!(colnames(mm) %in% design$id)]
   fit$response     <- matrix(data[,design$response])
   fit$rand.covar   <- matrix(cbind(rep(1, nrow(mm)), mm[,design$time]), ncol=2)
