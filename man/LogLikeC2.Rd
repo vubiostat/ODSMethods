@@ -47,7 +47,7 @@ LogLikeC2(
 
 \item{z}{sum(n_i) by q design matrix for random effects}
 
-\item{w.function}{sum(n_i) vector with possible values that include "mean" "intercept" "slope" and "bivar."  There should be one unique value per subject}
+\item{w.function}{sum(n_i) vector with possible values that include "mean" "intercept" "slope" and "bivariate."  There should be one unique value per subject}
 
 \item{id}{sum(n_i) vector of subject ids}
 

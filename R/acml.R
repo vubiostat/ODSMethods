@@ -48,12 +48,11 @@ LogLikeC2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sigma.e, 
   subjectData    <- CreateSubjectData(id=id,y=y,x=x,z=z,Weights=Weights,SampProb=SampProb,cutpoints=cutpoints,w.function=w.function, xcol.phase1=xcol.phase1, ests.phase1=ests.phase1)
   liC.and.logACi <- lapply(subjectData, LogLikeiC2, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e)
 
-  if (Keep.liC == FALSE){out <- -1*Reduce('+', unlist(liC.and.logACi))[1]  ## sum ss contributions to liC
-  }else{ out <- list(liC    = c(unlist(sapply(unlist(liC.and.logACi), function(x) x[1]))), ## ss contributions to liC
-                     logACi = c(unlist(sapply(unlist(liC.and.logACi), function(x) x[2]))))} ## ss contributions to ACi
+  if (Keep.liC == FALSE){out <- -1*Reduce('+', liC.and.logACi)[1]  ## sum ss contributions to liC
+  }else{ out <- list(liC    = c(unlist(sapply(liC.and.logACi, function(x) x[1]))), ## ss contributions to liC
+                     logACi = c(unlist(sapply(liC.and.logACi, function(x) x[2]))))} ## ss contributions to ACi
   out
 }
-
 
 
 #' Calculate the ss contributions to the conditional likelihood for the univariate and bivariate sampling cases.
@@ -72,6 +71,8 @@ LogLikeC2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sigma.e, 
 #' @export
 #'
 #'
+
+
 LogLikeiC2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
   yi          <- subjectData[["yi"]]
   xi          <- subjectData[["xi"]]
@@ -80,7 +81,6 @@ LogLikeiC2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
   w.function  <- subjectData[["w.function.i"]]
   SampProb    <- subjectData[["SampProb.i"]]
   cutpoints   <- subjectData[["cutpoints.i"]]
-  wi          =  subjectData[["wi"]]
   mui.phase1  =  subjectData[["mui.phase1"]]
   ni          <- length(yi)
   t.zi        <- t(zi)
@@ -135,7 +135,6 @@ LogLikeiC2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
   return(c(liC, logACi))
 }
 
-
 #' Gradient of the log of the ascertainment correction piece for sampling based on bivariate Q_i.
 #'
 #' Calculate the gradient of the log transformed ascertainment correction under designs that sample based on a bivariate Q_i (numerically).
@@ -148,6 +147,7 @@ LogLikeiC2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
 #' @param sigmae std dev of the measurement error distribution
 #' @return gradient of the log transformed ascertainment correction under the bivariate sampling design
 #' @importFrom mvtnorm pmvnorm
+#' @importFrom numDeriv grad
 #' @export
 logACi2q.score2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
 
@@ -167,7 +167,7 @@ logACi2q.score2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
   ###########################
   ###########################
   wi.tmp      <- solve(t.zi %*% zi) %*% t.zi
-  if (w.function %in% c("bivar")){         wi <- wi.tmp[c(1,2),]
+  if (w.function %in% c("bivariate")){         wi <- wi.tmp[c(1,2),]
   } else if (w.function %in% c("mvints")){ wi <- wi.tmp[c(1,3),]
   } else if (w.function %in% c("mvslps")){ wi <- wi.tmp[c(2,4),]
   }
@@ -249,7 +249,7 @@ vi.calc = function(zi, sigma.vc, rho.vc, sigma.e){
 #' @export
 ACi1q = function(cutpoints, SampProb, mu_q, sigma_q){
   CDFs = pnorm(c(-Inf, cutpoints, Inf), mu_q, sigma_q)
-  sum( SampProb*(CDFs[2:length(CDFs)] - CDFs[1:(length(CDFs)-1)]) )
+  sum( c(SampProb)*c(CDFs[2:length(CDFs)]) - c(CDFs[1:(length(CDFs)-1)]) )
 }
 
 #' Ascertainment correction piece for bivariate sampling
@@ -345,7 +345,7 @@ li.lme = function(yi, xi, beta, vi){
 #' @param y response vector
 #' @param x sum(n_i) by p design matrix for fixed effects
 #' @param z sum(n_i) by q design matrix for random effects
-#' @param w.function sum(n_i) vector with possible values that include "mean" "intercept" "slope" and "bivar."  There should be one unique value per subject
+#' @param w.function sum(n_i) vector with possible values that include "mean" "intercept" "slope" and "bivariate."  There should be one unique value per subject
 #' @param id sum(n_i) vector of subject ids
 #' @param beta mean model parameter p-vector
 #' @param sigma.vc vector of variance components on standard deviation scale
@@ -388,65 +388,63 @@ LogLikeC2 = function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sigma.e, c
 #' @export
 #'
 #'
-LogLikeiC2 = function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
-  yi          = subjectData[["yi"]]
-  xi          = subjectData[["xi"]]
-  zi          = subjectData[["zi"]]
-  Weights.i   = subjectData[["Weights.i"]]
-  w.function  = subjectData[["w.function.i"]]
-  SampProb    = subjectData[["SampProb.i"]]
-  cutpoints   = subjectData[["cutpoints.i"]]
-  wi          =  subjectData[["wi"]]
-  mui.phase1  =  subjectData[["mui.phase1"]]
-
-  ni          = length(yi)
-  t.zi        = t(zi)
+LogLikeiC2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
+  yi          <- subjectData[["yi"]]
+  xi          <- subjectData[["xi"]]
+  zi          <- subjectData[["zi"]]
+  Weights.i   <- subjectData[["Weights.i"]]
+  w.function  <- subjectData[["w.function.i"]]
+  SampProb    <- subjectData[["SampProb.i"]]
+  cutpoints   <- subjectData[["cutpoints.i"]]
+  mui.phase1  <- subjectData[["mui.phase1"]]
+  ni          <- length(yi)
+  t.zi        <- t(zi)
   ##########
   ##########
   ##########
   ##########
-  #wi.tmp = solve(t.zi %*% zi) %*% t.zi
-  if (!(w.function %in% c("bivar", "mvints", "mvslps"))){
-    # if (w.function %in% c("intercept", "intercept1")){ wi = wi.tmp[1,]
-    # } else if (w.function %in% c("slope", "slope1")){  wi = wi.tmp[2,]
-    # } else if (w.function %in% c("intercept2")){       wi = wi.tmp[3,]
-    # } else if (w.function %in% c("slope2")){           wi = wi.tmp[4,]
-    # } else if (w.function=="mean"){                    wi = t(rep(1/ni, ni))
-    # }
-    wi         = matrix(wi, 1, ni)
-    tmp        = logACi1q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb, mui.phase1)
-    logACi     = tmp[["logACi"]]
-    liC        = li.lme(yi, xi, beta, tmp[["vi"]])*Weights.i - logACi
+  wi.tmp <- solve(t.zi %*% zi) %*% t.zi
+  if (!(w.function %in% c("bivariate", "mvints", "mvslps"))){
+    if (w.function %in% c("intercept", "intercept1")){ wi <- wi.tmp[1,]
+    } else if (w.function %in% c("slope", "slope1")){  wi <- wi.tmp[2,]
+    } else if (w.function %in% c("intercept2")){       wi <- wi.tmp[3,]
+    } else if (w.function %in% c("slope2")){           wi <- wi.tmp[4,]
+    } else if (w.function=="mean"){                    wi <- t(rep(1/ni, ni))
+    }
+    wi         <- matrix(wi, 1, ni)
+    tmp        <- logACi1q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb, mui.phase1)
+    logACi     <- tmp[["logACi"]]
+    liC        <- li.lme(yi, xi, beta, tmp[["vi"]])*Weights.i - logACi
   }else {
-    # if (w.function %in% c("bivar")){ wi = wi.tmp[c(1,2),]
-    # } else if (w.function %in% c("mvints")){ wi = wi.tmp[c(1,3),]
-    # } else if (w.function %in% c("mvslps")){ wi = wi.tmp[c(2,4),]
-    # }
-    tmp        = logACi2q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb, mui.phase1)
-    logACi     = tmp[["logACi"]]
-    liC        = li.lme(yi, xi, beta, tmp[["vi"]])*Weights.i - logACi
+    if (w.function %in% c("bivariate")){ wi <- wi.tmp[c(1,2),]
+    } else if (w.function %in% c("mvints")){ wi <- wi.tmp[c(1,3),]
+    } else if (w.function %in% c("mvslps")){ wi <- wi.tmp[c(2,4),]
+    }
+    tmp        <- logACi2q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb, mui.phase1)
+    logACi     <- tmp[["logACi"]]
+    liC        <- li.lme(yi, xi, beta, tmp[["vi"]])*Weights.i - logACi
   }
   ##########
   ##########
   ##########
   ##########
-  # if (w.function != "bivar"){
-  #     if (w.function %in% c("intercept", "intercept1")){ wi= (solve(t.zi %*% zi) %*% t.zi)[1,]
-  #     } else if (w.function %in% c("slope", "slope1")){     wi= (solve(t.zi %*% zi) %*% t.zi)[2,]
-  #     } else if (w.function %in% c("intercept2")){ wi= (solve(t.zi %*% zi) %*% t.zi)[3,]
-  #     } else if (w.function %in% c("slope2")){     wi= (solve(t.zi %*% zi) %*% t.zi)[4,]
-  #     } else if (w.function=="mean"){     wi = t(rep(1/ni, ni))
+  # if (w.function != "bivariate"){
+  #     if (w.function %in% c("intercept", "intercept1")){ wi<- (solve(t.zi %*% zi) %*% t.zi)[1,]
+  #     } else if (w.function %in% c("slope", "slope1")){     wi<- (solve(t.zi %*% zi) %*% t.zi)[2,]
+  #     } else if (w.function %in% c("intercept2")){ wi<- (solve(t.zi %*% zi) %*% t.zi)[3,]
+  #     } else if (w.function %in% c("slope2")){     wi<- (solve(t.zi %*% zi) %*% t.zi)[4,]
+  #     } else if (w.function=="mean"){     wi <- t(rep(1/ni, ni))
   #     }
-  #     wi         = matrix(wi, 1, ni)
-  #     tmp        = logACi1q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb)
-  #     logACi     = tmp[["logACi"]]
-  #     liC        = li.lme(yi, xi, beta, tmp[["vi"]])*Weights.i - logACi
+  #     wi         <- matrix(wi, 1, ni)
+  #     tmp        <- logACi1q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb)
+  #     logACi     <- tmp[["logACi"]]
+  #     liC        <- li.lme(yi, xi, beta, tmp[["vi"]])*Weights.i - logACi
   #
   # }else{
-  #     wi         = solve(t.zi %*% zi) %*% t.zi
-  #     tmp        = logACi2q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb)
-  #     logACi     = tmp[["logACi"]]
-  #     liC        = li.lme(yi, xi, beta, tmp[["vi"]])*Weights.i - logACi
+  #     wi         <- solve(t.zi %*% zi) %*% t.zi
+  #     tmp        <- logACi2q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb)
+  #     logACi     <- tmp[["logACi"]]
+  #     liC        <- li.lme(yi, xi, beta, tmp[["vi"]])*Weights.i - logACi
   #
   # }
   return(c(liC, logACi))
@@ -653,7 +651,7 @@ li.lme.score2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
 #' @param y response vector
 #' @param x sum(n_i) by p design matrix for fixed effects
 #' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
-#' @param w.function sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[1,])}, "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[1,])}. "intercept2" (second intercept of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[3,])}, "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[2,])}, "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[2,])}, "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[4,])} "bivar" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[c(1,2),])} "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[c(1,3),])} "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[c(1,3),])}.  NOTE: We also have the same designs but for BLUP based sampling, in which case, the character string should begin with "blup.".  For example "blup.intercept". There should be one unique value per subject
+#' @param w.function sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[1,])}, "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[1,])}. "intercept2" (second intercept of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[3,])}, "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[2,])}, "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[2,])}, "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[4,])} "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[c(1,2),])} "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[c(1,3),])} "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[c(1,3),])}.  NOTE: We also have the same designs but for BLUP based sampling, in which case, the character string should begin with "blup.".  For example "blup.intercept". There should be one unique value per subject
 #' @param id sum(n_i) vector of subject ids
 #' @param beta mean model parameter p-vector
 #' @param sigma.vc vector of variance components on standard deviation scale
@@ -689,9 +687,9 @@ LogLikeC.Score2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sig
   Gradienti         <- lapply(UncorrectedScorei, function(x) x[['gr']]) ## create a list of ss contributions to gradient
   UncorrectedScore  <- Reduce('+', Gradienti)  ## Note if using IPW this is actually a corrected score (corrected by the IPW)
   #print(c("blah1", UncorrectedScore))
-  ## NOTE HERE: I used the first element of w.function in this call.  This means, for now, we cannot mix bivar with other
+  ## NOTE HERE: I used the first element of w.function in this call.  This means, for now, we cannot mix bivariate with other
   ## sampling schemes.  This also applies to the cheese calculation
-  if (!(w.function[[1]] %in% c("bivar","mvints","mvslps"))){
+  if (!(w.function[[1]] %in% c("bivariate","mvints","mvslps"))){
     logACi.Score <- lapply(subjectData, logACi1q.score2, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e)
     logAC.Score  <- Reduce('+', logACi.Score)
     CorrectedScore <- UncorrectedScore + logAC.Score
@@ -702,7 +700,7 @@ LogLikeC.Score2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sig
   }
   #print(c("blah2", CorrectedScore))
   if (CheeseCalc==TRUE){
-    if (!(w.function[[1]] %in% c("bivar","mvints","mvslps"))){ GradiMat <- mapply("+", Gradienti, logACi.Score)
+    if (!(w.function[[1]] %in% c("bivariate","mvints","mvslps"))){ GradiMat <- mapply("+", Gradienti, logACi.Score)
     }else{                           GradiMat <- mapply("-", Gradienti, logACi.Score)} ## notice this has the opposite sign compared to above.  Remember to check
     ## Need to use the chain rule: note that param,vec is on the unconstrained scale but Gradi was calculated on the constrained parameters
     GradiMat[notbeta.index,] <- GradiMat[notbeta.index,]*c(exp(param.vec[vc.sd.index]), 2*exp(param.vec[vc.rho.index])/((exp(param.vec[vc.rho.index])+1)^2), exp(param.vec[err.sd.index]))
@@ -721,7 +719,7 @@ LogLikeC.Score2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sig
 #' @param x sum(n_i) by p design matrix for fixed effects
 #' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
 #' @param id sum(n_i) vector of subject ids
-#' @param w.function sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[1,])}, "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[1,])}. "intercept2" (second intercept of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[3,])}, "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[2,])}, "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[2,])}, "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[4,])} "bivar" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[c(1,2),])} "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[c(1,3),])} "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[c(1,3),])}.  NOTE: We also have the same designs but for BLUP based sampling, in which case, the character string should begin with "blup.".  For example "blup.intercept". There should be one unique value per subject
+#' @param w.function sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[1,])}, "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[1,])}. "intercept2" (second intercept of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[3,])}, "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[2,])}, "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[2,])}, "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[4,])} "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \text{(solve(t.zi %*% zi) %*% t.zi)[c(1,2),])} "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[c(1,3),])} "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \text{solve(t.zi %*% zi) %*% t.zi)[c(1,3),])}.  NOTE: We also have the same designs but for BLUP based sampling, in which case, the character string should begin with "blup.".  For example "blup.intercept". There should be one unique value per subject
 #' @param cutpoints A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions (bivariate Q_i: each row is a vector of length 4 c(xlow, xhigh, ylow, yhigh); univariate Q_i: each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high).  Each subject should have n_i rows of the same values.
 #' @param SampProb A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region [bivariate Q_i: each row is a vector of length 2 c(central region, outlying region); univariate Q_i: each row is a vector of length 3 with sampling probabilities for each region]. Each subject should have n_i rows of the same values.
 #' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
@@ -776,7 +774,7 @@ LogLikeCAndScore2 <- function(params, y, x, z, id, w.function, cutpoints, SampPr
 #' @param data data frame that should contain everything in formula.fixed, formula.random, id, and Weights.  It does not include: w.function, cutpoints, SampProb
 #' @param id sum(n_i) vector of subject ids (a variable contained in data)
 #' @param w.function sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi* zi) * t.zi)[1,]), "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[1,]). "intercept2" (second intercept of the regression of the Yi ~
-##zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[3,]), "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[4,]) "bivar" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[c(1,2),]) "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) * t.zi)[c(1,3),]) "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[c(1,3),]).  There should be one unique value per subject.  NOTE: We also have the same designs but for BLUP based sampling, in which case, the character string should begin with "blup.".  For example "blup.intercept". There should be one unique value per subject but n_i replicates of that value.  Note that w.function should NOT be in the dat dataframe.
+##zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[3,]), "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[4,]) "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[c(1,2),]) "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) * t.zi)[c(1,3),]) "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[c(1,3),]).  There should be one unique value per subject.  NOTE: We also have the same designs but for BLUP based sampling, in which case, the character string should begin with "blup.".  For example "blup.intercept". There should be one unique value per subject but n_i replicates of that value.  Note that w.function should NOT be in the dat dataframe.
 #' @param InitVals starting values for c(beta, log(sigma0), log(sigma1), log((1+rho)/(1-rho)), log(sigmae))
 #' @param cutpoints A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions for individual subjects.  If using a low, medium, high, sampling scheme, this is a sum(n_i) by 2 matrix that must be a distinct object not contained in the dat dataframe.  Each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high.  If using a square doughnut design this should be sum(n_i) by 4 matrix (var1lower, var1upper, var2lower, var2upper). Each subject should have n_i rows of the same values.
 #' @param SampProb A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region. For low medium high sampling, each row is a vector of length 3 with sampling probabilities for each region. For bivariate stratum sampling each row is a vector of length 2 with sampling probabilities for the inner and outer strata. Each subject should have n_i rows of the same values.  Not in data.
@@ -828,9 +826,9 @@ acml_internal <- function(formula,
     Weights    = data$Weights = data[ , Weights0]
   }
 
-  cutpoints   <- rep(list(asplit(design$cutpoints,2)[[1]]), length(y))
-  SampProb    <- rep(list(design$p_sample), length(y))
-  w.function  <- rep(list(design$method), length(y))
+  cutpoints   <- replicate(length(y), design$cutpoints, simplify = F)
+  SampProb    <- replicate(length(y), design$p_sample, simplify = F)
+  w.function  <- rep(design$method, length(y))
 
   acml.fit <- nlm(LogLikeCAndScore2,
                   InitVals,
@@ -936,7 +934,7 @@ acml_internal <- function(formula,
 #' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
 #' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
 #' @param SampProb A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region [bivariate Q_i: each row is a vector of length 2 c(central region, outlying region); univariate Q_i: each row is a vector of length 3 with sampling probabilities for each region]. Each subject should have n_i rows of the same values.
-#' @param w.function sum(n_i) vector with possible values that include "mean" "intercept" "slope" and "bivar."  There should be one unique value per subject
+#' @param w.function sum(n_i) vector with possible values that include "mean" "intercept" "slope" and "bivariate."  There should be one unique value per subject
 #' @param xcol.phase1 This only applied if doing BLUP-based sampling.  It is the column numbers of the design matrix x that were used in phase 1 to conduct analyses from which BLUP estimates are calculated. e.g. xcol.phase1 = c(1,2,4) if the first second and fourth columns of x were used in phase 1
 #' @param ests.phase1 This only applied if doing BLUP-based sampling.  These are the estimates from the phase 1 analysis.  It is assumed that the columns of the design matrix in phase 1 are a subset of those in phase II.  The estimates should be ordered in the following way and appropriately transformed: (beta, log(variance component SDs), FisherZ(correlation parameters in random effects covariance matrix), log(error SDs)).  The transformed variance component SDs and correlations should be ordered the same way they are ordered in the phase II model
 #' @param cutpoints A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions [bivariate Q_i: each row is a vector of length 4 c(xlow, xhigh, ylow, yhigh); univariate Q_i: each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high].  Each subject should have n_i rows of the same values.
@@ -981,8 +979,8 @@ CreateSubjectData <- function(id,y,x,z,Weights,SampProb,cutpoints,w.function, xc
 
   ncol.x         = ncol(x)
   ncol.z         = ncol(z)
-  ncol.SampProb  = ncol(SampProb)
-  ncol.cutpoints = ncol(cutpoints)
+  ncol.SampProb  = length(SampProb[[1]])
+  ncol.cutpoints = length(cutpoints[[1]])
 
   subjectData <- vector('list', length=length(unique(id)))
   subjectData <- list()
@@ -1002,14 +1000,14 @@ CreateSubjectData <- function(id,y,x,z,Weights,SampProb,cutpoints,w.function, xc
       wi.tmp     = D.phase1 %*% t.zi %*% solve(Vi.phase1)
       mui.phase1 = xi.phase1 %*% beta.phase1
       ####################################################
-      if (!(w.functioni %in% c("blup.bivar", "blup.mvints", "blup.mvslps"))){
+      if (!(w.functioni %in% c("blup.bivariate", "blup.mvints", "blup.mvslps"))){
         if (w.functioni %in% c("blup.intercept", "blup.intercept1")){ wi = wi.tmp[1,]
         } else if (w.functioni %in% c("blup.slope", "blup.slope1")){  wi = wi.tmp[2,]
         } else if (w.functioni %in% c("blup.intercept2")){            wi = wi.tmp[3,]
         } else if (w.functioni %in% c("blup.slope2")){                wi = wi.tmp[4,]
         }
         wi         = matrix(wi, 1, ni)
-      }else if (w.functioni %in% c("blup.bivar")){ wi = wi.tmp[c(1,2),]
+      }else if (w.functioni %in% c("blup.bivariate")){ wi = wi.tmp[c(1,2),]
       } else if (w.functioni %in% c("blup.mvints")){ wi = wi.tmp[c(1,3),]
       } else if (w.functioni %in% c("blup.mvslps")){ wi = wi.tmp[c(2,4),]
       } else {stop("You have not chosen an appropriate w.function for BLUP sampling")
