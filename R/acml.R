@@ -863,8 +863,7 @@ acml_internal <- function(formula,
 
   if(any(is.na(data))) data = na.omit(data)
 
-  id0   = design$id
-  id    = data$id = data[ , id0 ]
+  id    = data$id = data[ , design$id]
 
   fixed.f = model.frame(formula, data)
   fixed.t = attr(fixed.f, "terms")
@@ -882,7 +881,7 @@ acml_internal <- function(formula,
     Weights    = data$Weights = data[ , Weights0]
   }
 
-  cutpoints   <- matrix(rep(design$cutpoints, length(y)), ncol = 3, byrow = T)
+  cutpoints   <- matrix(rep(design$cutpoints, length(y)), ncol = 2, byrow = T)
   SampProb    <- matrix(rep(design$p_sample, length(y)), ncol = 3, byrow = T)
   w.function  <- rep(design$method, length(y))
 
