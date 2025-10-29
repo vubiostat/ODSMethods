@@ -4,18 +4,7 @@
 \alias{CreateSubjectData}
 \title{Create a list of subject-specific data}
 \usage{
-CreateSubjectData(
-  id,
-  y,
-  x,
-  z,
-  Weights,
-  SampProb,
-  cutpoints,
-  w.function,
-  xcol.phase1,
-  ests.phase1
-)
+CreateSubjectData(id, y, x, z, Weights, SampProb, cutpoints, w.function)
 }
 \arguments{
 \item{id}{sum(n_i) vector of subject ids}
@@ -33,10 +22,6 @@ CreateSubjectData(
 \item{cutpoints}{A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions [bivariate Q_i: each row is a vector of length 4 c(xlow, xhigh, ylow, yhigh); univariate Q_i: each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high].  Each subject should have n_i rows of the same values.}
 
 \item{w.function}{sum(n_i) vector with possible values that include "mean" "intercept" "slope" and "bivariate."  There should be one unique value per subject}
-
-\item{xcol.phase1}{This only applied if doing BLUP-based sampling.  It is the column numbers of the design matrix x that were used in phase 1 to conduct analyses from which BLUP estimates are calculated. e.g. xcol.phase1 = c(1,2,4) if the first second and fourth columns of x were used in phase 1}
-
-\item{ests.phase1}{This only applied if doing BLUP-based sampling.  These are the estimates from the phase 1 analysis.  It is assumed that the columns of the design matrix in phase 1 are a subset of those in phase II.  The estimates should be ordered in the following way and appropriately transformed: (beta, log(variance component SDs), FisherZ(correlation parameters in random effects covariance matrix), log(error SDs)).  The transformed variance component SDs and correlations should be ordered the same way they are ordered in the phase II model}
 }
 \description{
 Create a list of subject-specific data

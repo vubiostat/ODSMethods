@@ -5,11 +5,9 @@
 \title{Calculate the ss contributions to the conditional likelihood for the univariate and bivariate sampling cases.}
 \usage{
 LogLikeiC2(subjectData, beta, sigma.vc, rho.vc, sigma.e)
-
-LogLikeiC2(subjectData, beta, sigma.vc, rho.vc, sigma.e)
 }
 \arguments{
-\item{subjectData}{a list containing: yi, xi, zi, Weights.i, w.function.i, cutpoints.i, wi, mui.phase1}
+\item{subjectData}{a list containing: yi, xi, zi, Weights.i}
 
 \item{beta}{mean model parameter p-vector}
 
@@ -19,7 +17,7 @@ LogLikeiC2(subjectData, beta, sigma.vc, rho.vc, sigma.e)
 
 \item{sigma.e}{std dev of the measurement error distribution}
 
-\item{w.function}{options include "mean" "intercept" "slope" and "bivar"}
+\item{w.function}{options include "mean" "intercept" "slope" and "bivariate"}
 
 \item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))}
 
@@ -27,11 +25,7 @@ LogLikeiC2(subjectData, beta, sigma.vc, rho.vc, sigma.e)
 }
 \value{
 ss contributions to the conditional log likelihood.  This is an internal function used by LogLikeC2
-
-ss contributions to the conditional log likelihood.  This is an internal function used by LogLikeC2
 }
 \description{
-Calculate the ss contributions to the conditional likelihood for the univariate and bivariate sampling cases.
-
 Calculate the ss contributions to the conditional likelihood for the univariate and bivariate sampling cases.
 }

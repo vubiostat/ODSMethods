@@ -4,19 +4,7 @@
 \alias{logACi1q}
 \title{Log of the Ascertainment correction for univariate sampling}
 \usage{
-logACi1q(
-  yi,
-  xi,
-  zi,
-  wi,
-  beta,
-  sigma.vc,
-  rho.vc,
-  sigma.e,
-  cutpoints,
-  SampProb,
-  mui.phase1
-)
+logACi1q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb)
 }
 \arguments{
 \item{yi}{n_i-response vector}
@@ -38,8 +26,6 @@ logACi1q(
 \item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 2)}
 
 \item{SampProb}{Sampling probabilities from within each region (vector of length 3).}
-
-\item{mui.phase1}{linear predictor from phase 1 that is used to calculate mu_q if we are doing BLUP based sampling.  If doing ODS then this is a vector of 0s}
 }
 \value{
 log transformed ascertainment correction

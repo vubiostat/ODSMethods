@@ -7,7 +7,7 @@
 logACi2q.score2(subjectData, beta, sigma.vc, rho.vc, sigma.e)
 }
 \arguments{
-\item{subjectData}{a list containing: yi, xi, zi, Weights.i, w.function, SampProb, cutpoints, wi, and mui.phase1}
+\item{subjectData}{a list containing: yi, xi, zi, Weights.i, w.function, SampProb, cutpoints}
 
 \item{beta}{mean model parameter p-vector}
 
