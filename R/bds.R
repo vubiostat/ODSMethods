@@ -106,6 +106,9 @@ summary.bdsdesign <- function(object, digits = max(3L, getOption("digits")), ...
 #' @importFrom checkmate assert_formula assert_numeric assert_true assert_character
 #' @importFrom checkmate reportAssertions
 #' @importFrom stats model.frame terms as.formula quantile coef
+#' @importFrom lme4 lmer
+#' @importFrom stats reformulate
+
 bds <- function(
   formula,
   method,

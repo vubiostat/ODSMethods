@@ -2,7 +2,7 @@
 % Please edit documentation in R/acml.R
 \name{LogLikeC.Score2}
 \alias{LogLikeC.Score2}
-\title{Calculate the gradient of the conditional likelihood for the univariate and bivariate sampling cases across all subjects (CheeseCalc=FALSE) or the cheese part of the sandwich estimator if CheeseCalc=TRUE.}
+\title{Calculate the gradient of the conditional likelihood}
 \usage{
 LogLikeC.Score2(
   y,
@@ -26,8 +26,6 @@ LogLikeC.Score2(
 \item{x}{sum(n_i) by p design matrix for fixed effects}
 
 \item{z}{sum(n_i) by 2 design matric for random effects (intercept and slope)}
-
-\item{w.function}{sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[1,]), "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[1,]). "intercept2" (second intercept of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) %*% t.zi)[3,]), "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[2,]), "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[2,]), "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) %*% t.zi)[4,]) "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[c(1,2),]) "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) %*% t.zi)[c(1,3),]) "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) %*% t.zi)[c(1,3),]).  There should be one unique value per subject}
 
 \item{id}{sum(n_i) vector of subject ids}
 

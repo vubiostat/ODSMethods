@@ -531,14 +531,12 @@ li.lme.score2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
 }
 
 
-#' Calculate the gradient of the conditional likelihood for the univariate and bivariate sampling cases across all subjects (CheeseCalc=FALSE) or the cheese part of the sandwich estimator if CheeseCalc=TRUE.
-#'
-#' Calculate the gradient of the conditional likelihood for the univariate and bivariate sampling cases across all subjects (CheeseCalc=FALSE) or the cheese part of the sandwich estimator if CheeseCalc=TRUE.
-#'
+#' Calculate the gradient of the conditional likelihood
+#' @description Calculate the gradient of the conditional likelihood for the univariate and bivariate sampling cases across all subjects (CheeseCalc=FALSE) or the cheese part of the sandwich estimator if CheeseCalc=TRUE.
 #' @param y response vector
 #' @param x sum(n_i) by p design matrix for fixed effects
 #' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
-#' @param w.function sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[1,]), "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[1,]). "intercept2" (second intercept of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) %*% t.zi)[3,]), "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[2,]), "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[2,]), "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) %*% t.zi)[4,]) "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[c(1,2),]) "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) %*% t.zi)[c(1,3),]) "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) %*% t.zi)[c(1,3),]).  There should be one unique value per subject
+#' @param w.function sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi %*% zi) %*% t.zi)[1,])}, "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi %*% zi) %*% t.zi)[1,])}. "intercept2" (second intercept of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \eqn{solve(t.zi %*% zi) %*% t.zi)[3,])}, "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi %*% zi) %*% t.zi)[2,])}, "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi %*% zi) %*% t.zi)[2,])}, "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \eqn{solve(t.zi %*% zi) %*% t.zi)[4,])} "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi %*% zi) %*% t.zi)[c(1,2),])} "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \eqn{solve(t.zi %*% zi) %*% t.zi)[c(1,3),])} "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \eqn{solve(t.zi %*% zi) %*% t.zi)[c(1,3),])}.  There should be one unique value per subject
 #' @param id sum(n_i) vector of subject ids
 #' @param beta mean model parameter p-vector
 #' @param sigma.vc vector of variance components on standard deviation scale
@@ -598,20 +596,18 @@ LogLikeC.Score2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sig
 }
 
 #' Calculate the ascertainment corrected log likelihood and score
-#'
-#' Calculate the ascertainment corrected log likelihood and score
-#'
+#' @description
+#' Calculate the ascertainment corrected log likelihood and score for different designs
 #' @param params parameter vector c(beta, log(sigma0), log(sigma1), rho, sigmae)
 #' @param y response vector
 #' @param x sum(n_i) by p design matrix for fixed effects
 #' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
 #' @param id sum(n_i) vector of subject ids
-#' @param w.function sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[1,]), "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[1,]). "intercept2" (second intercept of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) %*% t.zi)[3,]), "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[2,]), "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[2,]), "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) %*% t.zi)[4,]) "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi %*% zi) %*% t.zi)[c(1,2),]) "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) %*% t.zi)[c(1,3),]) "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) %*% t.zi)[c(1,3),]).  There should be one unique value per subject
+#' @param w.function sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi %*% zi) %*% t.zi)[1,])}, "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi %*% zi) %*% t.zi)[1,])}. "intercept2" (second intercept of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \eqn{solve(t.zi %*% zi) %*% t.zi)[3,])}, "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi %*% zi) %*% t.zi)[2,])}, "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi %*% zi) %*% t.zi)[2,])}, "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \eqn{solve(t.zi %*% zi) %*% t.zi)[4,])} "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi %*% zi) %*% t.zi)[c(1,2),])} "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \eqn{solve(t.zi %*% zi) %*% t.zi)[c(1,3),])} "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \eqn{solve(t.zi %*% zi) %*% t.zi)[c(1,3),])}.  There should be one unique value per subject
 #' @param cutpoints A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions [bivariate Q_i: each row is a vector of length 4 c(xlow, xhigh, ylow, yhigh); univariate Q_i: each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high].  Each subject should have n_i rows of the same values.
 #' @param SampProb A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region [bivariate Q_i: each row is a vector of length 2 c(central region, outlying region); univariate Q_i: each row is a vector of length 3 with sampling probabilities for each region]. Each subject should have n_i rows of the same values.
 #' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
-#' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
-#'                   while fixing these columns at the values of params[ProfileCol]
+#' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters while fixing these columns at the values of params at the location of ProfileCol
 #' @param Keep.liC If TRUE outputs subject specific conditional log lileihoods to be used for the imputation procedure described in the AOAS paper keep z sum(n_i) by 2 design matric for random effects (intercept and slope)
 #' @return The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) and subject specific contributions to the conditional likelihood if Keep.liC=TRUE).
 #' @export
@@ -646,139 +642,6 @@ LogLikeCAndScore2 <- function(params, y, x, z, id, w.function, cutpoints, SampPr
     if (!is.na(ProfileCol)) GRAD[ProfileCol] <- 0
     attr(out,"gradient") <- GRAD
 
-    out
-}
-
-
-## If you do not want to use the ascertainment correction term in the conditional likelihood
-## set all SampProb values equal to each other.  This would be the case if you were doing
-## straightforward maximum likelihood (albeit computationally inefficient) or weighted likelihood.
-
-#' Fitting function: ACML or WL for a linear mixed effects model (random intercept and slope)
-#'
-#' @param formula.fixed formula for the fixed effects (of the form y~x)
-#' @param formula.random formula for the random effects (of the form ~z).  Right now this model only fits random intercept and slope models.
-#' @param data data frame that should contain everything in formula.fixed, formula.random, id, and Weights.  It does not include: w.function, cutpoints, SampProb
-#' @param id sum(n_i) vector of subject ids (a variable contained in data)
-#' @param w.function sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi* zi) * t.zi)[1,]), "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[1,]). "intercept2" (second intercept of the regression of the Yi ~
-##zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[3,]), "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[4,]) "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[c(1,2),]) "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) * t.zi)[c(1,3),]) "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[c(1,3),]).  There should be one unique value per subject.  There should be one unique value per subject but n_i replicates of that value.  Note that w.function should NOT be in the dat dataframe.
-#' @param InitVals starting values for c(beta, log(sigma0), log(sigma1), log((1+rho)/(1-rho)), log(sigmae))
-#' @param cutpoints A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions for individual subjects.  If using a low, medium, high, sampling scheme, this is a sum(n_i) by 2 matrix that must be a distinct object not contained in the dat dataframe.  Each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high.  If using a square doughnut design this should be sum(n_i) by 4 matrix (var1lower, var1upper, var2lower, var2upper). Each subject should have n_i rows of the same values.
-#' @param SampProb A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region. For low medium high sampling, each row is a vector of length 3 with sampling probabilities for each region. For bivariate stratum sampling each row is a vector of length 2 with sampling probabilities for the inner and outer strata. Each subject should have n_i rows of the same values.  Not in data.
-#' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  This should be a variable in the data dataframe. It should only be used if doing IPWL.  Note if doing IPWL, only use robcov (robust variances) and not covar.  If not doing IPWL, this must be a vectors of 1s.
-#' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maximizing the log likelihood for all other parameters
-#'                   while fixing these columns at the values of InitVals[ProfileCol]
-#' @return Ascertainment corrected Maximum likelihood: Ests, covar, LogL, code, robcov
-#' @importFrom stats model.frame
-#' @importFrom stats model.matrix
-#' @importFrom stats model.response
-#' @importFrom stats na.omit
-#' @importFrom stats nlm
-#' @importFrom stats pnorm
-#' @export
-acml.lmem2 <- function(formula.fixed,
-                       formula.random,
-                       data,
-                       id,
-                       w.function="mean",
-                       InitVals,
-                       cutpoints,
-                       SampProb,
-                       Weights,
-                       ProfileCol=NA){              ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
-
-    if(is.null(formula.random)) {stop('Specify the random effects portion of the model.  It is currently NULL.')}
-    if(!is.data.frame(data)) {
-        data <- as.data.frame(data)
-        warning('data converted to data.frame.')
-    }
-    terms = unique( c(all.vars(formula.fixed), all.vars(formula.random),
-                      as.character(substitute(id)), as.character(substitute(Weights))) )
-    data  = data[,terms]
-
-    if(any(is.na(data))) data = na.omit(data)
-
-    id0   =  as.character(substitute(id))
-    id    = data$id = data[ , id0 ]
-
-    fixed.f = model.frame(formula.fixed, data)
-    fixed.t = attr(fixed.f, "terms")
-    y      = model.response(fixed.f,'numeric')
-    uy     = unique(y)
-    x      = model.matrix(formula.fixed, fixed.f)
-
-    rand.f = model.frame(formula.random, data)
-    z      = model.matrix(formula.random, rand.f) ####### changed Aug19, 2019
-
-    #if (is.na(SampProb[1])) SampProb = c(1,1,1)
-    Weights0   =  as.character(substitute(Weights))
-    Weights    = data$Weights = data[ , Weights0 ]
-
-    acml.fit <- nlm(LogLikeCAndScore2, InitVals, y=y, x=x, z=z, id=id, w.function=w.function,
-                    cutpoints=cutpoints, SampProb=SampProb, Weights=Weights, ProfileCol=ProfileCol,
-                    stepmax=4, iterlim=250, check.analyticals = TRUE, print.level=0)
-
-    ## Calculate the observed information and then invert to get the covariance matrix
-    npar        <- length(acml.fit$estimate)
-    Hessian.eps <- 1e-7
-    eps.mtx     <- diag(rep(Hessian.eps, npar))
-    grad.at.max <- acml.fit$gradient
-    ObsInfo.tmp <- ObsInfo <- matrix(NA, npar, npar)
-
-    ## Observed Information
-    for (j in 1:npar){
-        temp            <- LogLikeCAndScore2(acml.fit$estimate+eps.mtx[j,], y=y, x=x, z=z, id=id,
-                                             w.function=w.function, cutpoints=cutpoints,
-                                             SampProb=SampProb,Weights=Weights, ProfileCol=ProfileCol)
-        ObsInfo.tmp[j,] <- (attr(temp,"gradient")-grad.at.max)/(Hessian.eps)
-    }
-    for (m in 1:npar){
-        for (n in 1:npar){ ObsInfo[m,n] <-  (ObsInfo.tmp[m,n]+ObsInfo.tmp[n,m])/2}}
-
-    ## Cheese part of the sandwich estimator
-    nbeta <- ncol(x)
-    nVCsd <- ncol(z)
-    nVCrho <- choose(nVCsd,2)
-    nERRsd <- npar-nbeta-nVCsd-nVCrho
-
-    beta.index   <- c(1:nbeta)
-    vc.sd.index  <- nbeta + (c(1:nVCsd))
-    vc.rho.index <- nbeta + nVCsd + (c(1:nVCrho))
-    err.sd.index <- nbeta + nVCsd + nVCrho + c(1:nERRsd)
-
-    Cheese <- LogLikeC.Score2(y=y, x=x, z=z, w.function=w.function,
-                              id=id, beta=acml.fit$estimate[beta.index],
-                              sigma.vc=exp(acml.fit$estimate[vc.sd.index]),
-                              rho.vc=   (exp(acml.fit$estimate[vc.rho.index])-1) / (exp(acml.fit$estimate[vc.rho.index])+1),
-                              sigma.e=exp(acml.fit$estimate[err.sd.index]),
-                              cutpoints=cutpoints,
-                              SampProb=SampProb,
-                              Weights=Weights,
-                              CheeseCalc=TRUE)
-
-    if (!is.na(ProfileCol)){
-        acml.fit$estimate <- acml.fit$estimate[-ProfileCol]
-        ObsInfo           <- ObsInfo[-ProfileCol, -ProfileCol]
-        Cheese            <- Cheese[-ProfileCol, -ProfileCol]
-    }
-
-
-    out              <- NULL
-    out$call         <- match.call()
-    out$coefficients <- acml.fit$estimate
-    out$covariance   <- solve(ObsInfo)
-    out$robcov       <- solve(ObsInfo)%*%Cheese%*%solve(ObsInfo)
-    out$logLik       <- -acml.fit$minimum
-    attr(out,'args') <- list(formula.fixed=formula.fixed,
-                             formula.random=formula.random,
-                             id=id,
-                             w.function=w.function,
-                             cutpoints = cutpoints,
-                             SampProb = SampProb,
-                             Weights=Weights,
-                             WeightsVar = Weights0,
-                             ProfileCol=ProfileCol)
-    if(kappa(out$covar) > 1e5) warning("Poorly Conditioned Model")
     out
 }
 
@@ -837,7 +700,7 @@ CreateSubjectData <- function(id,y,x,z,Weights,SampProb,cutpoints,w.function){
 #' @param cutpoints A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions for individual subjects.  If using a low, medium, high, sampling scheme, this is a sum(n_i) by 2 matrix that must be a distinct object not contained in the dat dataframe.  Each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high.  If using a square doughnut design this should be sum(n_i) by 4 matrix (var1lower, var1upper, var2lower, var2upper). Each subject should have n_i rows of the same values.
 #' @param SampProb A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region. For low medium high sampling, each row is a vector of length 3 with sampling probabilities for each region. For bivariate stratum sampling each row is a vector of length 2 with sampling probabilities for the inner and outer strata. Each subject should have n_i rows of the same values.  Not in data.
 #' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  This should be a variable in the data dataframe. It should only be used if doing IPWL.  Note if doing IPWL, only use robcov (robust variances) and not covar.  If not doing IPWL, this must be a vectors of 1s.
-#' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maximizing the log likelihood for all other parameters
+#' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
 #'                   while fixing these columns at the values of InitVals[ProfileCol]
 #' @return Ascertainment corrected Maximum likelihood: Ests, covar, logLik, code, robcov
 #' @importFrom stats model.frame
@@ -881,8 +744,13 @@ acml_internal <- function(formula,
     Weights    = data$Weights = data[ , Weights0]
   }
 
-  cutpoints   <- matrix(rep(design$cutpoints, length(y)), ncol = 2, byrow = T)
-  SampProb    <- matrix(rep(design$p_sample, length(y)), ncol = 3, byrow = T)
+  if (design$method == "bivariate"){
+    cutpoints   <- matrix(rep(design$cutpoints, length(y)), ncol = 4, byrow = T)
+    SampProb    <- matrix(rep(design$p_sample[1:2], length(y)), ncol = 2, byrow = T)
+  } else {
+    cutpoints   <- matrix(rep(design$cutpoints, length(y)), ncol = 2, byrow = T)
+    SampProb    <- matrix(rep(design$p_sample, length(y)), ncol = 3, byrow = T)
+  }
   w.function  <- rep(design$method, length(y))
 
   acml.fit <- nlm(LogLikeCAndScore2,

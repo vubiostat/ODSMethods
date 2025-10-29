@@ -25,7 +25,7 @@ acml_internal(formula, design, data, InitVals)
 
 \item{Weights}{Subject specific sampling weights.  A vector of length sum(n_i).  This should be a variable in the data dataframe. It should only be used if doing IPWL.  Note if doing IPWL, only use robcov (robust variances) and not covar.  If not doing IPWL, this must be a vectors of 1s.}
 
-\item{ProfileCol}{the column number(s) for which we want fixed at the value of param.  Maximizing the log likelihood for all other parameters
+\item{ProfileCol}{the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
 while fixing these columns at the values of InitVals[ProfileCol]}
 }
 \value{

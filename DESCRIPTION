@@ -36,5 +36,6 @@ Suggests:
 VignetteBuilder: knitr
 Imports:
 	mvtnorm,
-	checkmate
+	checkmate,
+	lme4
 RoxygenNote: 7.3.3
