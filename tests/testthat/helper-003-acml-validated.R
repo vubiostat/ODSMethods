@@ -66,6 +66,7 @@ av_ascertainment.correction.bivar <- function(yi, xi, zi, wi, beta, sigma0, sigm
 ## Calculate conditional likelihood for the univariate and bivariate sampling cases
 av_total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb, SampProbi){
   total <- 0
+  cat("Reference validation version breakdown\n")
   for(i in unique(id)){
     yi <- y[id==i]
     ni <- length(yi)
@@ -78,6 +79,9 @@ av_total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho,
       wi    <- matrix(wi, 1, ni)
       IPWi  <- 1/ unique(SampProbi[id==i])
       vi    <- av_vi.calc(zi, sigma0, sigma1, rho, sigmae)
+      cat("id[", i, "]")
+      cat(" subject=", av_subject.ll.lme(yi, xi, beta, vi)*IPWi)
+      cat(" ac=", av_ascertainment.correction(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb), "\n")
       total <- total + av_subject.ll.lme(yi, xi, beta, vi)*IPWi -
         av_ascertainment.correction(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
     }else{
@@ -181,7 +185,9 @@ av_gradient.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, r
     }else{
       wi   <- (solve(t(zi[,1:2])%*% zi[,1:2]) %*% t(zi[,1:2]))
       subject <- av_subject.gradient.ll.lme(yi, xi, zi, beta, sigma0, sigma1, rho, sigmae)
+      cat("subject[",id,"]=", subject)
       correct <- av_ascertainment.gradient.correction.bivar(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
+      cat(" correct[",id,"]=", correct, "\n")
       Gradi  <- subject[['gr']]*IPWi  - correct ## Gradient for ith subject: Notice the minus here versus the plus in the univariate case
       total  <- total + Gradi
     }
