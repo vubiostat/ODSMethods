@@ -371,6 +371,7 @@ logACi1q.score2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
     } else if (w.function %in% c("slope2")){     wi<- (solve(t.zi %*% zi) %*% t.zi)[4,]
     } else if (w.function=="mean"){     wi <- t(rep(1/ni, ni))
     }
+
     wi      <- matrix(wi, 1, ni)
 
     vi        <- vi.calc(zi, sigma.vc, rho.vc, sigma.e)
@@ -734,7 +735,7 @@ acml_internal <- function(formula,
   uy      = unique(y)
   x       = model.matrix(formula, fixed.f)
   z_id    = data.frame(id = design$model.frame[,design$id], design$z_mf)
-  z       = as.matrix(merge(data.frame(id = unique(id)), z_id, by = "id", all.x = TRUE))[,-1]
+  z       = as.matrix(z_id[z_id$id %in% unique(id),-1])
 
   #if (is.na(SampProb[1])) SampProb = c(1,1,1)
   if (is.null(design$weights)){
