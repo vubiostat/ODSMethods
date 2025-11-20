@@ -72,6 +72,10 @@ av_total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho,
     ni <- length(yi)
     xi <- x[id==i,]
     zi <- z[id==i,]
+    if(i == 3)
+    {
+      dput(list(yi=yi, ni=ni, xi=xi, zi=zi))
+    }
     if (w.function != "bivar"){
       if (w.function=="mean")      wi <- t(rep(1/ni, ni))
       if (w.function=="intercept") wi<- (solve(t(zi[,1:2])%*% zi[,1:2]) %*% t(zi[,1:2]))[1,]
@@ -79,9 +83,9 @@ av_total.nll.lme <- function(y, x, z, w.function, id, beta, sigma0, sigma1, rho,
       wi    <- matrix(wi, 1, ni)
       IPWi  <- 1/ unique(SampProbi[id==i])
       vi    <- av_vi.calc(zi, sigma0, sigma1, rho, sigmae)
-      cat("id[", i, "]")
-      cat(" subject=", av_subject.ll.lme(yi, xi, beta, vi)*IPWi)
-      cat(" ac=", av_ascertainment.correction(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb), "\n")
+      # cat("id[", i, "]")
+      # cat(" subject=", av_subject.ll.lme(yi, xi, beta, vi)*IPWi)
+      # cat(" ac=", av_ascertainment.correction(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb), "\n")
       total <- total + av_subject.ll.lme(yi, xi, beta, vi)*IPWi -
         av_ascertainment.correction(yi, xi, zi, wi, beta, sigma0, sigma1, rho, sigmae, cutpoints, SampProb)
     }else{
