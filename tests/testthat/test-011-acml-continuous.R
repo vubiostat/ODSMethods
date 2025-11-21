@@ -25,7 +25,7 @@ test_that("ACML continuous response mean",
 
   # Did it converge and return an object of the right type?
   expect_true(inherits(est, "acml"))
-  expect_equal(est$Code,   2) # <- This will change based on optimization utilized
+  expect_equal(est$Code,   1) # <- This will change based on optimization utilized
 
   valid <- validated_ll(gbti, coef(est), 'mean', c(0.1, 0.9), c(1, 0.25, 1))
 
@@ -42,7 +42,7 @@ test_that("ACML continuous response intercept",
                   quantiles=c(0.1, 0.9))
   )
 
-  expect_warning(
+  expect_silent(
     est <- acml(Response ~ Month*Genotype,
                 design,
                 gbti,
@@ -50,7 +50,7 @@ test_that("ACML continuous response intercept",
   )
 
   expect_true(inherits(est, "acml"))
-  expect_equal(est$Code,  3) # <- This will change based on optimization utilized
+  expect_equal(est$Code,  1) # <- This will change based on optimization utilized
 
   valid <- validated_ll(gbti, coef(est), 'intercept', c(0.1, 0.9), c(1, 0.25, 1))
 
@@ -67,7 +67,7 @@ test_that("ACML continuous response slope",
                   quantiles=c(0.1, 0.9))
   )
 
-  expect_warning(
+  expect_silent(
     est <- acml(Response ~ Month*Genotype,
                design,
                gbti,
@@ -75,7 +75,7 @@ test_that("ACML continuous response slope",
   )
 
   expect_true(inherits(est, "acml"))
-  expect_equal(est$Code,3) # This changes based on method
+  expect_equal(est$Code,1) # This changes based on method
   valid <- validated_ll(gbti, coef(est), 'slope', c(0.1, 0.9), c(1, 0.25, 1))
 
   expect_close(logLik(est), valid)
@@ -100,7 +100,7 @@ test_that("ACML continuous response bivariate",
   )
 
   expect_true(inherits(est, "acml"))
-  expect_equal(est$Code,   2) # This changes based on method
+  expect_equal(est$Code,   1) # This changes based on method
 
   valid <- validated_ll(gbti, coef(est), 'bivar', c(0.1, 0.9), c(1, 0.25, 1))
 
