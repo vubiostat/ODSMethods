@@ -1,6 +1,6 @@
 ---
 title: "ODSMethods"
-author: "Shawn Garbett, Lucy Bailu, Jonathan Schildcrout"
+author: "Shawn Garbett, Lucy Yan, Jonathan Schildcrout"
 date: "2025-11-22"
 output: rmarkdown::html_vignette
 vignette: >
@@ -161,7 +161,7 @@ plot(design1)
 ### Fit the BLUP Model
 
 ```{r blupacml, R.options=list(width=100)}
-est <- acml(Response ~ Month*Genotype, design, data = data)
+est <- acml(Response ~ Month*Genotype, design1, data = data)
 summary(est, digits=3)
 ```
 
