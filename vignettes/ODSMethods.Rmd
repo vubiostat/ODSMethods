@@ -223,8 +223,8 @@ for (i in 1:5) {
 }
 cov_prob = apply(rob_se_covered, 2, mean)
 
-res_int <- data.frame(var = c("beta_0","beta_s","beta_t", "beta_c", "beta_st"), coef_est = round(apply(coef_int, 2, mean),2), sd_int = round(sd_int,2),  bias_int = paste0(round(bias_int,2), "%"), rob_se_est = round(apply(rob_se_int, 2, mean),2), cov_prob = paste0(round(cov_prob,2),"%"), bias_se_int = paste0(round(bias_se_int,2), "%"), bias_rob_se_int = paste0(round(bias_rob_se_int,2), "%"))
-kable(res_int, row.names = F, col.names = c("Variable", "Mean of Coef Est", "SD of Coef Est", "Robust SE Est","Coverage Prob", "Coef Est % Bias", "SE Est % Bias", "Robust SE % Bias")) %>%
+res_int <- data.frame(var = c("beta_0","beta_s","beta_t", "beta_c", "beta_st"),coef_est = round(apply(coef_int, 2, mean),2), bias_int = paste0(round(bias_int,2), "%"),  sd_int = round(sd_int,2), rob_se_est = round(apply(rob_se_int, 2, mean),2), cov_prob = paste0(round(cov_prob,4)*100,"%"), bias_se_int = paste0(round(bias_se_int,2), "%"), bias_rob_se_int = paste0(round(bias_rob_se_int,2), "%"))
+kable(res_int, row.names = F, col.names = c("Variable", "Mean of Coef Est", "Coef Est % Bias", "SD of Coef Est", "Robust SE Est","Coverage Prob", "SE Est % Bias", "Robust SE % Bias")) %>%
   kable_styling(full_width = F) %>%
   column_spec(1, bold = T) %>%
   kableExtra::kable_styling(position = "left")
