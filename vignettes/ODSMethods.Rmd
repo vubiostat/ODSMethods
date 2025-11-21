@@ -1,7 +1,7 @@
 ---
 title: "ODSMethods"
 author: "Shawn Garbett, Lucy Bailu, Jonathan Schildcrout"
-date: "2025-06-30"
+date: "2025-11-22"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{ODSMethods}
@@ -74,11 +74,10 @@ data(gbti)
 
 ### Specify the Design
 
-To specify the design, we'll using a simple intercept sampling model. The
-design to sample assumes that the slope is the most informative. One
+To specify the design, we'll using a simple intercept sampling model for this example.
+This example design to sample assumes that the slope is the most informative. One
 can plot the result of this design versus it's quantiles. 
 
-#### ODS Design
 ```{r, fig.dim=c(6,4) }
 design <- ods(Response ~ Month|Patient, 'slope',
             p_sample=c(1, 0.25, 1),
@@ -87,14 +86,6 @@ summary(design)
 plot(design)
 ```
 
-#### BDS Design
-```{r, fig.dim=c(6,4) }
-design1 <- bds(Response ~ Month|Patient, 'slope',
-              p_sample=c(1, 0.25, 1),
-              data=gbti, quantiles=c(0.1, 0.9))
-summary(design1)
-plot(design1)
-```
 
 ## Sample
 
@@ -111,7 +102,7 @@ specifying the fixed effects. The random effects will be pulled from the
 specified design. 
 
 ```{r acml, R.options=list(width=100)}
-est <- acml(Response ~ Month*Genotype, design1, data = data)
+est <- acml(Response ~ Month*Genotype, design, data = data)
 summary(est, digits=3)
 ```
 
@@ -121,22 +112,57 @@ One can also look at the coefficients transformed back to the original data scal
 summary(est, digits=3, transform=TRUE)
 ```
 
-## Visual summary
+### Other designs are possible
 
-Let's look at a visual summary of the residuals to see that assumptions are met.
+#### Mean Design
 
-```{r plot_acml}
-plot(est, which=1:2)
+```{r, fig.dim=c(6,4) }
+design <- ods(Response ~ Month|Patient, 'mean',
+            p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9))
+summary(design)
+plot(design)
 ```
 
-From this one can see, excellent conformance to the normality assumption.
+#### Intercept Design
 
-Further, it's good to check the same assumption for conditional effects.
-
-```{r plot_diagnostics}
-plot(est, which=3:4)
+```{r, fig.dim=c(6,4) }
+design <- ods(Response ~ Month|Patient, 'intercept',
+            p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9))
+summary(design)
+plot(design)
 ```
 
+#### Bivariate Design
+
+Also known as "the square donut". 
+
+```{r, fig.dim=c(6,4) }
+design <- ods(Response ~ Month|Patient, 'bivariate',
+            p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9))
+summary(design)
+plot(design)
+```
+
+## Best Linear Unbiased Predictor Design (BLUP)
+
+It is also possible to fit using BLUP designs.
+
+```{r, fig.dim=c(6,4) }
+design1 <- bds(Response ~ Month|Patient, 'slope',
+              p_sample=c(1, 0.25, 1),
+              data=gbti, quantiles=c(0.1, 0.9))
+summary(design1)
+plot(design1)
+```
+### Fit the BLUP Model
+
+```{r blupacml, R.options=list(width=100)}
+est <- acml(Response ~ Month*Genotype, design, data = data)
+summary(est, digits=3)
+```
 
 ## References
 
