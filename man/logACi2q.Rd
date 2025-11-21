@@ -4,9 +4,33 @@
 \alias{logACi2q}
 \title{Log of the Ascertainment correction piece for bivariate sampling}
 \usage{
-logACi2q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb)
+logACi2q(
+  yi,
+  xi,
+  zi,
+  wi,
+  beta,
+  sigma.vc,
+  rho.vc,
+  sigma.e,
+  cutpoints,
+  SampProb,
+  mui.phase1
+)
 
-logACi2q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb)
+logACi2q(
+  yi,
+  xi,
+  zi,
+  wi,
+  beta,
+  sigma.vc,
+  rho.vc,
+  sigma.e,
+  cutpoints,
+  SampProb,
+  mui.phase1
+)
 }
 \arguments{
 \item{yi}{n_i-response vector}
@@ -28,6 +52,8 @@ logACi2q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb)
 \item{cutpoints}{cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))}
 
 \item{SampProb}{Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).}
+
+\item{mui.phase1}{linear predictor from phase 1 that is used to calculate mu_q if we are doing BLUP based sampling.  If doing ODS then this is a vector of 0s}
 }
 \value{
 log transformed ascertainment correction

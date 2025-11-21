@@ -86,12 +86,13 @@ ACi2q <- function(cutpoints, SampProb, mu_q, sigma_q){
 #' @param sigma.e std dev of the measurement error distribution
 #' @param cutpoints cutpoints defining the sampling regions. (a vector of length 2)
 #' @param SampProb Sampling probabilities from within each region (vector of length 3).
+#' @param mui.phase1 linear predictor from phase 1 that is used to calculate mu_q if we are doing BLUP based sampling.  If doing ODS then this is a vector of 0s
 #' @return log transformed ascertainment correction
 #' @export
-logACi1q <- function(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb){
+logACi1q <- function(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb, mui.phase1){
     vi      <- vi.calc(zi, sigma.vc, rho.vc, sigma.e)
     mu      <- xi %*% beta
-    mu_q    <- (wi %*% mu)[,1]
+    mu_q    = (wi %*% (mu-mui.phase1))[,1]
     sigma_q <- sqrt((wi %*% vi %*% t(wi))[1,1])
     return(list(vi=vi, logACi=log(ACi1q(cutpoints, SampProb, mu_q, sigma_q))))
 }
@@ -111,12 +112,13 @@ logACi1q <- function(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints,
 #' @param sigma.e std dev of the measurement error distribution
 #' @param cutpoints cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
 #' @param SampProb Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
+#' @param mui.phase1 linear predictor from phase 1 that is used to calculate mu_q if we are doing BLUP based sampling.  If doing ODS then this is a vector of 0s
 #' @return log transformed ascertainment correction
 #' @export
-logACi2q <- function(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb){
+logACi2q <- function(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb, mui.phase1){
     vi      <- vi.calc(zi, sigma.vc, rho.vc, sigma.e)
     mu      <- xi %*% beta
-    mu_q    <- as.vector(wi %*% mu)
+    mu_q    = as.vector(wi %*% (mu - mui.phase1))
     sigma_q <- wi %*% vi %*% t(wi)
     ## for some reason the upper and lower triangles to not always equal, so I am taking their
     ## average.  Not sure this is a problem here
@@ -160,12 +162,14 @@ li.lme <- function(yi, xi, beta, vi){
 #' @param SampProb A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region [bivariate Q_i: each row is a vector of length 2 c(central region, outlying region); univariate Q_i: each row is a vector of length 3 with sampling probabilities for each region]. Each subject should have n_i rows of the same values.
 #' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
 #' @param Keep.liC If FALSE, the function returns the conditional log likelihood across all subjects.  If TRUE, subject specific contributions and exponentiated subject specific ascertainment corrections are returned in a list.
+#' @param xcol.phase1 This only applied if doing BLUP-based sampling.  It is the column numbers of the design matrix x that were used in phase 1 to conduct analyses from which BLUP estimates are calculated. e.g. xcol.phase1 = c(1,2,4) if the first second and fourth columns of x were used in phase 1
+#' @param ests.phase1 This only applied if doing BLUP-based sampling.  These are the estimates from the phase 1 analysis.  It is assumed that the columns of the design matrix in phase 1 are a subset of those in phase II.  The estimates should be ordered in the following way and appropriately transformed: (beta, log(variance component SDs), FisherZ(correlation parameters in random effects covariance matrix), log(error SDs)).  The transformed variance component SDs and correlations should be ordered the same way they are ordered in the phase II model
 #' @return If Keep.liC=FALSE, conditional log likelihood.  If Keep.liC=TRUE, a two-element list that contains subject specific likelihood contributions and exponentiated ascertainment corrections.
 #' @export
 #'
-LogLikeC2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb, Weights, Keep.liC=FALSE){
+LogLikeC2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb, Weights, Keep.liC=FALSE, xcol.phase1, ests.phase1){
 
-    subjectData    <- CreateSubjectData(id=id,y=y,x=x,z=z,Weights=Weights,SampProb=SampProb,cutpoints=cutpoints,w.function=w.function)
+    subjectData    <- CreateSubjectData(id=id,y=y,x=x,z=z,Weights=Weights,SampProb=SampProb,cutpoints=cutpoints,w.function=w.function, xcol.phase1=xcol.phase1, ests.phase1=ests.phase1)
     liC.and.logACi <- lapply(subjectData, LogLikeiC2, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e)
 
     if (Keep.liC == FALSE){out <- -1*Reduce('+', liC.and.logACi)[1]  ## sum ss contributions to liC
@@ -192,7 +196,7 @@ LogLikeC2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sigma.e, 
 #' @export
 #'
 #'
-LogLikeiC2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
+LogLikeiC2 = function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
     yi          <- subjectData[["yi"]]
     xi          <- subjectData[["xi"]]
     zi          <- subjectData[["zi"]]
@@ -200,6 +204,8 @@ LogLikeiC2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
     w.function  <- subjectData[["w.function.i"]]
     SampProb    <- subjectData[["SampProb.i"]]
     cutpoints   <- subjectData[["cutpoints.i"]]
+    wi          =  subjectData[["wi"]]
+    mui.phase1  =  subjectData[["mui.phase1"]]
     ni          <- length(yi)
     t.zi        <- t(zi)
 ##########
@@ -215,7 +221,7 @@ LogLikeiC2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
         } else if (w.function=="mean"){                    wi <- t(rep(1/ni, ni))
         }
         wi         <- matrix(wi, 1, ni)
-        tmp        <- logACi1q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb)
+        tmp        = logACi1q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb, mui.phase1)
         logACi     <- tmp[["logACi"]]
         liC        <- li.lme(yi, xi, beta, tmp[["vi"]])*Weights.i - logACi
     }else {
@@ -223,8 +229,8 @@ LogLikeiC2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
         } else if (w.function %in% c("mvints")){ wi <- wi.tmp[c(1,3),]
         } else if (w.function %in% c("mvslps")){ wi <- wi.tmp[c(2,4),]
         }
-    tmp        <- logACi2q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb)
-    logACi     <- tmp[["logACi"]]
+      tmp        = logACi2q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb, mui.phase1)
+      logACi     <- tmp[["logACi"]]
     liC        <- li.lme(yi, xi, beta, tmp[["vi"]])*Weights.i - logACi
     }
 ##########
@@ -547,9 +553,11 @@ li.lme.score2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
 #' @param SampProb A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region [bivariate Q_i: each row is a vector of length 2 c(central region, outlying region); univariate Q_i: each row is a vector of length 3 with sampling probabilities for each region]. Each subject should have n_i rows of the same values.
 #' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
 #' @param CheeseCalc If FALSE, the function returns the gradient of the conditional log likelihood across all subjects.  If TRUE, the cheese part of the sandwich esitmator is calculated.
+#' @param xcol.phase1 This only applied if doing BLUP-based sampling.  It is the column numbers of the design matrix x that were used in phase 1 to conduct analyses from which BLUP estimates are calculated. e.g. xcol.phase1 = c(1,2,4) if the first second and fourth columns of x were used in phase 1
+#' @param ests.phase1 This only applied if doing BLUP-based sampling.  These are the estimates from the phase 1 analysis.  It is assumed that the columns of the design matrix in phase 1 are a subset of those in phase II.  The estimates should be ordered in the following way and appropriately transformed: (beta, log(variance component SDs), FisherZ(correlation parameters in random effects covariance matrix), log(error SDs)).  The transformed variance component SDs and correlations should be ordered the same way they are ordered in the phase II model
 #' @return If CheeseCalc=FALSE, gradient of conditional log likelihood.  If CheeseCalc=TRUE, the cheese part of the sandwich estimator is calculated.
 #' @export
-LogLikeC.Score2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb, Weights, CheeseCalc=FALSE){
+LogLikeC.Score2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb, Weights, CheeseCalc=FALSE, xcol.phase1, ests.phase1){
     param.vec <- c(beta, log(sigma.vc),log((1+rho.vc)/(1-rho.vc)),log(sigma.e))
     #print(c("blahblah", param.vec))
     npar     <- length(param.vec)
@@ -565,7 +573,8 @@ LogLikeC.Score2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sig
     err.sd.index  <- len.beta + len.sigma.vc + len.rho.vc + c(1:len.sigma.e)
     notbeta.index <- c(vc.sd.index,vc.rho.index,err.sd.index)
 
-    subjectData <- CreateSubjectData(id=id,y=y,x=x,z=z,Weights=Weights,SampProb=SampProb,cutpoints=cutpoints,w.function=w.function)
+    subjectData = CreateSubjectData(id=id,y=y,x=x,z=z,Weights=Weights,SampProb=SampProb,cutpoints=cutpoints,
+                                    w.function=w.function, xcol.phase1=xcol.phase1, ests.phase1=ests.phase1)
 
     UncorrectedScorei <- lapply(subjectData, li.lme.score2, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e)
     Gradienti         <- lapply(UncorrectedScorei, function(x) x[['gr']]) ## create a list of ss contributions to gradient
@@ -610,9 +619,11 @@ LogLikeC.Score2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sig
 #' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
 #' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters while fixing these columns at the values of params at the location of ProfileCol
 #' @param Keep.liC If TRUE outputs subject specific conditional log lileihoods to be used for the imputation procedure described in the AOAS paper keep z sum(n_i) by 2 design matric for random effects (intercept and slope)
+#' @param xcol.phase1 This only applied if doing BLUP-based sampling.  It is the column numbers of the design matrix x that were used in phase 1 to conduct analyses from which BLUP estimates are calculated. e.g. xcol.phase1 = c(1,2,4) if the first second and fourth columns of x were used in phase 1
+#' @param ests.phase1 This only applied if doing BLUP-based sampling.  These are the estimates from the phase 1 analysis.  It is assumed that the columns of the design matrix in phase 1 are a subset of those in phase II.  The estimates should be ordered in the following way and appropriately transformed: (beta, log(variance component SDs), FisherZ(correlation parameters in random effects covariance matrix), log(error SDs)).  The transformed variance component SDs and correlations should be ordered the same way they are ordered in the phase II model
 #' @return The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) and subject specific contributions to the conditional likelihood if Keep.liC=TRUE).
 #' @export
-LogLikeCAndScore2 <- function(params, y, x, z, id, w.function, cutpoints, SampProb, Weights, ProfileCol=NA, Keep.liC=FALSE){
+LogLikeCAndScore2 <- function(params, y, x, z, id, w.function, cutpoints, SampProb, Weights, ProfileCol=NA, Keep.liC=FALSE, xcol.phase1, ests.phase1){
     npar   <- length(params)
 
     nbeta <- ncol(x)
@@ -630,10 +641,10 @@ LogLikeCAndScore2 <- function(params, y, x, z, id, w.function, cutpoints, SampPr
     rho.vc   <- (exp(params[vc.rho.index])-1) / (exp(params[vc.rho.index])+1)
     sigma.e  <- exp(params[err.sd.index])
 
-    out     <- LogLikeC2( y=y, x=x, z=z, w.function=w.function, id=id, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e, cutpoints=cutpoints,
-                          SampProb=SampProb, Weights=Weights, Keep.liC=Keep.liC)
-    GRAD    <- LogLikeC.Score2(y=y, x=x, z=z, w.function=w.function, id=id, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e, cutpoints=cutpoints,
-                               SampProb=SampProb, Weights=Weights)
+    out     = LogLikeC2( y=y, x=x, z=z, w.function=w.function, id=id, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e, cutpoints=cutpoints,
+                         SampProb=SampProb, Weights=Weights, Keep.liC=Keep.liC, xcol.phase1=xcol.phase1, ests.phase1=ests.phase1)
+    GRAD    = LogLikeC.Score2(y=y, x=x, z=z, w.function=w.function, id=id, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e, cutpoints=cutpoints,
+                              SampProb=SampProb, Weights=Weights, xcol.phase1=xcol.phase1, ests.phase1=ests.phase1)
     ## Need to use the chain rule: note that params is on the unconstrained
     ## scale but GRAD was calculated on the constrained parameters
     GRAD[vc.sd.index]  <- GRAD[vc.sd.index]*exp(params[vc.sd.index])
@@ -656,33 +667,121 @@ LogLikeCAndScore2 <- function(params, y, x, z, id, w.function, cutpoints, SampPr
 #' @param SampProb A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region [bivariate Q_i: each row is a vector of length 2 c(central region, outlying region); univariate Q_i: each row is a vector of length 3 with sampling probabilities for each region]. Each subject should have n_i rows of the same values.
 #' @param w.function sum(n_i) vector with possible values that include "mean" "intercept" "slope" and "bivariate."  There should be one unique value per subject
 #' @param cutpoints A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions [bivariate Q_i: each row is a vector of length 4 c(xlow, xhigh, ylow, yhigh); univariate Q_i: each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high].  Each subject should have n_i rows of the same values.
+#' @param xcol.phase1 This only applied if doing BLUP-based sampling.  It is the column numbers of the design matrix x that were used in phase 1 to conduct analyses from which BLUP estimates are calculated. e.g. xcol.phase1 = c(1,2,4) if the first second and fourth columns of x were used in phase 1
+#' @param ests.phase1 This only applied if doing BLUP-based sampling.  These are the estimates from the phase 1 analysis.  It is assumed that the columns of the design matrix in phase 1 are a subset of those in phase II.  The estimates should be ordered in the following way and appropriately transformed: (beta, log(variance component SDs), FisherZ(correlation parameters in random effects covariance matrix), log(error SDs)).  The transformed variance component SDs and correlations should be ordered the same way they are ordered in the phase II model
 #' @export
-CreateSubjectData <- function(id,y,x,z,Weights,SampProb,cutpoints,w.function){
-    id.tmp        <- split(id,id)
-    y.tmp         <- split(y,id)
-    x.tmp         <- split(x,id)
-    z.tmp         <- split(z,id)
-    Weights.tmp <- split(Weights,id)
-    SampProb.tmp  <- split(SampProb,id)
-    cutpoints.tmp  <- split(cutpoints,id)
-    w.function.tmp  <- split(w.function,id)
+CreateSubjectData <- function(id,y,x,z,Weights,SampProb,cutpoints,w.function, xcol.phase1, ests.phase1){
+  #xcol.phase1 = c(1,2,4)
+  #ests.phase1 = CoefPhase1
+  ################ Only under BLUP Sampling
+  if (!is.null(xcol.phase1)){
+    npar.phase1   = length(ests.phase1)
+    x.phase1      = x[,xcol.phase1]
+    nbeta.phase1  = ncol(x.phase1)
+    nVCsd.phase1  = ncol(z)
+    nVCrho.phase1 = choose(nVCsd.phase1,2)
+    nERRsd.phase1 = npar.phase1-nbeta.phase1-nVCsd.phase1-nVCrho.phase1
 
-    subjectData <- vector('list', length=length(unique(id)))
-    subjectData <- list()
-    uid <- as.character(unique(id))
-    for(j in seq(along=uid)){
-        i <- uid[j]
-        subjectData[[j]] <- list(idi          = as.character(unique(id.tmp[[i]])),
-                                 xi           = matrix(x.tmp[[i]], ncol=ncol(x)),
-                                 zi           = matrix(z.tmp[[i]], ncol=ncol(z)),
-                                 yi           = y.tmp[[i]],
-                                 Weights.i    = unique(Weights.tmp[[i]]),
-                                 SampProb.i   = matrix(SampProb.tmp[[i]], ncol=ncol(SampProb))[1,],
-                                 w.function.i = as.character(unique(w.function.tmp[[i]])),
-                                 cutpoints.i  = matrix(cutpoints.tmp[[i]], ncol=ncol(cutpoints))[1,])
+    beta.index.phase1   = c(1:nbeta.phase1)
+    vc.sd.index.phase1  = nbeta.phase1 + (c(1:nVCsd.phase1))
+    vc.rho.index.phase1 = nbeta.phase1 + nVCsd.phase1 + (c(1:nVCrho.phase1))
+    err.sd.index.phase1 = nbeta.phase1 + nVCsd.phase1 + nVCrho.phase1 + c(1:nERRsd.phase1)
+
+    beta.phase1     = ests.phase1[beta.index.phase1]
+    sigma.vc.phase1 = exp(ests.phase1[vc.sd.index.phase1])
+    rho.vc.phase1   = (exp(ests.phase1[vc.rho.index.phase1])-1) / (exp(ests.phase1[vc.rho.index.phase1])+1)
+    sigma.e.phase1  = exp(ests.phase1[err.sd.index.phase1])
+
+    D.tmp         = diag(sigma.vc.phase1)
+    b             = matrix(0,nVCsd.phase1,nVCsd.phase1)
+    b[lower.tri(b, diag=FALSE)] = rho.vc.phase1
+    R.tmp         = t(b)+b+diag(rep(1,nVCsd.phase1))
+    D.phase1      = D.tmp %*% R.tmp %*% D.tmp
+    x.phase1.tmp  = split(x.phase1, id)
+    ncol.x.phase1 = ncol(x.phase1)
+  }
+
+  id.tmp          = split(id,id)
+  y.tmp           = split(y,id)
+  x.tmp           = split(x,id)
+  z.tmp           = split(z,id)
+  Weights.tmp     = split(Weights,id)
+  SampProb.tmp    = split(SampProb,id)
+  cutpoints.tmp   = split(cutpoints,id)
+  w.function.tmp  = split(w.function,id)
+
+  ncol.x         = ncol(x)
+  ncol.z         = ncol(z)
+  ncol.SampProb  = ncol(SampProb)
+  ncol.cutpoints = ncol(cutpoints)
+
+  subjectData = vector('list', length=length(unique(id)))
+  subjectData = list()
+  uid = as.character(unique(id))
+  for(j in seq(along=uid)){
+
+    i           = uid[j]
+    zi          = matrix(z.tmp[[i]], ncol=ncol.z)
+    xi          = matrix(x.tmp[[i]], ncol=ncol.x)
+    yi          = y.tmp[[i]]
+    w.functioni = unique(w.function.tmp[[i]])
+    t.zi        = t(zi)
+    ni          = length(yi)
+    ######### Calculate wi and mui.phase1 under blup sampling schemes
+    if (!is.null(xcol.phase1)){
+      xi.phase1  = matrix(x.phase1.tmp[[i]], ncol=ncol.x.phase1)
+      Vi.phase1  = vi.calc(zi=zi, sigma.vc=sigma.vc.phase1, rho.vc=rho.vc.phase1, sigma.e=sigma.e.phase1)
+      wi.tmp     = D.phase1 %*% t.zi %*% solve(Vi.phase1)
+      mui.phase1 = xi.phase1 %*% beta.phase1
+      ####################################################
+      if (!(w.functioni %in% c("blup.bivariate", "blup.mvints", "blup.mvslps"))){
+        if (w.functioni %in% c("blup.intercept", "blup.intercept1")){ wi = wi.tmp[1,]
+        } else if (w.functioni %in% c("blup.slope", "blup.slope1")){  wi = wi.tmp[2,]
+        } else if (w.functioni %in% c("blup.intercept2")){            wi = wi.tmp[3,]
+        } else if (w.functioni %in% c("blup.slope2")){                wi = wi.tmp[4,]
+        }
+        wi         = matrix(wi, 1, ni)
+        # wi         = matrix(wi.tmp, 1, ni) # CHECKME
+      }else if (w.functioni %in% c("blup.bivariate")){ wi = wi.tmp[c(1,2),]
+      } else if (w.functioni %in% c("blup.mvints")){ wi = wi.tmp[c(1,3),]
+      } else if (w.functioni %in% c("blup.mvslps")){ wi = wi.tmp[c(2,4),]
+      } else {stop("You have not chosen an appropriate w.function for BLUP sampling")
+      }
+      ####################################################
+      ######### Calculate wi and mui.phase1 (which equals rep(0,nrow(zi))) under ODS schemes
+    }else{
+      wi.tmp     = solve(t.zi %*% zi) %*% t.zi
+      mui.phase1 = rep(0, nrow(xi))
+      ####################################################
+      if (!(w.functioni %in% c("bivariate", "mvints", "mvslps"))){
+        if (w.functioni %in% c("intercept", "intercept1")){ wi = wi.tmp[1,]
+        } else if (w.functioni %in% c("slope", "slope1")){  wi = wi.tmp[2,]
+        } else if (w.functioni %in% c("intercept2")){       wi = wi.tmp[3,]
+        } else if (w.functioni %in% c("slope2")){           wi = wi.tmp[4,]
+        } else if (w.functioni=="mean"){                    wi = t(rep(1/ni, ni))
+        }
+        wi         = matrix(wi, 1, ni)
+        # wi         = matrix(wi.tmp, 1, ni) # CHECKME
+      }else if (w.functioni %in% c("bivariate")){ wi = wi.tmp[c(1,2),]
+      } else if (w.functioni %in% c("mvints")){ wi = wi.tmp[c(1,3),]
+      } else if (w.functioni %in% c("mvslps")){ wi = wi.tmp[c(2,4),]
+      } else {stop("You have not chosen an appropriate w.function for ODS sampling")
+      }
+      ####################################################
     }
-    names(subjectData) <- uid
-    subjectData
+    subjectData[[j]] = list(idi          = as.character(unique(id.tmp[[i]])),
+                            xi           = xi,
+                            zi           = zi,
+                            yi           = yi,
+                            wi           = wi,
+                            mui.phase1   = mui.phase1,
+                            Weights.i    = unique(Weights.tmp[[i]]),
+                            SampProb.i   = matrix(SampProb.tmp[[i]], ncol=ncol.SampProb)[1,],
+                            w.function.i = as.character(w.functioni),
+                            cutpoints.i  = matrix(cutpoints.tmp[[i]], ncol=ncol.cutpoints)[1,])
+  }
+  names(subjectData) = uid
+  subjectData
 }
 
 ## If you do not want to use the ascertainment correction term in the conditional likelihood
@@ -765,6 +864,8 @@ acml_internal <- function(formula,
                   SampProb=SampProb,
                   Weights=Weights,
                   ProfileCol=design$ProfileCol,
+                  xcol.phase1=design$xcol.phase1,
+                  ests.phase1=design$ests.phase1,
                   stepmax=4, iterlim=250,
                   check.analyticals = TRUE, print.level=0)
 
@@ -787,6 +888,8 @@ acml_internal <- function(formula,
                                          cutpoints=cutpoints,
                                          SampProb=SampProb,
                                          Weights=Weights,
+                                         xcol.phase1=design$xcol.phase1,
+                                         ests.phase1=design$ests.phase1,
                                          ProfileCol=design$ProfileCol)
     ObsInfo.tmp[j,] <- (attr(temp,"gradient")-grad.at.max)/(Hessian.eps)
   }
@@ -815,7 +918,9 @@ acml_internal <- function(formula,
                             rho.vc=   (exp(acml.fit$estimate[vc.rho.index])-1) / (exp(acml.fit$estimate[vc.rho.index])+1),
                             sigma.e=exp(acml.fit$estimate[err.sd.index]),
                             Weights=Weights,
-                            CheeseCalc=TRUE)
+                            CheeseCalc=TRUE,
+                            xcol.phase1=design$xcol.phase1,
+                            ests.phase1=design$ests.phase1)
 
   if (!is.na(design$ProfileCol)){
     acml.fit$estimate <- acml.fit$estimate[-design$ProfileCol]
@@ -1303,6 +1408,11 @@ acml <- function(
     stop("must have same time variable as design")
 
   mm <- model.matrix(formula, data)
+
+  # mm <- model.matrix(formula2, mf, na.action=na.action)
+  assert_true(all(as.character(data[,design$id]) %in% names(design$p_sample_i)),
+              .var.name='Group variables provided to acml that were not part of design', add=coll)
+  reportAssertions(coll)
 
   fit <- acml_internal(
     formula  = formula,

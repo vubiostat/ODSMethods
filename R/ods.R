@@ -247,7 +247,9 @@ ods <- function(
   subset    = NULL,
   weights   = NULL,
   na.action = getOption('na.action'),
-  ProfileCol= NULL     ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
+  ProfileCol= NULL,     ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
+  xcol.phase1 = NULL,  ## only used for blup sampling
+  ests.phase1 = NULL   ## only used for blup sampling
   # ... #FIXME: this doesn't work for now
 )
 {
@@ -341,6 +343,9 @@ ods <- function(
     ProfileCol = NA
   }
 
+  ests.phase1 = NULL
+  ests.phase1 = NULL
+
   # Return design object
   structure(list(
       call        = cl,
@@ -359,8 +364,10 @@ ods <- function(
       z_mf        = z_mf,      #FIXME: only appropriate for one intercept and one slope
       weights     = weights,
       n_rand      = 2,     # Number of random effects, slope + intercept
-      ProfileCol  = ProfileCol ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
-    ),
+      ProfileCol  = ProfileCol, ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
+      xcol.phase1 = xcol.phase1,  ## only used for blup sampling
+      ests.phase1 = ests.phase1   ## only used for blup sampling
+      ),
     class="odsdesign"
   )
 }

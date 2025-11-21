@@ -15,7 +15,9 @@ LogLikeCAndScore2(
   SampProb,
   Weights,
   ProfileCol = NA,
-  Keep.liC = FALSE
+  Keep.liC = FALSE,
+  xcol.phase1,
+  ests.phase1
 )
 
 LogLikeCAndScore2(
@@ -29,7 +31,9 @@ LogLikeCAndScore2(
   SampProb,
   Weights,
   ProfileCol = NA,
-  Keep.liC = FALSE
+  Keep.liC = FALSE,
+  xcol.phase1,
+  ests.phase1
 )
 }
 \arguments{
@@ -54,6 +58,10 @@ LogLikeCAndScore2(
 \item{ProfileCol}{the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters while fixing these columns at the values of params at the location of ProfileCol}
 
 \item{Keep.liC}{If TRUE outputs subject specific conditional log lileihoods to be used for the imputation procedure described in the AOAS paper keep z sum(n_i) by 2 design matric for random effects (intercept and slope)}
+
+\item{xcol.phase1}{This only applied if doing BLUP-based sampling.  It is the column numbers of the design matrix x that were used in phase 1 to conduct analyses from which BLUP estimates are calculated. e.g. xcol.phase1 = c(1,2,4) if the first second and fourth columns of x were used in phase 1}
+
+\item{ests.phase1}{This only applied if doing BLUP-based sampling.  These are the estimates from the phase 1 analysis.  It is assumed that the columns of the design matrix in phase 1 are a subset of those in phase II.  The estimates should be ordered in the following way and appropriately transformed: (beta, log(variance component SDs), FisherZ(correlation parameters in random effects covariance matrix), log(error SDs)).  The transformed variance component SDs and correlations should be ordered the same way they are ordered in the phase II model}
 }
 \value{
 The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) and subject specific contributions to the conditional likelihood if Keep.liC=TRUE).

@@ -14,7 +14,9 @@ ods(
   subset = NULL,
   weights = NULL,
   na.action = getOption("na.action"),
-  ProfileCol = NULL
+  ProfileCol = NULL,
+  xcol.phase1 = NULL,
+  ests.phase1 = NULL
 )
 }
 \arguments{

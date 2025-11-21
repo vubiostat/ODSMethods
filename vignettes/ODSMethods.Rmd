@@ -59,10 +59,10 @@ $$Y_{ij} = 10 + 0.5 \cdot Month - 0.5 \cdot Genotype  + 0.25 \cdot Month
 
 where
 
-$$b_{0i} \sim \mathcal{N}(\mu=0, \sigma^2_0=4)$$
-$$b_{1i} \sim \mathcal{N}(\mu=0, \sigma^2_1=0.25)$$
+$$b_{0i} \sim N(\mu=0, \sigma^2_0=4)$$
+$$b_{1i} \sim N(\mu=0, \sigma^2_1=0.25)$$
 $$\rho(b_{0i}, b_{1i}) = 0.1$$
-$$\epsilon_{ij} \sim \mathcal{N}(\mu=0, \sigma^2=1)$$
+$$\epsilon_{ij} \sim N(\mu=0, \sigma^2=1)$$
 
 Further,
 
@@ -157,6 +157,7 @@ design1 <- bds(Response ~ Month|Patient, 'slope',
 summary(design1)
 plot(design1)
 ```
+
 ### Fit the BLUP Model
 
 ```{r blupacml, R.options=list(width=100)}
@@ -164,6 +165,106 @@ est <- acml(Response ~ Month*Genotype, design, data = data)
 summary(est, digits=3)
 ```
 
+
+## Simulation
+
+The setting of the simulation is chosen to resemble the Lung Health Study data. Data were generated under the following model: 
+
+$$
+Y_{ij} = \beta_0 + \beta_t t_{ij} + \beta_s snp_i + \beta_c c_i + \beta_{st}(snp_i t_{ij}) 
+        + b_{0i} + b_{1i} t_{ij} + e_{ij}.
+$$
+
+The variable $\text{snp}_i$ is binary with prevalence 0.3. 
+
+Fixed-effect coefficients are $(\beta_0, \beta_t, \beta_s, \beta_c, \beta_{st}) = (75,\,-1,\,-0.5,\,-2,\,-0.5)$.
+
+The random effects $(b_{0i}, b_{1i})$ are **uncorrelated**, normally distributed with variance components: $(\sigma_0^2, \sigma_1^2) = (81,\; 1.56)$.
+
+The measurement error $e_{ij}$ is normally distributed: $e_{ij} \sim N(0,\; \sigma_e^2), \qquad \sigma_e^2 = 12.25$.
+
+The confounder $c_i$ follows: $c_i \sim N\!\left(0.25 + 0.5\,\text{snp}_i,\; 1\right)$.
+
+The time variable $t_{ij}$ ranges from: $t_{ij} = 0 \text{ (baseline)} \quad \text{to} \quad 5 \text{ (end of study)}$.
+
+### Intercept Sampling
+
+**Intercept sampling** creates sampling strata based on the empirical 10th and 90th percentiles of the subject-specific intercepts:
+
+Sampling probabilities are assigned as follows:
+
+- Subjects in the **high** and **low** strata are sampled with probability $\frac{150}{200} = 0.75$
+
+- Subjects in the **central** stratum are sampled with probability $\frac{100}{1600} = 0.0625$
+
+
+```{r, echo = FALSE, message=FALSE}
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+res_ls <- list.files('acml_sim1')
+dat_ls <- lapply(res_ls, function(x) {read.csv(paste0("acml_sim1/", x))})
+dat_comb1 <- do.call(rbind, dat_ls)
+
+true_coef = c(75, -1, -.5, -2, -.5)
+coef_int = dat_comb1[dat_comb1$type == "coef" & dat_comb1$design == "int",][2:6]
+bias_int = ((apply(coef_int, 2, mean) - true_coef)/true_coef)*100
+
+sd_int = apply(coef_int, 2, sd) 
+se_int = dat_comb1[dat_comb1$type == "se" & dat_comb1$design == "int",][2:6] 
+bias_se_int = ((apply(se_int, 2, mean) - sd_int)/sd_int)*100
+
+rob_se_int = dat_comb1[dat_comb1$type == "rob_se" & dat_comb1$design == "int",][2:6] 
+bias_rob_se_int = ((apply(rob_se_int, 2, mean) - sd_int)/sd_int)*100
+
+rob_se_covered = data.frame(matrix(NA, nrow = 2000, ncol = 5))
+for (i in 1:5) {
+  rob_se_covered[,i] = (true_coef[i] >= coef_int[,i]-1.96*rob_se_int[,i]) & (true_coef[i] <= coef_int[,i] + 1.96*rob_se_int[,i])
+}
+cov_prob = apply(rob_se_covered, 2, mean)
+
+res_int <- data.frame(var = c("beta_0","beta_s","beta_t", "beta_c", "beta_st"), coef_est = round(apply(coef_int, 2, mean),2), sd_int = round(sd_int,2),  bias_int = paste0(round(bias_int,2), "%"), rob_se_est = round(apply(rob_se_int, 2, mean),2), cov_prob = paste0(round(cov_prob,2),"%"), bias_se_int = paste0(round(bias_se_int,2), "%"), bias_rob_se_int = paste0(round(bias_rob_se_int,2), "%"))
+kable(res_int, row.names = F, col.names = c("Variable", "Mean of Coef Est", "SD of Coef Est", "Robust SE Est","Coverage Prob", "Coef Est % Bias", "SE Est % Bias", "Robust SE % Bias")) %>%
+  kable_styling(full_width = F) %>%
+  column_spec(1, bold = T) %>%
+  kableExtra::kable_styling(position = "left")
+```
+
+
+### Slope Sampling
+
+**Slope sampling** creates sampling strata based on the empirical 10th and 90th percentiles of the subject-specific slopes:
+
+Sampling probabilities are assigned as follows:
+
+- Subjects in the **high** and **low** strata are sampled with probability $\frac{150}{200} = 0.75$
+
+- Subjects in the **central** stratum are sampled with probability $\frac{100}{1600} = 0.0625$
+  
+```{r, echo = FALSE}
+coef_slp = dat_comb1[dat_comb1$type == "coef" & dat_comb1$design == "slp",][2:6]
+bias_slp = ((apply(coef_slp, 2, mean) - true_coef)/true_coef)*100
+
+sd_slp = apply(coef_slp, 2, sd) 
+se_slp = dat_comb1[dat_comb1$type == "se" & dat_comb1$design == "slp",][2:6] 
+bias_se_slp = ((apply(se_slp, 2, mean) - sd_slp)/sd_slp)*100
+
+rob_se_slp = dat_comb1[dat_comb1$type == "rob_se" & dat_comb1$design == "slp",][2:6] 
+bias_rob_se_slp = ((apply(rob_se_slp, 2, mean) - sd_slp)/sd_slp)*100
+
+rob_se_covered = data.frame(matrix(NA, nrow = 2000, ncol = 5))
+for (i in 1:5) {
+  rob_se_covered[,i] = (true_coef[i] >= coef_slp[,i]-1.96*rob_se_slp[,i]) & (true_coef[i] <= coef_slp[,i] + 1.96*rob_se_slp[,i])
+}
+cov_prob = apply(rob_se_covered, 2, mean)
+
+res_slp <- data.frame(var = c("beta_0","beta_s","beta_t", "beta_c", "beta_st"), coef_est = round(apply(coef_slp, 2, mean),2), sd_slp = round(sd_slp,2),  bias_slp = paste0(round(bias_slp,2), "%"), rob_se_est = round(apply(rob_se_slp, 2, mean),2), cov_prob = paste0(round(cov_prob,2),"%"), bias_se_slp = paste0(round(bias_se_slp,2), "%"), bias_rob_se_slp = paste0(round(bias_rob_se_slp,2), "%"))
+kable(res_slp, row.names = F, col.names = c("Variable", "Mean of Coef Est", "SD of Coef Est", "Robust SE Est","Coverage Prob", "Coef Est % Bias", "SE Est % Bias", "Robust SE % Bias")) %>%
+  kable_styling(full_width = F) %>%
+  column_spec(1, bold = T) %>%
+  kableExtra::kable_styling(position = "left")
+```
+  
 ## References
 
 Schildcrout JS, Haneuse S, Tao R, Zelnick LR, Schisterman EF, Garbett SP, Mercaldo ND, Rathouz PJ, Heagerty PJ. Two-Phase, Generalized Case-Control Designs for the Study of Quantitative Longitudinal Outcomes. Am J Epidemiol. 2020 Feb 28;189(2):81-90. doi: 10.1093/aje/kwz127. PMID: 31165875; PMCID: PMC7298772.

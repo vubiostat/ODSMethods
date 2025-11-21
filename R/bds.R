@@ -119,9 +119,9 @@ bds <- function(
   subset     = NULL,
   weights    = NULL,
   na.action  = getOption('na.action'),
-  xcol.phase1= NULL,  ## only used for blup sampling
-  ests.phase1= NULL,  ## only used for blup sampling
-  ProfileCol = NULL  ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
+  ProfileCol = NULL,   ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
+  xcol.phase1 = NULL,  ## only used for blup sampling
+  ests.phase1 = NULL   ## only used for blup sampling
   # ... #FIXME: this doesn't work for now
 )
 {
@@ -208,6 +208,9 @@ bds <- function(
   if(is.null(ProfileCol)){
     ProfileCol = NA
   }
+
+  ests.phase1 = NULL
+  ests.phase1 = NULL
 
   # Return design object
   structure(list(
