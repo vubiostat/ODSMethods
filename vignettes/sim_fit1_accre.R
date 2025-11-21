@@ -1820,7 +1820,7 @@ RunMods <- function(params,
 
   ## identify stratum membership
   dat$StratInt <- identify.stratum(Y=dat$y, time=dat$time, id=dat$id, w.function="intercept", cutpoints=cutoffs$IntCutUniv, Int=dat$Int, Slp=dat$Slp)
-  dat$StratSlp <- identify.stratum(Y=dat$y, time=dat$time, id=dat$id, w.function="slope",     cutpoints=cutoffs$SlpCutUniv, Int=dat$Int, Slp=dat$Slp)
+  dat$StratSlp <- identify.stratum(Y=dat$y, time=dat$time, id=dat$id, w.function="slope",     cutpoints=cutoffs$SlpCutUniv, Int=dat$Slp, Slp=dat$Slp)
   # dat$StratBiv <- identify.stratum(Y=dat$y, time=dat$time, id=dat$id, w.function="bivar",     cutpoints=c(cutoffs$IntCutBiv, cutoffs$SlpCutBiv), Int=dat$Int, Slp=dat$Slp)
 
   ## identify the sample along with individual sampling probs and stratum sampling probs
@@ -1948,7 +1948,7 @@ se_int <- NULL
 se_slp <- NULL
 rob_se_int <- NULL
 rob_se_slp <- NULL
-for (r in 1:10){
+for (r in 1:5){
   seed_r = seednum + 10000*r
   set.seed(seed_r)
   N=2000

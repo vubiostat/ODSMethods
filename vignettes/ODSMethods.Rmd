@@ -231,39 +231,39 @@ kable(res_int, row.names = F, col.names = c("Variable", "Mean of Coef Est", "SD 
 ```
 
 
-### Slope Sampling
+<!-- ### Slope Sampling -->
 
-**Slope sampling** creates sampling strata based on the empirical 10th and 90th percentiles of the subject-specific slopes:
+<!-- **Slope sampling** creates sampling strata based on the empirical 10th and 90th percentiles of the subject-specific slopes: -->
 
-Sampling probabilities are assigned as follows:
+<!-- Sampling probabilities are assigned as follows: -->
 
-- Subjects in the **high** and **low** strata are sampled with probability $\frac{150}{200} = 0.75$
+<!-- - Subjects in the **high** and **low** strata are sampled with probability $\frac{150}{200} = 0.75$ -->
 
-- Subjects in the **central** stratum are sampled with probability $\frac{100}{1600} = 0.0625$
-  
-```{r, echo = FALSE}
-coef_slp = dat_comb1[dat_comb1$type == "coef" & dat_comb1$design == "slp",][2:6]
-bias_slp = ((apply(coef_slp, 2, mean) - true_coef)/true_coef)*100
+<!-- - Subjects in the **central** stratum are sampled with probability $\frac{100}{1600} = 0.0625$ -->
 
-sd_slp = apply(coef_slp, 2, sd) 
-se_slp = dat_comb1[dat_comb1$type == "se" & dat_comb1$design == "slp",][2:6] 
-bias_se_slp = ((apply(se_slp, 2, mean) - sd_slp)/sd_slp)*100
+<!-- ```{r, echo = FALSE} -->
+<!-- coef_slp = dat_comb1[dat_comb1$type == "coef" & dat_comb1$design == "slp",][2:6] -->
+<!-- bias_slp = ((apply(coef_slp, 2, mean) - true_coef)/true_coef)*100 -->
 
-rob_se_slp = dat_comb1[dat_comb1$type == "rob_se" & dat_comb1$design == "slp",][2:6] 
-bias_rob_se_slp = ((apply(rob_se_slp, 2, mean) - sd_slp)/sd_slp)*100
+<!-- sd_slp = apply(coef_slp, 2, sd)  -->
+<!-- se_slp = dat_comb1[dat_comb1$type == "se" & dat_comb1$design == "slp",][2:6]  -->
+<!-- bias_se_slp = ((apply(se_slp, 2, mean) - sd_slp)/sd_slp)*100 -->
 
-rob_se_covered = data.frame(matrix(NA, nrow = 2000, ncol = 5))
-for (i in 1:5) {
-  rob_se_covered[,i] = (true_coef[i] >= coef_slp[,i]-1.96*rob_se_slp[,i]) & (true_coef[i] <= coef_slp[,i] + 1.96*rob_se_slp[,i])
-}
-cov_prob = apply(rob_se_covered, 2, mean)
+<!-- rob_se_slp = dat_comb1[dat_comb1$type == "rob_se" & dat_comb1$design == "slp",][2:6]  -->
+<!-- bias_rob_se_slp = ((apply(rob_se_slp, 2, mean) - sd_slp)/sd_slp)*100 -->
 
-res_slp <- data.frame(var = c("beta_0","beta_s","beta_t", "beta_c", "beta_st"), coef_est = round(apply(coef_slp, 2, mean),2), sd_slp = round(sd_slp,2),  bias_slp = paste0(round(bias_slp,2), "%"), rob_se_est = round(apply(rob_se_slp, 2, mean),2), cov_prob = paste0(round(cov_prob,2),"%"), bias_se_slp = paste0(round(bias_se_slp,2), "%"), bias_rob_se_slp = paste0(round(bias_rob_se_slp,2), "%"))
-kable(res_slp, row.names = F, col.names = c("Variable", "Mean of Coef Est", "SD of Coef Est", "Robust SE Est","Coverage Prob", "Coef Est % Bias", "SE Est % Bias", "Robust SE % Bias")) %>%
-  kable_styling(full_width = F) %>%
-  column_spec(1, bold = T) %>%
-  kableExtra::kable_styling(position = "left")
-```
+<!-- rob_se_covered = data.frame(matrix(NA, nrow = 2000, ncol = 5)) -->
+<!-- for (i in 1:5) { -->
+<!--   rob_se_covered[,i] = (true_coef[i] >= coef_slp[,i]-1.96*rob_se_slp[,i]) & (true_coef[i] <= coef_slp[,i] + 1.96*rob_se_slp[,i]) -->
+<!-- } -->
+<!-- cov_prob = apply(rob_se_covered, 2, mean) -->
+
+<!-- res_slp <- data.frame(var = c("beta_0","beta_s","beta_t", "beta_c", "beta_st"), coef_est = round(apply(coef_slp, 2, mean),2), sd_slp = round(sd_slp,2),  bias_slp = paste0(round(bias_slp,2), "%"), rob_se_est = round(apply(rob_se_slp, 2, mean),2), cov_prob = paste0(round(cov_prob,2),"%"), bias_se_slp = paste0(round(bias_se_slp,2), "%"), bias_rob_se_slp = paste0(round(bias_rob_se_slp,2), "%")) -->
+<!-- kable(res_slp, row.names = F, col.names = c("Variable", "Mean of Coef Est", "SD of Coef Est", "Robust SE Est","Coverage Prob", "Coef Est % Bias", "SE Est % Bias", "Robust SE % Bias")) %>% -->
+<!--   kable_styling(full_width = F) %>% -->
+<!--   column_spec(1, bold = T) %>% -->
+<!--   kableExtra::kable_styling(position = "left") -->
+<!-- ``` -->
   
 ## References
 
