@@ -1787,17 +1787,17 @@ RunMods <- function(params,
                     p.central,
                     conf.param,
                     ni){
-
-  params=c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5))
-  NsPerStratumUniv=c(150,100,150)
-  NsPerStratumBiv=c(100,300)
-
-  N=2000
-  prev.grp=0.3
-  n.imp=50
-  p.central=0.8
-  conf.param = c(-0.25, 0.5)
-  ni = c(4, 6)
+#
+#   params=c(75, -1, -.5, -2, -.5, log(9),log(1.25),0,log(3.5))
+#   NsPerStratumUniv=c(150,100,150)
+#   NsPerStratumBiv=c(100,300)
+#
+#   N=2000
+#   prev.grp=0.3
+#   n.imp=50
+#   p.central=0.8
+#   conf.param = c(-0.25, 0.5)
+#   ni = c(4, 6)
 
 
   inits            <- params
@@ -1900,7 +1900,7 @@ RunMods <- function(params,
                     method = w.functionInt[1],
                     p_sample=SampProbInt[1,],
                     data=dat,
-                    quantiles=c(0.1, 0.9))
+                    quantiles=c((1-p.central)/2, 1-(1-p.central)/2))
 
   #### From our new acml code
 
@@ -1915,7 +1915,7 @@ RunMods <- function(params,
                     method = w.functionSlp[1],
                     p_sample=SampProbSlp[1,],
                     data=dat,
-                    quantiles=c(1, 0.9))
+                    quantiles=c((1-p.central)/2, 1-(1-p.central)/2))
 
   #### From our new acml code
 
