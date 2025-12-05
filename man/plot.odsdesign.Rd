@@ -10,12 +10,12 @@
   ylab = "Slope",
   main = format(x$formula),
   sub = paste(x$method, "design"),
-  col = if (x$method == "mean") "lightgray" else rgb(0, 0, 0, x$p_sample_i),
   lwd = 1,
   lty = 1,
-  cutcol = "red",
+  cutcol = "black",
   cutlwd = 2,
-  cutlty = 2,
+  cutlty = 1,
+  label_strata = TRUE,
   ...
 )
 }
@@ -29,8 +29,6 @@
 \item{main}{an overall title for the plot: see \code{\link{title}}.}
 
 \item{sub}{a subtitle for the plot: see \code{\link{title}}.}
-
-\item{col}{A specification for the default plotting color. See \code{\link{par}}.}
 
 \item{lwd}{The line width, a positive number, defaulting to 1. See \code{\link{par}}.}
 
@@ -56,6 +54,8 @@ See \code{\link{par}}.}
 
 \item{...}{Additional arguments past to \code{\link{plot}}, \code{\link{hist}},
 or \code{\link{lines}} depending on context.}
+
+\item{col}{A specification for the default plotting color. See \code{\link{par}}.}
 }
 \description{
 Generate a basic scatter plot of an ODS design and overlay the

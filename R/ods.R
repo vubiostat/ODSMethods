@@ -52,56 +52,107 @@
 #' @exportS3Method
 #' @importFrom graphics abline hist lines
 plot.odsdesign <- function(
-  x,
-  xlab   = "Intercept",
-  ylab   = "Slope",
-  main   = format(x$formula),
-  sub    = paste(x$method, "design"),
-  col    = if(x$method == 'mean') 'lightgray' else rgb(0,0,0,x$p_sample_i),
-  lwd    = 1,
-  lty    = 1,
-  cutcol = 'red',
-  cutlwd = 2,
-  cutlty = 2,
-  ...)
-{
-  if(x$method == 'mean')
-  {
-    if(xlab == 'Intercept') xlab <- "Mean"
-    hist(x$z_i[1,], xlab=xlab, main=main, sub=sub,
-         col=col, lwd=lwd, lty=lty, ...)
-  } else
-  {
-    plot(x$z_i["intercept",], x$z_i["slope",],  # Lucy changed to rownames
-         xlab=xlab, ylab=ylab,
-         main=main, sub=sub,
-         col=col, lwd=lwd, lty=lty, # Needed to prevent capture in call to lines below via ...
-         ...)
-  }
+    x,
+    xlab   = "Intercept",
+    ylab   = "Slope",
+    main   = format(x$formula),
+    sub    = paste(x$method, "design"),
+    lwd    = 1,
+    lty    = 1,
+    cutcol = "black",
+    cutlwd = 2,
+    cutlty = 1,
+    label_strata = TRUE,
+    ...
+  ) {
 
-  if (x$method != 'bivariate')
-  {
-    for(i in colnames(x$cutpoints))
-    {
-      if(i %in% c('mean', 'intercept'))
-        abline(v=x$cutpoints[,i], col=cutcol, lty=cutlty, lwd=cutlwd, ...) else
-        abline(h=x$cutpoints[,i], col=cutcol, lty=cutlty, lwd=cutlwd, ...)
+    if (!is.null(x$sample_ids)) {
+      samp <- as.character(colnames(x$z_i)) %in% x$sample_ids
+      col_pts <- ifelse(samp,
+                        rgb(0, 0, 0, 0.9),   # sampled
+                        rgb(0, 0, 0, 0.15))  # not sampled
+    } else {
+      col_pts <- if (x$method == "mean") "lightgray" else rgb(0, 0, 0, x$p_sample_i)
     }
-  } else # bivariate
-  {
-    square <- function(x, y)
-      lines(x[c(1, 1, 2, 2, 1)], y[c(1, 2, 2, 1, 1)],
-            col=cutcol, lty=cutlty, lwd=cutlwd, ...)
-    n <- nrow(x$cutpoints)
-    for(i in 1:(n/2))
-    {
-      sel <- c(i, n+1-i)
-      square(x$cutpoints[sel,1], x$cutpoints[sel,2])
-    }
-  }
 
-  invisible(x)
+    if (x$method == "mean") {
+      xlab_hist <- if (xlab == "Intercept") "Mean" else xlab
+      hist(x$z_i[1, ], xlab = xlab_hist, main = main, sub = sub,
+           col = "lightgray", lwd = lwd, lty = lty, ...)
+    } else {
+      plot(x$z_i["intercept", ], x$z_i["slope", ],
+           xlab = xlab, ylab = ylab,
+           main = main, sub = sub,
+           col  = col_pts, pch = 3,
+           cex = 0.4,
+           ...)
+    }
+
+    usr <- par("usr")
+
+    if (x$method != "bivariate") {
+
+      cp <- x$cutpoints
+
+      for (i in colnames(cp)) {
+        if (i %in% c("mean", "intercept")) {
+          abline(v = cp[, i], col = cutcol, lty = cutlty, lwd = cutlwd, ...)
+        } else {
+          abline(h = cp[, i], col = cutcol, lty = cutlty, lwd = cutlwd, ...)
+        }
+      }
+
+      if (label_strata) {
+        if (any(colnames(cp) %in% c("mean", "intercept"))) {
+          name_x <- intersect(c("intercept", "mean"), colnames(cp))[1]
+          cx <- sort(cp[, name_x])
+          bounds_x <- c(usr[1], cx, usr[2])
+          mid_x <- (bounds_x[-1] + bounds_x[-length(bounds_x)]) / 2
+          y_top <- usr[4] - 0.05 * (usr[4] - usr[3])
+
+          for (k in seq_along(mid_x)) {
+            text(mid_x[k], y_top, labels = bquote(R^.(k)))
+          }
+        }
+
+        if ("slope" %in% colnames(cp)) {
+          cy <- sort(cp[, "slope"])
+          bounds_y <- c(usr[3], cy, usr[4])
+          mid_y <- (bounds_y[-1] + bounds_y[-length(bounds_y)]) / 2
+          x_left <- usr[1] + 0.05 * (usr[2] - usr[1])
+
+          for (k in seq_along(mid_y)) {
+            text(x_left, mid_y[k], labels = bquote(R^.(k)))
+          }
+        }
+      }
+
+    } else {
+
+      square <- function(xc, yc) {
+        lines(xc[c(1, 1, 2, 2, 1)], yc[c(1, 2, 2, 1, 1)],
+              col = cutcol, lty = cutlty, lwd = cutlwd, ...)
+      }
+
+      n <- nrow(x$cutpoints)
+      for (i in 1:(n / 2)) {
+        sel <- c(i, n + 1 - i)
+        square(x$cutpoints[sel, 1], x$cutpoints[sel, 2])
+      }
+
+      if (label_strata) {
+        rx <- range(x$cutpoints[, 1])
+        ry <- range(x$cutpoints[, 2])
+        text(mean(rx), mean(ry), labels = expression(R^1))
+        x_out <- usr[1] + 0.1 * (usr[2] - usr[1])
+        y_out <- usr[3] + 0.9 * (usr[4] - usr[3])
+        text(x_out, y_out, labels = expression(R^2))
+      }
+    }
+
+    invisible(x)
 }
+
 
 transform_output <- function(InitVals, x = x, y = y, z = z){
   beta = InitVals[1:(ncol(x))] # note here are with beta_0, need to change to accommodate if no beta_0
