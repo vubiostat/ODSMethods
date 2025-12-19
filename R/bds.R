@@ -108,7 +108,6 @@ summary.bdsdesign <- function(object, digits = max(3L, getOption("digits")), ...
 #' @importFrom stats model.frame terms as.formula quantile coef
 #' @importFrom lme4 lmer
 #' @importFrom stats reformulate
-
 bds <- function(
   formula,
   method,
@@ -117,118 +116,332 @@ bds <- function(
   quantiles  = NULL,
   cutpoints  = NULL,
   subset     = NULL,
-  weights    = NULL,
   na.action  = getOption('na.action'),
-  ProfileCol = NULL,   ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
-  xcol.phase1 = NULL,  ## only used for blup sampling
-  ests.phase1 = NULL   ## only used for blup sampling
-  # ... #FIXME: this doesn't work for now
+  ProfileCol = NULL   ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
 )
 {
-  n_c <- length(p_sample)-1 # Number of cuts
-  if(!is.null(method) && inherits(method, "character") && method == 'bivariate')
-    n_c <- 2*n_c
-
   # Validate arguments
   coll <- makeAssertCollection()
-  assert_formula(formula, add=coll)
-  assert_numeric(p_sample,  add=coll, lower=0, upper=1, min.len=2, any.missing=FALSE)
-  assert_numeric(quantiles, add=coll, lower=0, upper=1, len=length(p_sample)-1, null.ok=TRUE, any.missing=FALSE)
-  assert_numeric(cutpoints, add=coll, len=n_c, null.ok=TRUE, any.missing=FALSE)
-  assert_character(method,  add=coll, len=1, any.missing=FALSE, pattern="slope|intercept|bivariate|mean")
-  assert_true(xor(is.null(quantiles), is.null(cutpoints)), .var.name="only one of quantiles or cutpoints can be specified", add=coll)
-  assert_true(length(terms(formula))==3, .var.name="formula must have 3 terms", add=coll)
-  assert_true(any(grepl("\\|", formula)), .var.name="formula must have an id specified, e.g. y~t|id", add=coll)
+
+  ## method could only be 3 types: slope|intercept|bivariate|mean
+  assert_character(
+    method,
+    len           = 1,
+    any.missing   = FALSE,
+    pattern       = "^(slope|intercept|bivariate|mean)$",
+    add           = coll
+  )
+
+  ## formula type
+  assert_formula(formula, add = coll)
+
+  ## y ~ . structure
+  assert_true(
+    length(formula) == 3L,
+    .var.name = "formula must be two-sided, e.g. Response ~ Month|Patient",
+    add = coll
+  )
+
+  # at least one random-effects term
+  bars <- lme4::findbars(formula)
+  assert_true(
+    length(bars) >= 1L,
+    .var.name = "formula must contain at least one random-effects term, e.g. (Month|Patient)",
+    add = coll
+  )
+
+  re1 <- bars[[1L]]
+  re_lhs <- re1[[2L]]
+  re_id  <- re1[[3L]]
+
+  ## id is a variable name
+  assert_true(
+    is.name(re_id),
+    .var.name = "grouping factor in the first random term must be a single variable name, e.g. (Month|Patient)",
+    add = coll
+  )
+
+  ## response and id name
+  response_name <- as.character(formula[[2L]])
+  id_name       <- as.character(re_id)
+
+  ## method vs time
+  ## Response ~ Month|Patient can only be c("intercept", "slope", "bivariate", "mean")
+  assert_true(
+    method %in% c("intercept", "slope", "bivariate", "mean"),
+    .var.name = "when formula is Response ~ Month|Patient, method must be 'intercept', 'slope', 'bivariate', or 'mean'",
+    add = coll
+  )
+
+  ## p_sample must always be present，and it is consistent with method
+  if (identical(method, "bivariate")) {
+    ## square donut has inner and outer probability
+    assert_numeric(
+      p_sample,
+      lower        = 0,
+      upper        = 1,
+      len          = 2,
+      any.missing  = FALSE,
+      add          = coll
+    )
+  } else {
+    ## three regions, low, medium, high
+    assert_numeric(
+      p_sample,
+      lower        = 0,
+      upper        = 1,
+      len          = 3,
+      any.missing  = FALSE,
+      add          = coll
+    )
+  }
+
+  ## only one of quantiles or cutpoints can be specified
+  assert_true(
+    xor(is.null(quantiles), is.null(cutpoints)),
+    .var.name = "only one of quantiles or cutpoints can be specified",
+    add = coll
+  )
+
+  if (identical(method, "bivariate")) {
+
+    ## bivariate: quantiles = PropInCentralRegion
+    if (!is.null(quantiles)) {
+      assert_numeric(
+        quantiles,
+        lower        = 0,
+        upper        = 1,
+        len          = 1L,
+        null.ok      = FALSE,
+        any.missing  = FALSE,
+        add          = coll
+      )
+    }
+
+    ## bivariate: cutpoints = IntLow, IntHigh, SlpLow, SlpHigh
+    if (!is.null(cutpoints)) {
+      assert_numeric(
+        cutpoints,
+        len          = 4L,
+        null.ok      = FALSE,
+        any.missing  = FALSE,
+        add          = coll
+      )
+    }
+
+  } else {
+
+    ## univariate: n_c = length(p_sample) - 1
+    n_c <- length(p_sample) - 1L
+
+    if (!is.null(quantiles)) {
+      assert_numeric(
+        quantiles,
+        lower        = 0,
+        upper        = 1,
+        len          = n_c,
+        null.ok      = FALSE,
+        any.missing  = FALSE,
+        add          = coll
+      )
+    }
+
+    if (!is.null(cutpoints)) {
+      assert_numeric(
+        cutpoints,
+        len          = n_c,
+        null.ok      = FALSE,
+        any.missing  = FALSE,
+        add          = coll
+      )
+    }
+  }
   reportAssertions(coll)
 
-  # Square donut must have even number of quantiles or cutpoints
-  if(method == 'bivariate')
-  {
-    assert_true(length(quantiles) %% 2 == 0, .var.name="length(quantiles) must be even for bivariate design", add=coll)
-    assert_true(length(cutpoints) %% 2 == 0, .var.name="length(cutpoints) must be even for bivariate design", add=coll)
-    reportAssertions(coll)
+  # Duplicate of lm behavior
+  cl      <- match.call()
+  mf_call <- match.call(expand.dots = FALSE)
+  m       <- match(c("formula", "data", "subset", "na.action"),
+                   names(mf_call), 0L)
+  mf_call <- mf_call[c(1L, m)]
+  mf_call$drop.unused.levels <- TRUE
+  mf_call[[1L]]        <- quote(stats::model.frame)
+  mf_call[["formula"]] <- stats::as.formula(gsub("\\|", "+", format(formula)))
+  mf <- eval(mf_call, parent.frame())
+
+  ## Response ~ Month|Patient: regressed on time
+  lme_mod = lme4::lmer(formula = formula,
+                       data = data,
+                       na.action=na.action)
+  re_list <- lme4::ranef(lme_mod)
+  if (!id_name %in% names(re_list)) {
+    id_name_re <- names(re_list)[1L]
+  } else {
+    id_name_re <- id_name
+  }
+  re_mat <- re_list[[id_name_re]]   # rows = subjects, cols = random-effects
+  re_cols <- colnames(re_mat)
+
+  has_int   <- "(Intercept)" %in% re_cols
+  slope_cols <- setdiff(re_cols, "(Intercept)")
+
+  if (method %in% c("slope","bivariate") && length(slope_cols) < 1L) {
+    stop("method '", method, "' requires at least one random slope in the first random-effects term")
+  }
+  if (method %in% c("intercept","bivariate","mean") && !has_int) {
+    stop("method '", method, "' requires a random intercept in the first random-effects term")
   }
 
-  # Duplicate of lm behavior
-  cl <- match.call()
-  mf <- match.call(expand.dots = FALSE)
-  m  <- match(c("formula", "data", "subset", "weights", "na.action"), names(mf), 0L)
-  mf <- mf[c(1L, m)]
-  mf$drop.unused.levels <- TRUE
-  mf[[1L]] <- quote(stats::model.frame)
-  mf[['formula']] <- as.formula(gsub("\\|", "+", format(formula)))
-  mf <- eval(mf, parent.frame())
+  time_name <- if (length(slope_cols) >= 1L) slope_cols[1L] else NA_character_
 
-  if(!is.integer(mf[,3]) && !is.numeric(mf[,3]))
-    mf[,3] <- as.numeric(as.factor(mf[,3]))
-
-  # Construct z_i (not treating weights here)
-  lme_mod = lmer(formula = formula, data = data, na.action=na.action)
-  z_i <- t(lme4::ranef(lme_mod)[[1]]) # from lme4
+  z_i <- t(re_mat) # from lme4
   rownames(z_i) <- c("intercept", "slope")
 
-  z_mf <- model.matrix(reformulate(names(mf)[2], intercept = TRUE), data = mf)
+  ## z_mf: fixed effect matrix
+  z_mf <- stats::model.matrix(
+    stats::reformulate(time_name, intercept = TRUE),
+    data = mf
+  )
 
-  # Devise cutpoints if not specified
-  if(is.null(cutpoints))
-  {
-    sel <- if(method == 'bivariate') c("intercept", "slope") else method
-    cutpoints <- apply(z_i, 1, quantile, quantiles)[,sel, drop=FALSE]
-  } else if(method == 'bivariate')
-  {
-    cutpoints <- matrix(
-      cutpoints,
-      nrow=2, byrow=FALSE,
-      dimnames=list(1:2, c("intercept", "slope"))
-    )
-  } else
-  {
-    cutpoints <- matrix(
-      cutpoints,
-      nrow=2,
-      dimnames=list(1:2, method))
+  ## get x.phase1
+
+  X <- stats::model.matrix(lme_mod)      # full fixed-effect design matrix
+  xcol.phase1 <- colnames(X)
+
+  ## get beta.phase1:
+  beta_fixed <- lme4::fixef(lme_mod)
+
+  vc      <- as.matrix(lme4::VarCorr(lme_mod)[[1]])
+  sigma_vc  <- sqrt(diag(vc))
+  rho     <- vc[1, 2] / (sigma_vc[1] * sigma_vc[2])  #FIXME: to account for more than 1 random/fixed effects
+  sigma_e <- sigma(lme_mod)
+
+  ests.phase1 <- c(beta_fixed, log(sigma_vc), log((1+rho)/(1-rho)), log(sigma_e))
+
+  ## create/process cutpoints
+
+  if (is.null(cutpoints)) {
+
+    ## from quantiles and data to calculate cutpoints
+    if (identical(method, "bivariate")) {
+
+      ## bivariate: quantiles are PropInCentralRegion
+      p0   <- quantiles[1]
+      ints <- z_i["intercept", ]
+      slps <- z_i["slope",     ]
+
+      q1  <- 0.99
+      Del <- 1
+
+      ## marginal joint inside around p0
+      while (Del > 0.003 && q1 > 0.5) {
+        q1 <- q1 - 0.001
+
+        I_low  <- as.numeric(stats::quantile(ints, probs = 1 - q1))
+        I_high <- as.numeric(stats::quantile(ints, probs = q1))
+        S_low  <- as.numeric(stats::quantile(slps, probs = 1 - q1))
+        S_high <- as.numeric(stats::quantile(slps, probs = q1))
+
+        inside <- (ints > I_low & ints < I_high &
+                     slps > S_low & slps < S_high)
+
+        Del <- abs(mean(inside) - p0)
+      }
+
+      cutpoints <- rbind(
+        low  = c(intercept = I_low,  slope = S_low),
+        high = c(intercept = I_high, slope = S_high)
+      )
+
+    } else {
+
+      ## univariate: intercept or slope
+      n_c     <- length(p_sample) - 1L
+      cp_main <- as.numeric(stats::quantile(z_i[method, ], probs = quantiles))
+      cutpoints <- matrix(
+        cp_main,
+        nrow     = n_c,
+        ncol     = 1L,
+        dimnames = list(seq_len(n_c), method)
+      )
+    }
+
+  } else {
+
+    ## user defined cutpoints
+    if (identical(method, "bivariate")) {
+      ## c(IntLow, IntHigh, SlpLow, SlpHigh)
+      cutpoints <- rbind(
+        low  = c(intercept = cutpoints[1], slope = cutpoints[3]),
+        high = c(intercept = cutpoints[2], slope = cutpoints[4])
+      )
+    } else {
+      n_c <- length(p_sample) - 1L
+      cutpoints <- matrix(
+        cutpoints,
+        nrow     = n_c,
+        ncol     = 1L,
+        dimnames = list(seq_len(n_c), method)
+      )
+    }
   }
 
-  # Create patient to probability
-  p_sample_i <- if(method =='bivariate')
-  {
-    # Square donut(s)
-    pmax(p_sample[as.numeric(
-      cut(z_i['intercept',], c(-Inf, t(cutpoints[,'intercept']), Inf)))],
-      p_sample[as.numeric(
-        cut(z_i['slope',],     c(-Inf, t(cutpoints[,'slope']),     Inf)))])
-  } else
-  {
-    p_sample[as.numeric(cut(z_i[method,], c(-Inf, t(cutpoints), Inf)))]
+  ## calculate each subject's sampling probability p_sample_i
+
+  if (identical(method, "bivariate")) {
+
+    ## square donut inside/outside
+    ints <- z_i["intercept", ]
+    slps <- z_i["slope",     ]
+
+    inside <- (ints >  cutpoints["low",  "intercept"] &
+                 ints <  cutpoints["high", "intercept"] &
+                 slps >  cutpoints["low",  "slope"] &
+                 slps <  cutpoints["high", "slope"])
+
+    p_sample_i <- ifelse(inside, p_sample[2], p_sample[1])
+
+  } else {
+
+    ## univariate：from cutpoints to have n_c+1 regions
+    bounds <- as.numeric(cutpoints[, method])
+    p_sample_i <- p_sample[
+      as.numeric(
+        cut(
+          z_i[method, ],
+          c(-Inf, bounds, Inf)
+        )
+      )
+    ]
   }
+
   names(p_sample_i) <- colnames(z_i)
 
-  smpl <- names(p_sample_i)[rbinom(length(p_sample_i), 1, p_sample_i) > 0]
+  ## sampling ids
 
-  if(is.null(ProfileCol)){
-    ProfileCol = NA
+  smpl <- names(p_sample_i)[stats::rbinom(length(p_sample_i), 1, p_sample_i) > 0]
+
+
+  if (is.null(ProfileCol)) {
+    ProfileCol <- NA
   }
-
-  ests.phase1 = NULL
-  ests.phase1 = NULL
 
   # Return design object
   structure(list(
     call        = cl,
     formula     = formula,
     model.frame = mf,
-    method      = method,
+    method      = paste0("blup.",method),
     p_sample    = p_sample,
     p_sample_i  = p_sample_i,
     sample_ids  = smpl,
-    response    = names(mf)[1],
-    time        = names(mf)[2],
-    id          = names(mf)[3],
+    response    = response_name,
+    time        = time_name,
+    id          = id_name,
     quantiles   = quantiles,
     cutpoints   = cutpoints,
     z_i         = z_i,
     z_mf        = z_mf,
-    weights     = weights,
     n_rand      = 2,     # Number of random effects, slope + intercept
     ProfileCol  = ProfileCol, ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
     xcol.phase1 = xcol.phase1,  ## only used for blup sampling

@@ -16,7 +16,7 @@ validated_ll <- function(data, est, method, cuts=c(0.1, 0.9), probs=c(1, 0.25, 1
     c(
       quantile(b_i['intercept',], probs=cuts),
       quantile(b_i['slope',],     probs=cuts)
-    )
+    ) # FIXME: this needs to be changed. The bivariate design is not a simple cut of intercept and slope
   } else quantile(b_i[method,], probs=cuts)
 
   data <- data[!is.na(data$Genotype),]  # Drop NA data for these tests

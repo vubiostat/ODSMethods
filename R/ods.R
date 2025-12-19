@@ -90,7 +90,7 @@ plot.odsdesign <- function(
 
     usr <- par("usr")
 
-    if (x$method != "bivariate") {
+    if (!(x$method %in% c("bivariate","blup.bivariate"))) {
 
       cp <- x$cutpoints
 
@@ -289,116 +289,339 @@ print.summary.odsdesign <- function(x, digits = NULL, ...)
 #' @importFrom checkmate reportAssertions
 #' @importFrom stats model.frame terms as.formula quantile coef
 ods <- function(
-  formula,
-  method,
-  p_sample,
-  data      = NULL,
-  quantiles = NULL,
-  cutpoints = NULL,
-  subset    = NULL,
-  weights   = NULL,
-  na.action = getOption('na.action'),
-  ProfileCol= NULL,     ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
-  xcol.phase1 = NULL,  ## only used for blup sampling
-  ests.phase1 = NULL   ## only used for blup sampling
-  # ... #FIXME: this doesn't work for now
+    formula,
+    method,
+    p_sample,
+    data      = NULL,
+    quantiles = NULL,
+    cutpoints = NULL,
+    subset    = NULL,
+    na.action = getOption('na.action'),
+    ProfileCol= NULL   ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
 )
 {
-  n_c <- length(p_sample)-1 # Number of cuts
-  if(!is.null(method) && inherits(method, "character") && method == 'bivariate')
-    n_c <- 2*n_c
-
   # Validate arguments
   coll <- makeAssertCollection()
-  assert_formula(formula, add=coll)
-  assert_numeric(p_sample,  add=coll, lower=0, upper=1, min.len=2, any.missing=FALSE)
-  assert_numeric(quantiles, add=coll, lower=0, upper=1, len=length(p_sample)-1, null.ok=TRUE, any.missing=FALSE)
-  assert_numeric(cutpoints, add=coll, len=n_c, null.ok=TRUE, any.missing=FALSE)
-  assert_character(method,  add=coll, len=1, any.missing=FALSE, pattern="slope|intercept|bivariate|mean")
-  assert_true(xor(is.null(quantiles), is.null(cutpoints)), .var.name="only one of quantiles or cutpoints can be specified", add=coll)
-  assert_true(length(terms(formula))==3, .var.name="formula must have 3 terms", add=coll)
-  assert_true(any(grepl("\\|", formula)), .var.name="formula must have an id specified, e.g. y~t|id", add=coll)
+
+  ## method could only be 3 types: slope|intercept|bivariate|mean
+  assert_character(
+    method,
+    len           = 1,
+    any.missing   = FALSE,
+    pattern       = "^(slope|intercept|bivariate|mean)$",
+    add           = coll
+  )
+
+  ## formula type
+  assert_formula(formula, add = coll)
+
+  ## y ~ . structure
+  assert_true(
+    length(formula) == 3L,
+    .var.name = "formula must be two-sided, e.g. Response ~ Month|Patient",
+    add = coll
+  )
+
+  rhs <- formula[[3L]]
+
+  ## Right hand side must be time | id
+  ok_rhs <- is.call(rhs) && identical(rhs[[1L]], as.name("|")) && length(rhs) == 3L
+
+  assert_true(
+    ok_rhs,
+    .var.name = paste(
+      "right-hand side of formula must be of the form time_formula|id,",
+      "e.g. Response ~ Month|Patient or Response ~ Month + Age|Patient"
+    ),
+    add = coll
+  )
+
   reportAssertions(coll)
 
-  # Square donut must have even number of quantiles or cutpoints
-  if(method == 'bivariate')
-  {
-    assert_true(length(quantiles) %% 2 == 0, .var.name="length(quantiles) must be even for bivariate design", add=coll)
-    assert_true(length(cutpoints) %% 2 == 0, .var.name="length(cutpoints) must be even for bivariate design", add=coll)
-    reportAssertions(coll)
+  lhs       <- formula[[2L]]
+  time_term <- rhs[[2L]]
+  id_term   <- rhs[[3L]]
+
+  ## time is variable name
+  time_is_single <- is.name(time_term)
+
+  if (!time_is_single) {
+    # Allow expressions like Month + Age + ...
+    tt <- stats::terms(time_term)
+    time_labels <- attr(tt, "term.labels")
+    assert_true(
+      length(time_labels) >= 1L,
+      .var.name = "time part must contain at least one variable, e.g. Response ~ Month|Patient or Response ~ Month + Age|Patient",
+      add = coll
+    )
+  } else {
+    time_labels <- as.character(time_term)
   }
 
-  # Duplicate of lm behavior
-  cl <- match.call()
-  mf <- match.call(expand.dots = FALSE)
-  m  <- match(c("formula", "data", "subset", "weights", "na.action"), names(mf), 0L)
-  mf <- mf[c(1L, m)]
-  mf$drop.unused.levels <- TRUE
-  mf[[1L]] <- quote(stats::model.frame)
-  mf[['formula']] <- as.formula(gsub("\\|", "+", format(formula)))
-  mf <- eval(mf, parent.frame())
+  ## id is a variable name
+  assert_true(
+    is.name(id_term),
+    .var.name = "id part must be a single variable name, e.g. Response ~ Month|Patient",
+    add = coll
+  )
 
-  if(!is.integer(mf[,3]) && !is.numeric(mf[,3]))
-    mf[,3] <- as.numeric(as.factor(mf[,3]))
+  ## method vs time
+  ## Response ~ Month|Patient can only be c("intercept", "slope", "bivariate", "mean")
+  assert_true(
+    method %in% c("intercept", "slope", "bivariate", "mean"),
+    .var.name = "when formula is Response ~ Month|Patient, method must be 'intercept', 'slope', 'bivariate', or 'mean'",
+    add = coll
+  )
 
-  # Construct z_i
-  f <- if (ncol(mf) == 4) # Treat weights?
-  {
-    function(x) c(mean(x[,1]), coef(lm(x[,1]~x[,2], weights=x[,4], na.action=na.action)))
-  } else
-  {
-    function(x) c(mean(x[,1]), coef(lm(x[,1]~x[,2], na.action=na.action)))
+  response_name <- as.character(lhs)
+  time_name     <- as.character(time_term)
+  id_name       <- as.character(id_term)
+
+  ## p_sample must always be present，and it is consistent with method
+  if (identical(method, "bivariate")) {
+    ## square donut has inner and outer probability
+    assert_numeric(
+      p_sample,
+      lower        = 0,
+      upper        = 1,
+      len          = 2,
+      any.missing  = FALSE,
+      add          = coll
+    )
+  } else {
+    ## three regions, low, medium, high
+    assert_numeric(
+      p_sample,
+      lower        = 0,
+      upper        = 1,
+      len          = 3,
+      any.missing  = FALSE,
+      add          = coll
+    )
   }
-  z_i <- sapply(split(mf, mf[,3]), f)
+
+  ## only one of quantiles or cutpoints can be specified
+  assert_true(
+    xor(is.null(quantiles), is.null(cutpoints)),
+    .var.name = "only one of quantiles or cutpoints can be specified",
+    add = coll
+  )
+
+  if (identical(method, "bivariate")) {
+
+    ## bivariate: quantiles = PropInCentralRegion
+    if (!is.null(quantiles)) {
+      assert_numeric(
+        quantiles,
+        lower        = 0,
+        upper        = 1,
+        len          = 1L,
+        null.ok      = FALSE,
+        any.missing  = FALSE,
+        add          = coll
+      )
+    }
+
+    ## bivariate: cutpoints = IntLow, IntHigh, SlpLow, SlpHigh
+    if (!is.null(cutpoints)) {
+      assert_numeric(
+        cutpoints,
+        len          = 4L,
+        null.ok      = FALSE,
+        any.missing  = FALSE,
+        add          = coll
+      )
+    }
+
+  } else {
+
+    ## univariate: n_c = length(p_sample) - 1
+    n_c <- length(p_sample) - 1L
+
+    if (!is.null(quantiles)) {
+      assert_numeric(
+        quantiles,
+        lower        = 0,
+        upper        = 1,
+        len          = n_c,
+        null.ok      = FALSE,
+        any.missing  = FALSE,
+        add          = coll
+      )
+    }
+
+    if (!is.null(cutpoints)) {
+      assert_numeric(
+        cutpoints,
+        len          = n_c,
+        null.ok      = FALSE,
+        any.missing  = FALSE,
+        add          = coll
+      )
+    }
+  }
+
+  reportAssertions(coll)
+
+  ## model.frame (similar to lm)
+  cl      <- match.call()
+  mf_call <- match.call(expand.dots = FALSE)
+  m       <- match(c("formula", "data", "subset", "na.action"),
+                   names(mf_call), 0L)
+  mf_call <- mf_call[c(1L, m)]
+  mf_call$drop.unused.levels <- TRUE
+  mf_call[[1L]]        <- quote(stats::model.frame)
+  mf_call[["formula"]] <- stats::as.formula(gsub("\\|", "+", format(formula)))
+  mf <- eval(mf_call, parent.frame())
+
+  ## id
+  id_idx <- match(id_name, names(mf))
+  if (is.na(id_idx)) {
+    stop("id variable '", id_name, "' not found in data/model.frame")
+  }
+  if (!is.integer(mf[[id_idx]]) && !is.numeric(mf[[id_idx]])) {
+    mf[[id_idx]] <- as.numeric(as.factor(mf[[id_idx]]))
+  }
+
+
+  ## construct z_i: mean, intercept, slope
+
+  y_name   <- response_name
+  time_idx <- match(time_name, names(mf))
+  if (is.na(time_idx)) {
+    stop("time variable '", time_name, "' not found in data/model.frame")
+  }
+
+  reportAssertions(coll)
+
+  ## Response ~ Month|Patient: regressed on time
+  z_fun <- function(x) {
+    y  <- x[[y_name]]
+    tt <- x[[time_name]]
+    fit <- stats::lm(y ~ tt, na.action = na.action)
+    c(mean(y), stats::coef(fit))
+  }
+
+  z_i <- sapply(split(mf, mf[[id_idx]]), z_fun)
   rownames(z_i) <- c("mean", "intercept", "slope")
 
-  z_mf <- model.matrix(reformulate(names(mf)[2], intercept = TRUE), data = mf)
+  ## z_mf: fixed effect matrix
+  z_mf <- stats::model.matrix(
+    stats::reformulate(time_name, intercept = TRUE),
+    data = mf
+  )
 
-  # Devise cutpoints if not specified
-  if(is.null(cutpoints))
-  {
-    sel <- if(method == 'bivariate') c("intercept", "slope") else method
-    cutpoints <- apply(z_i, 1, quantile, quantiles)[,sel, drop=FALSE]
-  } else if(method == 'bivariate')
-  {
-    cutpoints <- matrix(
-      cutpoints,
-      nrow=2, byrow=FALSE,
-      dimnames=list(1:2, c("intercept", "slope"))
-    )
-  } else
-  {
-    cutpoints <- matrix(
-      cutpoints,
-      nrow=2,
-      dimnames=list(1:2, method))
+  ## create/process cutpoints
+
+  if (is.null(cutpoints)) {
+
+    ## from quantiles and data to calculate cutpoints
+    if (identical(method, "bivariate")) {
+
+      ## bivariate: quantiles are PropInCentralRegion
+      p0   <- quantiles[1]
+      ints <- z_i["intercept", ]
+      slps <- z_i["slope",     ]
+
+      q1  <- 0.99
+      Del <- 1
+
+      ## marginal joint inside around p0
+      while (Del > 0.003 && q1 > 0.5) {
+        q1 <- q1 - 0.001
+
+        I_low  <- as.numeric(stats::quantile(ints, probs = 1 - q1))
+        I_high <- as.numeric(stats::quantile(ints, probs = q1))
+        S_low  <- as.numeric(stats::quantile(slps, probs = 1 - q1))
+        S_high <- as.numeric(stats::quantile(slps, probs = q1))
+
+        inside <- (ints > I_low & ints < I_high &
+                     slps > S_low & slps < S_high)
+
+        Del <- abs(mean(inside) - p0)
+      }
+
+      cutpoints <- rbind(
+        low  = c(intercept = I_low,  slope = S_low),
+        high = c(intercept = I_high, slope = S_high)
+      )
+
+    } else {
+
+      ## univariate: intercept or slope
+      n_c     <- length(p_sample) - 1L
+      cp_main <- as.numeric(stats::quantile(z_i[method, ], probs = quantiles))
+      cutpoints <- matrix(
+        cp_main,
+        nrow     = n_c,
+        ncol     = 1L,
+        dimnames = list(seq_len(n_c), method)
+      )
+    }
+
+  } else {
+
+    ## user defined cutpoints
+    if (identical(method, "bivariate")) {
+      ## c(IntLow, IntHigh, SlpLow, SlpHigh)
+      cutpoints <- rbind(
+        low  = c(intercept = cutpoints[1], slope = cutpoints[3]),
+        high = c(intercept = cutpoints[2], slope = cutpoints[4])
+      )
+    } else {
+      n_c <- length(p_sample) - 1L
+      cutpoints <- matrix(
+        cutpoints,
+        nrow     = n_c,
+        ncol     = 1L,
+        dimnames = list(seq_len(n_c), method)
+      )
+    }
   }
 
-  # Create patient to probability
-  p_sample_i <- if(method =='bivariate')
-  {
-    # Square donut(s)
-    pmax(p_sample[as.numeric(
-           cut(z_i['intercept',], c(-Inf, t(cutpoints[,'intercept']), Inf)))],
-         p_sample[as.numeric(
-           cut(z_i['slope',],     c(-Inf, t(cutpoints[,'slope']),     Inf)))])
-  } else
-  {
-    p_sample[as.numeric(cut(z_i[method,], c(-Inf, t(cutpoints), Inf)))]
+
+  ## calculate each subject's sampling probability p_sample_i
+
+  if (identical(method, "bivariate")) {
+
+    ## square donut inside/outside
+    ints <- z_i["intercept", ]
+    slps <- z_i["slope",     ]
+
+    inside <- (ints >  cutpoints["low",  "intercept"] &
+                 ints <  cutpoints["high", "intercept"] &
+                 slps >  cutpoints["low",  "slope"] &
+                 slps <  cutpoints["high", "slope"])
+
+    p_sample_i <- ifelse(inside, p_sample[2], p_sample[1])
+
+  } else {
+
+    ## univariate：from cutpoints to have n_c+1 regions
+    bounds <- as.numeric(cutpoints[, method])
+    p_sample_i <- p_sample[
+      as.numeric(
+        cut(
+          z_i[method, ],
+          c(-Inf, bounds, Inf)
+        )
+      )
+    ]
   }
+
   names(p_sample_i) <- colnames(z_i)
 
-  smpl <- names(p_sample_i)[rbinom(length(p_sample_i), 1, p_sample_i) > 0]
 
-  if(is.null(ProfileCol)){
-    ProfileCol = NA
+  ## sampling ids
+
+  smpl <- names(p_sample_i)[stats::rbinom(length(p_sample_i), 1, p_sample_i) > 0]
+
+  if (is.null(ProfileCol)) {
+    ProfileCol <- NA
   }
 
-  ests.phase1 = NULL
-  ests.phase1 = NULL
-
-  # Return design object
-  structure(list(
+  structure(
+    list(
       call        = cl,
       formula     = formula,
       model.frame = mf,
@@ -406,22 +629,16 @@ ods <- function(
       p_sample    = p_sample,
       p_sample_i  = p_sample_i,
       sample_ids  = smpl,
-      response    = names(mf)[1],
-      time        = names(mf)[2],
-      id          = names(mf)[3],
+      response    = response_name,
+      time        = time_name,
+      id          = id_name,
       quantiles   = quantiles,
       cutpoints   = cutpoints,
       z_i         = z_i,
-      z_mf        = z_mf,      #FIXME: only appropriate for one intercept and one slope
-      weights     = weights,
-      n_rand      = 2,     # Number of random effects, slope + intercept
-      ProfileCol  = ProfileCol, ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
-      xcol.phase1 = xcol.phase1,  ## only used for blup sampling
-      ests.phase1 = ests.phase1   ## only used for blup sampling
-      ),
-    class="odsdesign"
+      z_mf        = z_mf,
+      n_rand      = 2,
+      ProfileCol  = ProfileCol
+    ),
+    class = "odsdesign"
   )
 }
-
-
-

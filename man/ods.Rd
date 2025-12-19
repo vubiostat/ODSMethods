@@ -12,11 +12,8 @@ ods(
   quantiles = NULL,
   cutpoints = NULL,
   subset = NULL,
-  weights = NULL,
   na.action = getOption("na.action"),
-  ProfileCol = NULL,
-  xcol.phase1 = NULL,
-  ests.phase1 = NULL
+  ProfileCol = NULL
 )
 }
 \arguments{
@@ -44,15 +41,15 @@ used in the fitting process. (See additional details about how this
 argument interacts with data-dependent bases in the ‘Details’ section of
 the model.frame documentation.)}
 
-\item{weights}{an optional vector of weights to be used in the fitting
-process. Should be NULL or a numeric vector. If non-NULL, weighted least
-squares is used with weights weights (that is, minimizing sum(w*e^2));
-otherwise ordinary least squares is used. See also ‘Details’,}
-
 \item{na.action}{a function which indicates what should happen when the data
 contain NAs. The default is set by the na.action setting of options, and is
 na.fail if that is unset. The ‘factory-fresh’ default is na.omit. Another
 possible value is NULL, no action. Value na.exclude can be useful.}
+
+\item{weights}{an optional vector of weights to be used in the fitting
+process. Should be NULL or a numeric vector. If non-NULL, weighted least
+squares is used with weights weights (that is, minimizing sum(w*e^2));
+otherwise ordinary least squares is used. See also ‘Details’,}
 
 \item{...}{additional arguments.}
 }

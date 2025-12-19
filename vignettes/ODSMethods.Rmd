@@ -140,18 +140,145 @@ Also known as "the square donut".
 
 ```{r, fig.dim=c(6,4) }
 design <- ods(Response ~ Month|Patient, 'bivariate',
-            p_sample=c(1, 0.25),
-            data=gbti, quantiles=c(0.1, 0.9))
+            p_sample=c(0.8, 0.2),
+            data=gbti, quantiles=c(0.9))
 summary(design)
 plot(design)
 ```
+
+## Demo of ODS Error Input Message
+### Error in formula, missing |id
+
+```{r}
+try(ods(Response ~ Month,
+      method    = "intercept",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9)))
+```
+
+### Wrong structure of right-hand side
+```{r}
+try(
+  ods(Response ~ Month + Patient,
+      method    = "intercept",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+
+### Error in formula: time is not a single variable
+
+```{r}
+try(
+  ods(Response ~ I(Month^2 | Patient),
+      method    = "intercept",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+### id is not a single variable
+```{r}
+try(
+  ods(Response ~ Month | (Patient + 1),
+      method    = "intercept",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+### Method is not allowed
+```{r}
+try(
+  ods(Response ~ Month | Patient,
+      method    = "random",  # not in slope/intercept/bivariate/mean
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+### Sampling probability length does not match method (bivariate)
+```{r}
+try(
+  ods(Response ~ Month | Patient,
+      method    = "bivariate",
+      p_sample  = c(1, 0.25, 1),  # should be length of 2
+      data      = gbti,
+      quantiles = 0.5)
+)
+```
+
+### Sampling probability length does not match method (intercept)
+```{r}
+try(
+  ods(Response ~ Month | Patient,
+      method    = "intercept",
+      p_sample  = c(1, 0.25),     # should be length of 3
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+### Assigning quantiles and cutpoints together
+```{r}
+try(
+  ods(Response ~ Month | Patient,
+      method    = "slope",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9),
+      cutpoints = c(-1, 1))
+)
+```
+
+### Univariate sampling design the length of quantile does not equal to length(p_sample)-1
+
+```{r}
+try(
+  ods(Response ~ Month | Patient,
+      method    = "intercept",                 # or "mean"/"slope"
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = 0.1)                    
+)
+```
+
+### Bivariate sampling design the length of quantile does not equal to 1
+
+```{r}
+try(
+  ods(Response ~ Month | Patient,
+      method    = "bivariate",
+      p_sample  = c(1, 0.25),
+      data      = gbti,
+      quantiles = c(0.2, 0.8))            
+)
+```
+
+### Bivariate sampling design the length of cutpoints does not equal to 4
+```{r}
+try(
+  ods(Response ~ Month | Patient,
+      method    = "bivariate",
+      p_sample  = c(1, 0.25),
+      data      = gbti,
+      cutpoints = c(-2, -1, 1))          
+)
+```
+
 
 ## Best Linear Unbiased Predictor Design (BLUP)
 
 It is also possible to fit using BLUP designs.
 
 ```{r, fig.dim=c(6,4) }
-design1 <- bds(Response ~ 1 + (Month|Patient), 'slope',
+design1 <- bds(formula = Response ~ Genotype + (Month|Patient), 'slope',
               p_sample=c(1, 0.25, 1),
               data=gbti, quantiles=c(0.1, 0.9))
 summary(design1)
@@ -161,8 +288,169 @@ plot(design1)
 ### Fit the BLUP Model
 
 ```{r blupacml, R.options=list(width=100)}
-est <- acml(Response ~ Month*Genotype, design1, data = data)
+est <- acml(Response ~ Month*Genotype, design1, data = gbti[gbti$Patient %in% design1$sample_ids,])
 summary(est, digits=3)
+```
+
+
+#### Intercept Design
+
+```{r, fig.dim=c(6,4) }
+design <- bds(Response ~ Month|Patient, 'intercept',
+            p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9))
+summary(design)
+plot(design)
+```
+
+#### Bivariate Design
+
+```{r, fig.dim=c(6,4) }
+design <- bds(Response ~ Month|Patient, 'bivariate',
+            p_sample=c(0.8, 0.2),
+            data=gbti, quantiles=c(0.9))
+summary(design)
+plot(design)
+```
+
+
+## Demo of BDS Error Input Message
+### Error in formula, missing |id
+
+```{r}
+try(bds(Response ~ Month,
+      method    = "intercept",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9)))
+```
+
+### Error in formula, id format incorrect
+
+```{r}
+try(
+  bds(Response ~ Genotype + (Month | Patient:Genotype),
+      method    = "intercept",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+
+```
+
+
+### Method is not allowed
+```{r}
+try(
+  bds(Response ~ Month | Patient,
+      method    = "random",  # not in slope/intercept/bivariate/mean
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+### Sampling probability length does not match method (bivariate)
+```{r}
+try(
+  bds(Response ~ Month | Patient,
+      method    = "bivariate",
+      p_sample  = c(1, 0.25, 1),  # should be length of 2
+      data      = gbti,
+      quantiles = 0.5)
+)
+```
+
+### Sampling probability length does not match method (intercept)
+```{r}
+try(
+  bds(Response ~ Month | Patient,
+      method    = "intercept",
+      p_sample  = c(1, 0.25),     # should be length of 3
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+### Assigning quantiles and cutpoints together
+```{r}
+try(
+  bds(Response ~ Month | Patient,
+      method    = "slope",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9),
+      cutpoints = c(-1, 1))
+)
+```
+
+### Univariate sampling design the length of quantile does not equal to length(p_sample)-1
+
+```{r}
+try(
+  bds(Response ~ Month | Patient,
+      method    = "intercept",                 # or "mean"/"slope"
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = 0.1)                    
+)
+```
+
+### Bivariate sampling design the length of quantile does not equal to 1
+
+```{r}
+try(
+  bds(Response ~ Month | Patient,
+      method    = "bivariate",
+      p_sample  = c(1, 0.25),
+      data      = gbti,
+      quantiles = c(0.2, 0.8))            
+)
+```
+
+### Bivariate sampling design the length of cutpoints does not equal to 4
+```{r}
+try(
+  bds(Response ~ Month | Patient,
+      method    = "bivariate",
+      p_sample  = c(1, 0.25),
+      data      = gbti,
+      cutpoints = c(-2, -1, 1))          
+)
+```
+
+
+### Random effect does not match method (no random slope)
+```{r}
+try(
+  bds(Response ~ Genotype + (1 | Patient),
+      method    = "slope",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+```{r}
+try(
+  bds(Response ~ Genotype + (1 | Patient),
+      method    = "bivariate",
+      p_sample  = c(1, 0.25),
+      data      = gbti,
+      quantiles = 0.5)
+)
+```
+
+### Random effect does not match method (no random intercept)
+
+```{r}
+try(
+  bds(Response ~ Genotype + (0 + Month | Patient),
+      method    = "intercept",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
 ```
 
 

@@ -87,9 +87,9 @@ test_that("ACML continuous response bivariate",
   expect_silent(
     design <- ods(Response ~ Month|Patient,
                   'bivariate',
-                  p_sample=c(1, 0.25, 1),
+                  p_sample=c(1, 0.25),
                   data=gbti,
-                  quantiles=c(0.1, 0.9))
+                  quantiles=0.1)
   )
 
   expect_silent(

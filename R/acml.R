@@ -356,101 +356,100 @@ logACi2q.score2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
 #' @return gradient of the log transformed ascertainment correction under univariate $Q_i$
 #' @export
 #' @importFrom stats dnorm
-logACi1q.score2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
+logACi1q.score2 = function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
 
-    yi          <- subjectData[["yi"]]
-    xi          <- subjectData[["xi"]]
-    zi          <- subjectData[["zi"]]
-    Weights.i   <- subjectData[["Weights.i"]]  ## not used
-    w.function  <- subjectData[["w.function.i"]]
-    SampProb    <- subjectData[["SampProb.i"]]
-    cutpoints   <- subjectData[["cutpoints.i"]]
+  yi          = subjectData[["yi"]]
+  xi          = subjectData[["xi"]]
+  zi          = subjectData[["zi"]]
+  Weights.i   = subjectData[["Weights.i"]]  ## not used
+  w.function  = subjectData[["w.function.i"]]
+  SampProb    = subjectData[["SampProb.i"]]
+  cutpoints   = subjectData[["cutpoints.i"]]
+  wi          =  subjectData[["wi"]]
+  mui.phase1  =  subjectData[["mui.phase1"]]
+  t.zi        = t(zi)
+  ni          = length(yi)
 
-    t.zi        <- t(zi)
-    ni          <- length(yi)
-    #if (w.function=="mean")      wi <- t(rep(1/ni, ni))
-    #if (w.function=="intercept") wi<- (solve(t.zi %*% zi) %*% t.zi)[1,]
-    #if (w.function=="slope")     wi<- (solve(t.zi %*% zi) %*% t.zi)[2,]
-    if (w.function %in% c("intercept", "intercept1")){ wi<- (solve(t.zi %*% zi) %*% t.zi)[1,]
-    } else if (w.function %in% c("slope", "slope1")){     wi<- (solve(t.zi %*% zi) %*% t.zi)[2,]
-    } else if (w.function %in% c("intercept2")){ wi<- (solve(t.zi %*% zi) %*% t.zi)[3,]
-    } else if (w.function %in% c("slope2")){     wi<- (solve(t.zi %*% zi) %*% t.zi)[4,]
-    } else if (w.function=="mean"){     wi <- t(rep(1/ni, ni))
-    }
+  # if (w.function %in% c("intercept", "intercept1")){ wi= (solve(t.zi %*% zi) %*% t.zi)[1,]
+  # } else if (w.function %in% c("slope", "slope1")){     wi= (solve(t.zi %*% zi) %*% t.zi)[2,]
+  # } else if (w.function %in% c("intercept2")){ wi= (solve(t.zi %*% zi) %*% t.zi)[3,]
+  # } else if (w.function %in% c("slope2")){     wi= (solve(t.zi %*% zi) %*% t.zi)[4,]
+  # } else if (w.function=="mean"){     wi = t(rep(1/ni, ni))
+  # }
+  wi      = matrix(wi, 1, ni)
 
-    wi      <- matrix(wi, 1, ni)
+  vi        = vi.calc(zi, sigma.vc, rho.vc, sigma.e)
+  t.wi      = t(wi)
+  wi.zi     = wi %*% zi
+  t.wi.zi   = t(wi.zi)
 
-    vi        <- vi.calc(zi, sigma.vc, rho.vc, sigma.e)
-    t.wi      <- t(wi)
-    wi.zi     <- wi %*% zi
-    t.wi.zi   <- t(wi.zi)
+  mu        = xi %*% beta
+  mu_q      = (wi %*% (mu-mui.phase1))[,1]
+  sigma_q   = sqrt((wi %*% vi %*% t.wi)[1,1])
 
-    mu        <- xi %*% beta
-    mu_q      <- (wi %*% mu)[,1]
-    sigma_q   <- sqrt((wi %*% vi %*% t.wi)[1,1])
+  l = ACi1q(cutpoints, SampProb, mu_q, sigma_q)
+  p = SampProb[1:(length(SampProb)-1)] - SampProb[2:(length(SampProb))]
+  f = dnorm(cutpoints, mu_q, sigma_q)
 
-    l <- ACi1q(cutpoints, SampProb, mu_q, sigma_q)
-    p <- SampProb[1:(length(SampProb)-1)] - SampProb[2:(length(SampProb))]
-    f <- dnorm(cutpoints, mu_q, sigma_q)
+  d_li_beta = (wi %*% xi) * sum(p*f) / l
+  f_alpha_k = sum(p*f*(cutpoints - mu_q)) / (l * 2* sigma_q^2 )
 
-    d_li_beta <- (wi %*% xi) * sum(p*f) / l
-    f_alpha_k <- sum(p*f*(cutpoints - mu_q)) / (l * 2* sigma_q^2 )
+  #################################################################################
+  ### now calculate d_li_dalpha
+  #################################################################################
+  len.sigma.vc = length(sigma.vc)
+  len.rho.vc   = length(rho.vc)
+  len.sigma.e  = length(sigma.e)
 
-    #################################################################################
-    ### now calculate d_li_dalpha
-    #################################################################################
-    len.sigma.vc <- length(sigma.vc)
-    len.rho.vc   <- length(rho.vc)
-    len.sigma.e  <- length(sigma.e)
+  SDMat.RE     = diag(sigma.vc)
 
-    SDMat.RE     <- diag(sigma.vc)
+  b0         = matrix(0, len.sigma.vc, len.sigma.vc)
+  b0[lower.tri(b0, diag=FALSE)] = rho.vc
+  tbb0       = t(b0) + b0
+  CorMat.RE  = tbb0 +  diag(rep(1,len.sigma.vc))
 
-    b0         <- matrix(0, len.sigma.vc, len.sigma.vc)
-    b0[lower.tri(b0, diag=FALSE)] <- rho.vc
-    tbb0       <- t(b0) + b0
-    CorMat.RE  <- tbb0 +  diag(rep(1,len.sigma.vc))
+  D             = SDMat.RE %*% CorMat.RE %*% SDMat.RE
+  m             = matrix(0,len.sigma.vc, len.sigma.vc)
 
-    D             <- SDMat.RE %*% CorMat.RE %*% SDMat.RE
-    m             <- matrix(0,len.sigma.vc, len.sigma.vc)
+  ## derivatives w.r.t variance components SDs
+  dVi.dsigma.vc = NULL
+  for (mmm in 1:len.sigma.vc){
+    m1               = m
+    m1[mmm,]         = m1[,mmm] = 1
+    m1[mmm,mmm]      = 2
+    tmp              = sigma.vc[mmm]+ 1*(sigma.vc[mmm]==0) ## to prevent unlikely division by 0
+    dViMat.dsigma.vc = m1 * D / tmp
+    dVi.dsigma.vc    = c(dVi.dsigma.vc, (wi.zi %*% dViMat.dsigma.vc %*% t.wi.zi)[1,1])
+  }
 
-    ## derivatives w.r.t variance components SDs
-    dVi.dsigma.vc <- NULL
-    for (mmm in 1:len.sigma.vc){
-        m1               <- m
-        m1[mmm,]         <- m1[,mmm] <- 1
-        m1[mmm,mmm]      <- 2
-        tmp              <- sigma.vc[mmm]+ 1*(sigma.vc[mmm]==0) ## to prevent unlikely division by 0
-        dViMat.dsigma.vc <- m1 * D / tmp
-        dVi.dsigma.vc    <- c(dVi.dsigma.vc, (wi.zi %*% dViMat.dsigma.vc %*% t.wi.zi)[1,1])
-    }
+  ## derivatives w.r.t variance components rhos
+  b1         = matrix(0,len.sigma.vc,len.sigma.vc)
+  b1[lower.tri(b1, diag=FALSE)] =  c(1:len.rho.vc)
+  tbb1       = t(b1) + b1
 
-    ## derivatives w.r.t variance components rhos
-    b1         <- matrix(0,len.sigma.vc,len.sigma.vc)
-    b1[lower.tri(b1, diag=FALSE)] <-  c(1:len.rho.vc)
-    tbb1       <- t(b1) + b1
+  dVi.drho.vc = NULL
+  for (mmm in 1:len.rho.vc){
+    tmp                   = which(tbb1==mmm, arr.ind=TRUE)
+    m2                    = m
+    m2[tmp[1,1],tmp[1,2]] = 1
+    m2[tmp[2,1],tmp[2,2]] = 1
+    tmp                   = rho.vc[mmm] + 1*(rho.vc[mmm]==0) ## to prevent division by 0
+    dViMat.drho.vc        = m2 * D / tmp
+    dVi.drho.vc           = c(dVi.drho.vc, (wi.zi %*% dViMat.drho.vc %*% t.wi.zi)[1,1])
+  }
 
-    dVi.drho.vc <- NULL
-    for (mmm in 1:len.rho.vc){
-        tmp                   <- which(tbb1==mmm, arr.ind=TRUE)
-        m2                    <- m
-        m2[tmp[1,1],tmp[1,2]] <- 1
-        m2[tmp[2,1],tmp[2,2]] <- 1
-        tmp                   <- rho.vc[mmm] + 1*(rho.vc[mmm]==0) ## to prevent division by 0
-        dViMat.drho.vc        <- m2 * D / tmp
-        dVi.drho.vc           <- c(dVi.drho.vc, (wi.zi %*% dViMat.drho.vc %*% t.wi.zi)[1,1])
-    }
+  ## derivatives w.r.t error sds
+  dVi.dsigma.e = NULL
+  for (mmm in 1:len.sigma.e){
+    dsigma.e.vec       = 2*sigma.e
+    dsigma.e.vec[-mmm] = 0
+    dViMat.dsigma.e    = diag(rep(dsigma.e.vec, each=ni/len.sigma.e))
+    dVi.dsigma.e       = c(dVi.dsigma.e, (wi %*% dViMat.dsigma.e %*% t.wi)[1,1])
+  }
 
-    ## derivatives w.r.t error sds
-    dVi.dsigma.e <- NULL
-    for (mmm in 1:len.sigma.e){
-        dsigma.e.vec       <- 2*sigma.e
-        dsigma.e.vec[-mmm] <- 0
-        dViMat.dsigma.e    <- diag(rep(dsigma.e.vec, each=ni/len.sigma.e))
-        dVi.dsigma.e       <- c(dVi.dsigma.e, (wi %*% dViMat.dsigma.e %*% t.wi)[1,1])
-    }
-
-    c(d_li_beta, c(f_alpha_k * c(dVi.dsigma.vc, dVi.drho.vc, dVi.dsigma.e)))
+  c(d_li_beta, c(f_alpha_k * c(dVi.dsigma.vc, dVi.drho.vc, dVi.dsigma.e)))
 }
+
 
 
 #' Subject specific contribution to the lme model score (also returns marginal Vi=Cov(Y|X))
@@ -844,7 +843,7 @@ acml_internal <- function(formula,
     Weights    = data$Weights = data[ , Weights0]
   }
 
-  if (design$method == "bivariate"){
+  if (design$method %in% c("bivariate","blup.bivariate")){
     cutpoints   <- matrix(rep(design$cutpoints, length(y)), ncol = 4, byrow = T)
     SampProb    <- matrix(rep(design$p_sample[1:2], length(y)), ncol = 2, byrow = T)
   } else {
