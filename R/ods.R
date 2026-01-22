@@ -296,6 +296,7 @@ ods <- function(
     quantiles = NULL,
     cutpoints = NULL,
     subset    = NULL,
+    prob_intercept = NULL,
     na.action = getOption('na.action'),
     ProfileCol= NULL   ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
 )
@@ -546,7 +547,16 @@ ods <- function(
         high = c(intercept = I_high, slope = S_high)
       )
 
-    } else {
+    } else if (identical(method, "mixture")) {
+
+      cutpoints <- apply(z_i, 1, quantile, quantiles)[,c("intercept", "slope"), drop=FALSE]
+      cutpoints <- matrix(
+        cutpoints,
+        nrow=2, byrow=FALSE,
+        dimnames=list(1:2, c("intercept", "slope"))
+      )
+
+      } else {
 
       ## univariate: intercept or slope
       n_c     <- length(p_sample) - 1L
@@ -562,7 +572,7 @@ ods <- function(
   } else {
 
     ## user defined cutpoints
-    if (identical(method, "bivariate")) {
+    if (method %in% c("bivariate","mixture")) {
       ## c(IntLow, IntHigh, SlpLow, SlpHigh)
       cutpoints <- rbind(
         low  = c(intercept = cutpoints[1], slope = cutpoints[3]),
@@ -594,6 +604,17 @@ ods <- function(
                  slps <  cutpoints["high", "slope"])
 
     p_sample_i <- ifelse(inside, p_sample[2], p_sample[1])
+    names(p_sample_i) <- colnames(z_i)
+
+  } else if (identical(method, "mixture")) {
+
+    # for mixture design, the sampling probability should be a vector of 3, which is low, medium, high, the same as univariate.
+
+    p_sample_vec <- data.frame(p_intercept = p_sample[as.numeric(
+      cut(z_i['intercept',], c(-Inf, t(cutpoints[,'intercept']), Inf)))],
+      p_slope = p_sample[as.numeric(
+        cut(z_i['slope',],     c(-Inf, t(cutpoints[,'slope']),     Inf)))])
+    rownames(p_sample_vec) <- colnames(z_i)
 
   } else {
 
@@ -607,14 +628,21 @@ ods <- function(
         )
       )
     ]
+    names(p_sample_i) <- colnames(z_i)
   }
 
-  names(p_sample_i) <- colnames(z_i)
-
-
   ## sampling ids
+  if (identical(method, "mixture")) {
+    # prob_intercept is the proportion of sampled based on intercept.
+    sampled_by_intercept = stats::rbinom(nrow(p_sample_vec), 1, prob_intercept) > 0
+    p_sample_i = ifelse(sampled_by_intercept, p_sample_vec[,"p_intercept"], p_sample_vec[,"p_slope"])
+    smpl <- rownames(p_sample_vec)[((stats::rbinom(nrow(p_sample_vec), 1, p_sample_vec[,"p_intercept"]) > 0)*sampled_by_intercept) | ((stats::rbinom(nrow(p_sample_vec), 1, p_sample_vec[,"p_slope"]) > 0)*(1-sampled_by_intercept))]
+  }
+  else {
+    smpl <- names(p_sample_i)[stats::rbinom(length(p_sample_i), 1, p_sample_i) > 0]
+  }
 
-  smpl <- names(p_sample_i)[stats::rbinom(length(p_sample_i), 1, p_sample_i) > 0]
+  ## FIXME: adding sample() to sample exact numbers of subjects.
 
   if (is.null(ProfileCol)) {
     ProfileCol <- NA
