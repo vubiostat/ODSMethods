@@ -155,6 +155,19 @@ design <- ods(Response ~ Month|Patient, 'mixture',
 summary(design)
 plot(design)
 ```
+#### Weighted Likelihood
+
+```{r, fig.dim=c(6,4) }
+data <- gbti %>%
+  group_by(Patient) %>%
+  mutate(weight = 1/runif(1)) %>%
+  ungroup()
+design <- ods(Response ~ Month|Patient, 'mean',
+            p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9), weights = 'weight')
+summary(design)
+plot(design)
+```
 
 ## Demo of ODS Error Input Message
 ### Error in formula, missing |id

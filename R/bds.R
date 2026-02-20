@@ -316,7 +316,6 @@ bds <- function(
 
   ## create/process cutpoints
 
-
   if (is.null(cutpoints)) {
 
     ## from quantiles and data to calculate cutpoints
@@ -356,7 +355,7 @@ bds <- function(
       cutpoints <- matrix(
         cutpoints,
         nrow=2, byrow=FALSE,
-        dimnames=list(1:2, c("intercept", "slope"))
+        dimnames=list(c("low","high"), c("intercept", "slope"))
       )
 
     } else {
@@ -406,14 +405,14 @@ bds <- function(
                  slps >  cutpoints["low",  "slope"] &
                  slps <  cutpoints["high", "slope"])
 
-    p_sample_i <- ifelse(inside, p_sample[2], p_sample[1])
-    names(p_sample_i) <- colnames(z_i)
+    p_sample_i <- ifelse(inside, p_sample[1], p_sample[2])
+    names(p_sample_i) <- names(split_list)
 
-    method_i         = rep(method, nrow(data))
+    method_i         = rep(method, length(names(split_list)))
 
-    cutpoints_i      = rep(c(cutpoints["low",  "intercept"], cutpoints["high",  "intercept"], cutpoints["low",  "slope"], cutpoints["high", "slope"]), nrow(data))
+    cutpoints_i      = matrix(rep(c(cutpoints["low",  "intercept"], cutpoints["high",  "intercept"], cutpoints["low",  "slope"], cutpoints["high", "slope"]), length(names(split_list))), ncol = 4, byrow = T)
 
-    acml_samp_prob_i = rep(p_sample, nrow(data))
+    acml_samp_prob_i = matrix(rep(p_sample, length(names(split_list))), ncol = 2, byrow = T)
 
   } else if (identical(method, "mixture")) {
 
@@ -423,7 +422,7 @@ bds <- function(
       cut(z_i['intercept',], c(-Inf, t(cutpoints[,'intercept']), Inf)))],
       p_slope = p_sample[as.numeric(
         cut(z_i['slope',],     c(-Inf, t(cutpoints[,'slope']),     Inf)))])
-    rownames(p_sample_vec) <- colnames(z_i)
+    rownames(p_sample_vec) <- names(split_list)
 
 
   } else {
@@ -438,10 +437,11 @@ bds <- function(
         )
       )
     ]
-    names(p_sample_i) <- colnames(z_i)
-    method_i         = rep(method, nrow(data))
-    cutpoints_i      = rep(cutpoints, nrow(data))
-    acml_samp_prob_i = rep(p_sample, nrow(data))
+    names(p_sample_i) <- names(split_list)
+
+    method_i         = rep(method, length(names(split_list)))
+    cutpoints_i      = matrix(rep(cutpoints, length(names(split_list))), ncol = 2, byrow = T)
+    acml_samp_prob_i = matrix(rep(p_sample, length(names(split_list))), ncol = 3, byrow = T)
   }
 
   ## sampling ids
@@ -451,18 +451,13 @@ bds <- function(
     p_sample_i = ifelse(sampled_by_intercept, p_sample_vec[,"p_intercept"], p_sample_vec[,"p_slope"])
     smpl <- rownames(p_sample_vec)[((stats::rbinom(nrow(p_sample_vec), 1, p_sample_vec[,"p_intercept"]) > 0)*sampled_by_intercept) | ((stats::rbinom(nrow(p_sample_vec), 1, p_sample_vec[,"p_slope"]) > 0)*(1-sampled_by_intercept))]
 
-    method_i         = ifelse(sampled_by_intercept, rep("intercept", nrow(data)), rep('slope',nrow(data)))
+    method_i         = ifelse(sampled_by_intercept, "intercept","slope")
 
-    cutpoints_i      = ifelse(sampled_by_intercept,
-                              rep(c(cutpoints["low",  "intercept"], cutpoints["high",  "intercept"]), nrow(data)),
-                              rep(c(cutpoints["low",  "slope"], cutpoints["high", "slope"]), nrow(data)))
+    cutpoints_i      = matrix(unlist(lapply(sampled_by_intercept, function(i) {c(cutpoints["low",  "intercept"], cutpoints["high",  "intercept"]) * i + (1-i)* c(cutpoints["low",  "slope"], cutpoints["high", "slope"])})),ncol = 2, byrow = T)
 
-    acml_samp_prob_i = ifelse(sampled_by_intercept,
-                              rep(p_sample, nrow(data)),  # FIXME: mixture design allow length of six
-                              rep(p_sample, nrow(data)))
+    acml_samp_prob_i = matrix(unlist(lapply(sampled_by_intercept, function(i) {p_sample * i + (1-i)* p_sample})),ncol = 3, byrow = T)  # FIXME: allow 6 p_samples
 
-  }
-  else {
+  }else {
     smpl <- names(p_sample_i)[stats::rbinom(length(p_sample_i), 1, p_sample_i) > 0]
   }
 
@@ -471,6 +466,7 @@ bds <- function(
   if (is.null(ProfileCol)) {
     ProfileCol <- NA
   }
+
   # Return design object
   structure(list(
     call        = cl,

@@ -602,7 +602,7 @@ ods <- function(
       cutpoints <- matrix(
         cutpoints,
         nrow=2, byrow=FALSE,
-        dimnames=list(1:2, c("intercept", "slope"))
+        dimnames=list(c("low","high"), c("intercept", "slope"))
       )
 
       } else {
@@ -656,10 +656,13 @@ ods <- function(
     names(p_sample_i) <- names(split_list)
 
     method_i         = rep(method, length(names(split_list)))
+    names(method_i)  = names(split_list)
 
     cutpoints_i      = matrix(rep(c(cutpoints["low",  "intercept"], cutpoints["high",  "intercept"], cutpoints["low",  "slope"], cutpoints["high", "slope"]), length(names(split_list))), ncol = 4, byrow = T)
+    rownames(cutpoints_i)  = names(split_list)
 
     acml_samp_prob_i = matrix(rep(p_sample, length(names(split_list))), ncol = 2, byrow = T)
+    rownames(acml_samp_prob_i)  = names(split_list)
 
   } else if (identical(method, "mixture")) {
 
@@ -687,8 +690,14 @@ ods <- function(
     names(p_sample_i) <- names(split_list)
 
     method_i         = rep(method, length(names(split_list)))
+    names(method_i)  = names(split_list)
+
     cutpoints_i      = matrix(rep(cutpoints, length(names(split_list))), ncol = 2, byrow = T)
+    rownames(cutpoints_i)  = names(split_list)
+
     acml_samp_prob_i = matrix(rep(p_sample, length(names(split_list))), ncol = 3, byrow = T)
+    rownames(acml_samp_prob_i)  = names(split_list)
+
   }
 
   ## sampling ids
@@ -699,21 +708,24 @@ ods <- function(
     smpl <- rownames(p_sample_vec)[((stats::rbinom(nrow(p_sample_vec), 1, p_sample_vec[,"p_intercept"]) > 0)*sampled_by_intercept) | ((stats::rbinom(nrow(p_sample_vec), 1, p_sample_vec[,"p_slope"]) > 0)*(1-sampled_by_intercept))]
 
     method_i         = ifelse(sampled_by_intercept, "intercept","slope")
+    names(method_i)  = names(split_list)
 
     cutpoints_i      = matrix(unlist(lapply(sampled_by_intercept, function(i) {c(cutpoints["low",  "intercept"], cutpoints["high",  "intercept"]) * i + (1-i)* c(cutpoints["low",  "slope"], cutpoints["high", "slope"])})),ncol = 2, byrow = T)
+    rownames(cutpoints_i)  = names(split_list)
 
     acml_samp_prob_i = matrix(unlist(lapply(sampled_by_intercept, function(i) {p_sample * i + (1-i)* p_sample})),ncol = 3, byrow = T)  # FIXME: allow 6 p_samples
+    rownames(acml_samp_prob_i)  = names(split_list)
 
   }else {
     smpl <- names(p_sample_i)[stats::rbinom(length(p_sample_i), 1, p_sample_i) > 0]
   }
 
+  if (!is.character(weights)) {weights = as.character(weights)}
   ## FIXME: adding sample() to sample exact numbers of subjects.
 
   if (is.null(ProfileCol)) {
     ProfileCol <- NA
   }
-
   structure(
     list(
       call        = cl,
