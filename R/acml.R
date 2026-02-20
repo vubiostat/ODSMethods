@@ -656,6 +656,7 @@ LogLikeCAndScore2 <- function(params, y, x, z, id, w.function, cutpoints, SampPr
     out
 }
 
+
 #' Create a list of subject-specific data
 #'
 #' @param id sum(n_i) vector of subject ids
@@ -793,12 +794,12 @@ CreateSubjectData <- function(id,y,x,z,Weights,SampProb,cutpoints,w.function, xc
 #' @param formula.random formula for the random effects (of the form ~z).  Right now this model only fits random intercept and slope models.
 #' @param data data frame that should contain everything in formula.fixed, formula.random, id, and Weights.  It does not include: w.function, cutpoints, SampProb
 #' @param id sum(n_i) vector of subject ids (a variable contained in data)
-#' @param w.function sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi* zi) * t.zi)[1,]), "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[1,]). "intercept2" (second intercept of the regression of the Yi ~
+#' @param method sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi* zi) * t.zi)[1,]), "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[1,]). "intercept2" (second intercept of the regression of the Yi ~
 ##zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[3,]), "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[4,]) "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[c(1,2),]) "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) * t.zi)[c(1,3),]) "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[c(1,3),]).  There should be one unique value per subject.  NOTE: We also have the same designs but for BLUP based sampling, in which case, the character string should begin with "blup.".  For example "blup.intercept". There should be one unique value per subject but n_i replicates of that value.  Note that w.function should NOT be in the dat dataframe.
 #' @param InitVals starting values for c(beta, log(sigma0), log(sigma1), log((1+rho)/(1-rho)), log(sigmae))
 #' @param cutpoints A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions for individual subjects.  If using a low, medium, high, sampling scheme, this is a sum(n_i) by 2 matrix that must be a distinct object not contained in the dat dataframe.  Each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high.  If using a square doughnut design this should be sum(n_i) by 4 matrix (var1lower, var1upper, var2lower, var2upper). Each subject should have n_i rows of the same values.
-#' @param SampProb A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region. For low medium high sampling, each row is a vector of length 3 with sampling probabilities for each region. For bivariate stratum sampling each row is a vector of length 2 with sampling probabilities for the inner and outer strata. Each subject should have n_i rows of the same values.  Not in data.
-#' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  This should be a variable in the data dataframe. It should only be used if doing IPWL.  Note if doing IPWL, only use robcov (robust variances) and not covar.  If not doing IPWL, this must be a vectors of 1s.
+#' @param acml_samp_prob A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region. For low medium high sampling, each row is a vector of length 3 with sampling probabilities for each region. For bivariate stratum sampling each row is a vector of length 2 with sampling probabilities for the inner and outer strata. Each subject should have n_i rows of the same values.  Not in data.
+#' @param weights Subject specific sampling weights.  A vector of length sum(n_i).  This should be a variable in the data dataframe. It should only be used if doing IPWL.  Note if doing IPWL, only use robcov (robust variances) and not covar.  If not doing IPWL, this must be a vectors of 1s.
 #' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
 #'                   while fixing these columns at the values of InitVals[ProfileCol]
 #' @return Ascertainment corrected Maximum likelihood: Ests, covar, logLik, code, robcov
@@ -813,44 +814,86 @@ CreateSubjectData <- function(id,y,x,z,Weights,SampProb,cutpoints,w.function, xc
 acml_internal <- function(formula,
                           design,
                           data,
-                          InitVals
+                          InitVals,
+                          weights,
+                          cutpoints,
+                          acml_samp_prob,
+                          method,
+                          ProfileCol
 ){ ## only used for blup sampling
   if(is.null(formula)) {stop('Specify the formula of the model.  It is currently NULL.')}
   if(!is.data.frame(data)) {
     data <- as.data.frame(data)
     warning('data converted to data.frame.')
   }
-  terms = unique( c(all.vars(formula),design$id,design$weights) )
-  data  = data[,terms]
 
-  if(any(is.na(data))) data = na.omit(data)
+  ftxt  <- paste(deparse(design$formula), collapse = "")
+  parts <- strsplit(ftxt, "\\|", perl = TRUE)[[1]]
+  if (length(parts) != 2) stop("Formula must be like: y ~ x1 + x2 | id")
 
-  id    = data$id = data[ , design$id]
+  left_txt <- trimws(parts[1])          # "y ~ x1 + x2"
+  id_txt   <- trimws(parts[2])          # "id"
 
-  fixed.f = model.frame(formula, data)
-  fixed.t = attr(fixed.f, "terms")
-  y       = model.response(fixed.f,'numeric')
-  uy      = unique(y)
-  x       = model.matrix(formula, fixed.f)
-  z_id    = data.frame(id = design$model.frame[,design$id], design$z_mf)
-  z       = as.matrix(z_id[z_id$id %in% unique(id),-1])
+  f_left <- stats::as.formula(left_txt)
+  x_vars <- all.vars(stats::update(f_left, 0 ~ .))
+
+  all_vars_formula <- as.formula(
+    paste(design$response, "~", paste(unique(c(all.vars(formula), x_vars,  design$id, weights, method, cutpoints, acml_samp_prob)), collapse = " + ")
+    )
+  )
+  mf <- model.frame(all_vars_formula, data = data,
+                    drop.unused.levels = TRUE)
+
+  # y
+  y <- unlist(mf[, design$response, drop = FALSE])
+
+  # id
+  id <- mf[, design$id]
+
+  # fixed X
+  fixed.mf <- model.frame(formula, mf)
+  x <- model.matrix(formula, fixed.mf)
+
+  # random z (long format)
+  z <- as.matrix(data.frame(
+    `(Intercept)` = 1,
+    mf[, x_vars, drop = FALSE],
+    check.names = FALSE
+  ))
+
+  if (is.null(weights)){
+    Weights    = rep(1, nrow(mf))    #for non-IPW case
+  } else if (is.null(design$weights)){
+    Weights    = rep(1, nrow(mf))
+  } else {
+    Weights    = ifelse(!is.null(weights), mf[, weights], mf[, design$weights])
+  }
+
+  if (is.null(method)){
+    names(design$method_i) = design$id_i
+    w.function = design$method_i[id]}
+  else{
+    w.function = mf[, method]
+  }
+  if (is.null(cutpoints)){
+    rownames(design$cutpoints_i) <- design$id_i
+    cutpoints = design$cutpoints_i[id,]
+  } else {
+    cutpoints = mf[, cutpoints]
+  }
+  if (is.null(acml_samp_prob)){
+    rownames(design$acml_samp_prob_i) <- design$id_i
+    SampProb = design$acml_samp_prob_i[id,]
+  } else {
+    SampProb = mf[, acml_samp_prob]
+  }
+
+
+  xcol.phase1=design$xcol.phase1
+  ests.phase1=design$ests.phase1
 
   #if (is.na(SampProb[1])) SampProb = c(1,1,1)
-  if (is.null(design$weights)){
-    Weights    = data$Weights = rep(1, nrow(data))    #for non-IPW case
-  }else{
-    Weights0   = design$weights
-    Weights    = data$Weights = data[ , Weights0]
-  }
 
-  if (design$method %in% c("bivariate","blup.bivariate")){
-    cutpoints   <- matrix(rep(design$cutpoints, length(y)), ncol = 4, byrow = T)
-    SampProb    <- matrix(rep(design$p_sample[1:2], length(y)), ncol = 2, byrow = T)
-  } else {
-    cutpoints   <- matrix(rep(design$cutpoints, length(y)), ncol = 2, byrow = T)
-    SampProb    <- matrix(rep(design$p_sample, length(y)), ncol = 3, byrow = T)
-  }
-  w.function  <- rep(design$method, length(y))
 
   acml.fit <- nlm(LogLikeCAndScore2,
                   InitVals,
@@ -863,13 +906,15 @@ acml_internal <- function(formula,
                   SampProb=SampProb,
                   Weights=Weights,
                   ProfileCol=design$ProfileCol,
-                  xcol.phase1=design$xcol.phase1,
-                  ests.phase1=design$ests.phase1,
+                  xcol.phase1=xcol.phase1,
+                  ests.phase1=ests.phase1,
                   stepmax=4, iterlim=250,
                   check.analyticals = TRUE, print.level=0)
 
-  ## Calculate the observed information and then invert to get the covariance matrix
+  # ## Calculate the observed information and then invert to get the covariance matrix
   npar        <- length(acml.fit$estimate)
+  # ObsInfo    = LogLikeC.Hessian(params = acml.fit$estimate,y=y, x=x, z=z, w.function=w.function, id=id, cutpoints=cutpoints, SampProb=SampProb, Weights=Weights, xcol.phase1=xcol.phase1, ests.phase1=ests.phase1)
+
   Hessian.eps <- 1e-7
   eps.mtx     <- diag(rep(Hessian.eps, npar))
   grad.at.max <- acml.fit$gradient
@@ -942,9 +987,8 @@ acml_internal <- function(formula,
                            cutpoints  = cutpoints,
                            SampProb   = SampProb,
                            Weights    = Weights,
-                           WeightsVar = design$weights,
                            ProfileCol = design$ProfileCol)
-  if(kappa(out$covar) > 1e5) warning("Poorly Conditioned Model")
+  if(kappa(out$covariance) > 1e5) warning("Poorly Conditioned Model")
   out
 }
 
@@ -1362,12 +1406,16 @@ acml <- function(
     design,
     data,
     subset = NULL,
-    # weights = NULL,
+    weights = NULL,
     MI = FALSE,
     MImethod = "direct",
     na.action = getOption('na.action'),
     verbose = 0L,
     init = NULL,
+    cutpoints = NULL,
+    acml_samp_prob = NULL,
+    method = NULL,
+    ProfileCol = NA,
     ...)
 {
   # Validate arguments
@@ -1414,10 +1462,15 @@ acml <- function(
   reportAssertions(coll)
 
   fit <- acml_internal(
-    formula  = formula,
-    design   = design,
-    InitVals = init,
-    data     = data
+    formula     = formula,
+    design      = design,
+    InitVals    = init,
+    data        = data,
+    weights     = weights,
+    cutpoints   = cutpoints,
+    acml_samp_prob = acml_samp_prob,
+    method      = method,
+    ProfileCol  = ProfileCol
   )
   fit$formula <- formula
   fit$design <- design

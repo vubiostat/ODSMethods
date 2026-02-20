@@ -9,11 +9,16 @@ acml(
   design,
   data,
   subset = NULL,
+  weights = NULL,
   MI = FALSE,
   MImethod = "direct",
   na.action = getOption("na.action"),
   verbose = 0L,
   init = NULL,
+  cutpoints = NULL,
+  acml_samp_prob = NULL,
+  method = NULL,
+  ProfileCol = NA,
   ...
 )
 }
@@ -35,6 +40,11 @@ observations to be used in the fitting process. (See additional details
 about how this argument interacts with data-dependent bases in the
 ‘Details’ section of the model.frame documentation.)}
 
+\item{weights}{an optional vector of weights to be used in the fitting
+process. Should be NULL or a numeric vector. If non-NULL, weighted least
+squares is used with weights weights (that is, minimizing sum(w*e^2));
+otherwise ordinary least squares is used. See also ‘Details’,}
+
 \item{MI}{`logical(1)`; Is multiple imputation to be performed. Defaults to FALSE.}
 
 \item{MImethod}{`character(1)`; Specifies multiple imputation method, defaults to 'direct'. Can also be 'indirect'.}
@@ -51,11 +61,6 @@ about how this argument interacts with data-dependent bases in the
 via the optimizer.}
 
 \item{...}{Optional additional parameters passed to sub methods.}
-
-\item{weights}{an optional vector of weights to be used in the fitting
-process. Should be NULL or a numeric vector. If non-NULL, weighted least
-squares is used with weights weights (that is, minimizing sum(w*e^2));
-otherwise ordinary least squares is used. See also ‘Details’,}
 }
 \description{
 Outcome dependent sampling designs need to be corrected when fitting a

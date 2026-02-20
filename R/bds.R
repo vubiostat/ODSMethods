@@ -66,10 +66,6 @@ summary.bdsdesign <- function(object, digits = max(3L, getOption("digits")), ...
 #'   used in the fitting process. (See additional details about how this
 #'   argument interacts with data-dependent bases in the ‘Details’ section of
 #'   the model.frame documentation.)
-#' @param weights	an optional vector of weights to be used in the fitting
-#'   process. Should be NULL or a numeric vector. If non-NULL, weighted least
-#'   squares is used with weights weights (that is, minimizing sum(w*e^2));
-#'   otherwise ordinary least squares is used. See also ‘Details’,
 #' @param na.action a function which indicates what should happen when the data
 #'   contain NAs. The default is set by the na.action setting of options, and is
 #'   na.fail if that is unset. The ‘factory-fresh’ default is na.omit. Another
@@ -116,9 +112,9 @@ bds <- function(
   quantiles  = NULL,
   cutpoints  = NULL,
   subset     = NULL,
+  weights    = NULL,
   na.action  = getOption('na.action'),
-  ProfileCol = NULL   ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
-)
+  ProfileCol = NULL)   ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
 {
   # Validate arguments
   coll <- makeAssertCollection()
@@ -320,6 +316,7 @@ bds <- function(
 
   ## create/process cutpoints
 
+
   if (is.null(cutpoints)) {
 
     ## from quantiles and data to calculate cutpoints
@@ -353,6 +350,15 @@ bds <- function(
         high = c(intercept = I_high, slope = S_high)
       )
 
+    } else if (identical(method, "mixture")) {
+
+      cutpoints <- apply(z_i, 1, quantile, quantiles)[,c("intercept", "slope"), drop=FALSE]
+      cutpoints <- matrix(
+        cutpoints,
+        nrow=2, byrow=FALSE,
+        dimnames=list(1:2, c("intercept", "slope"))
+      )
+
     } else {
 
       ## univariate: intercept or slope
@@ -369,7 +375,7 @@ bds <- function(
   } else {
 
     ## user defined cutpoints
-    if (identical(method, "bivariate")) {
+    if (method %in% c("bivariate","mixture")) {
       ## c(IntLow, IntHigh, SlpLow, SlpHigh)
       cutpoints <- rbind(
         low  = c(intercept = cutpoints[1], slope = cutpoints[3]),
@@ -386,7 +392,8 @@ bds <- function(
     }
   }
 
-  ## calculate each subject's sampling probability p_sample_i
+
+  ## calculate each subject's sampling probability p_sample_i and define each subject's method, cutpoints, sampling probability
 
   if (identical(method, "bivariate")) {
 
@@ -400,6 +407,24 @@ bds <- function(
                  slps <  cutpoints["high", "slope"])
 
     p_sample_i <- ifelse(inside, p_sample[2], p_sample[1])
+    names(p_sample_i) <- colnames(z_i)
+
+    method_i         = rep(method, nrow(data))
+
+    cutpoints_i      = rep(c(cutpoints["low",  "intercept"], cutpoints["high",  "intercept"], cutpoints["low",  "slope"], cutpoints["high", "slope"]), nrow(data))
+
+    acml_samp_prob_i = rep(p_sample, nrow(data))
+
+  } else if (identical(method, "mixture")) {
+
+    # for mixture design, the sampling probability should be a vector of 3, which is low, medium, high, the same as univariate.
+
+    p_sample_vec <- data.frame(p_intercept = p_sample[as.numeric(
+      cut(z_i['intercept',], c(-Inf, t(cutpoints[,'intercept']), Inf)))],
+      p_slope = p_sample[as.numeric(
+        cut(z_i['slope',],     c(-Inf, t(cutpoints[,'slope']),     Inf)))])
+    rownames(p_sample_vec) <- colnames(z_i)
+
 
   } else {
 
@@ -413,41 +438,65 @@ bds <- function(
         )
       )
     ]
+    names(p_sample_i) <- colnames(z_i)
+    method_i         = rep(method, nrow(data))
+    cutpoints_i      = rep(cutpoints, nrow(data))
+    acml_samp_prob_i = rep(p_sample, nrow(data))
   }
 
-  names(p_sample_i) <- colnames(z_i)
-
   ## sampling ids
+  if (identical(method, "mixture")) {
+    # prob_intercept is the proportion of sampled based on intercept.
+    sampled_by_intercept = stats::rbinom(nrow(p_sample_vec), 1, prob_intercept) > 0
+    p_sample_i = ifelse(sampled_by_intercept, p_sample_vec[,"p_intercept"], p_sample_vec[,"p_slope"])
+    smpl <- rownames(p_sample_vec)[((stats::rbinom(nrow(p_sample_vec), 1, p_sample_vec[,"p_intercept"]) > 0)*sampled_by_intercept) | ((stats::rbinom(nrow(p_sample_vec), 1, p_sample_vec[,"p_slope"]) > 0)*(1-sampled_by_intercept))]
 
-  smpl <- names(p_sample_i)[stats::rbinom(length(p_sample_i), 1, p_sample_i) > 0]
+    method_i         = ifelse(sampled_by_intercept, rep("intercept", nrow(data)), rep('slope',nrow(data)))
 
+    cutpoints_i      = ifelse(sampled_by_intercept,
+                              rep(c(cutpoints["low",  "intercept"], cutpoints["high",  "intercept"]), nrow(data)),
+                              rep(c(cutpoints["low",  "slope"], cutpoints["high", "slope"]), nrow(data)))
+
+    acml_samp_prob_i = ifelse(sampled_by_intercept,
+                              rep(p_sample, nrow(data)),  # FIXME: mixture design allow length of six
+                              rep(p_sample, nrow(data)))
+
+  }
+  else {
+    smpl <- names(p_sample_i)[stats::rbinom(length(p_sample_i), 1, p_sample_i) > 0]
+  }
+
+  ## FIXME: adding sample() to sample exact numbers of subjects.
 
   if (is.null(ProfileCol)) {
     ProfileCol <- NA
   }
-
   # Return design object
   structure(list(
     call        = cl,
     formula     = formula,
     model.frame = mf,
     method      = paste0("blup.",method),
+    method_i    = paste0("blup.",method_i),
+    weights     = weights,
     p_sample    = p_sample,
     p_sample_i  = p_sample_i,
+    acml_samp_prob_i = acml_samp_prob_i,
     sample_ids  = smpl,
     response    = response_name,
     time        = time_name,
     id          = id_name,
     quantiles   = quantiles,
     cutpoints   = cutpoints,
+    cutpoints_i = cutpoints_i,
     z_i         = z_i,
     z_mf        = z_mf,
-    n_rand      = 2,     # Number of random effects, slope + intercept
+    n_rand      = 2,
     ProfileCol  = ProfileCol, ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
     xcol.phase1 = xcol.phase1,  ## only used for blup sampling
     ests.phase1 = ests.phase1  ## only used for blup sampling
     ),
-    class=c("bdsdesign","odsdesign")
+    class=c("bdsdesign")
   )
 }
 

@@ -12,7 +12,9 @@ ods(
   quantiles = NULL,
   cutpoints = NULL,
   subset = NULL,
+  prob_intercept = NULL,
   na.action = getOption("na.action"),
+  weights = NULL,
   ProfileCol = NULL
 )
 }

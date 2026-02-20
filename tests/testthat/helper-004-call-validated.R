@@ -13,10 +13,30 @@ validated_ll <- function(data, est, method, cuts=c(0.1, 0.9), probs=c(1, 0.25, 1
 
   cuts <- if(method == 'bivar')
   {
-    c(
-      quantile(b_i['intercept',], probs=cuts),
-      quantile(b_i['slope',],     probs=cuts)
-    ) # FIXME: this needs to be changed. The bivariate design is not a simple cut of intercept and slope
+    p0   <- cuts[1]
+    ints <- b_i["intercept", ]
+    slps <- b_i["slope",     ]
+
+    q1  <- 0.99
+    Del <- 1
+
+    ## marginal joint inside around p0
+    while (Del > 0.003 && q1 > 0.5) {
+      q1 <- q1 - 0.001
+
+      I_low  <- as.numeric(stats::quantile(ints, probs = 1 - q1))
+      I_high <- as.numeric(stats::quantile(ints, probs = q1))
+      S_low  <- as.numeric(stats::quantile(slps, probs = 1 - q1))
+      S_high <- as.numeric(stats::quantile(slps, probs = q1))
+
+      inside <- (ints > I_low & ints < I_high &
+                   slps > S_low & slps < S_high)
+
+      Del <- abs(mean(inside) - p0)
+    }
+
+    c(I_low, I_high, S_low,  S_high)
+
   } else quantile(b_i[method,], probs=cuts)
 
   data <- data[!is.na(data$Genotype),]  # Drop NA data for these tests

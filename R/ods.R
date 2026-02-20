@@ -298,8 +298,8 @@ ods <- function(
     subset    = NULL,
     prob_intercept = NULL,
     na.action = getOption('na.action'),
-    ProfileCol= NULL   ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
-)
+    weights   = NULL,
+    ProfileCol= NULL)## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
 {
   # Validate arguments
   coll <- makeAssertCollection()
@@ -309,7 +309,7 @@ ods <- function(
     method,
     len           = 1,
     any.missing   = FALSE,
-    pattern       = "^(slope|intercept|bivariate|mean)$",
+    pattern       = "^(slope|intercept|bivariate|mean|mixture)$",
     add           = coll
   )
 
@@ -369,8 +369,8 @@ ods <- function(
   ## method vs time
   ## Response ~ Month|Patient can only be c("intercept", "slope", "bivariate", "mean")
   assert_true(
-    method %in% c("intercept", "slope", "bivariate", "mean"),
-    .var.name = "when formula is Response ~ Month|Patient, method must be 'intercept', 'slope', 'bivariate', or 'mean'",
+    method %in% c("intercept", "slope", "bivariate", "mean", "mixture"),
+    .var.name = "when formula is Response ~ Month|Patient, method must be 'intercept', 'slope', 'bivariate', 'mean' or 'mixture'",
     add = coll
   )
 
@@ -399,7 +399,7 @@ ods <- function(
       any.missing  = FALSE,
       add          = coll
     )
-  }
+    }
 
   ## only one of quantiles or cutpoints can be specified
   assert_true(
@@ -464,53 +464,102 @@ ods <- function(
 
   reportAssertions(coll)
 
-  ## model.frame (similar to lm)
+  # ## model.frame (similar to lm)
   cl      <- match.call()
-  mf_call <- match.call(expand.dots = FALSE)
-  m       <- match(c("formula", "data", "subset", "na.action"),
-                   names(mf_call), 0L)
-  mf_call <- mf_call[c(1L, m)]
-  mf_call$drop.unused.levels <- TRUE
-  mf_call[[1L]]        <- quote(stats::model.frame)
-  mf_call[["formula"]] <- stats::as.formula(gsub("\\|", "+", format(formula)))
-  mf <- eval(mf_call, parent.frame())
+  # mf_call <- match.call(expand.dots = FALSE)
+  # m       <- match(c("formula", "data", "subset", "na.action"),
+  #                  names(mf_call), 0L)
+  # mf_call <- mf_call[c(1L, m)]
+  # mf_call$drop.unused.levels <- TRUE
+  # mf_call[[1L]]        <- quote(stats::model.frame)
+  # mf_call[["formula"]] <- stats::as.formula(gsub("\\|", "+", format(formula)))
+  # mf <- eval(mf_call, parent.frame())
+  #
+  #
+  # ## id
+  # id_idx <- match(id_name, names(mf))
+  # if (is.na(id_idx)) {
+  #   stop("id variable '", id_name, "' not found in data/model.frame")
+  # }
+  # if (!is.integer(mf[[id_idx]]) && !is.numeric(mf[[id_idx]])) {
+  #   mf[[id_idx]] <- as.numeric(as.factor(mf[[id_idx]]))
+  # }
+  #
+  #
+  # ## construct z_i: mean, intercept, slope
+  #
+  # y_name   <- response_name
+  # time_idx <- match(time_name, names(mf))
+  # if (is.na(time_idx)) {
+  #   stop("time variable '", time_name, "' not found in data/model.frame")
+  # }
+  #
+  # reportAssertions(coll)
+  #
+  # ## Response ~ Month|Patient: regressed on time
+  # z_fun <- function(x) {
+  #   y  <- x[[y_name]]
+  #   tt <- x[[time_name]]
+  #   fit <- stats::lm(y ~ tt, na.action = na.action)
+  #   c(mean(y), stats::coef(fit))
+  # }
+  #
+  # z_i <- sapply(split(mf, mf[[id_idx]]), z_fun)
+  # rownames(z_i) <- c("mean", "intercept", "slope")
+  # colnames(z_i) <- mf[[id_idx]]
+  #
+  # ## z_mf: fixed effect matrix
+  # z_mf <- stats::model.matrix(
+  #   stats::reformulate(time_name, intercept = TRUE),
+  #   data = mf
+  # )
 
-  ## id
-  id_idx <- match(id_name, names(mf))
-  if (is.na(id_idx)) {
-    stop("id variable '", id_name, "' not found in data/model.frame")
+  ftxt  <- paste(deparse(formula), collapse = "")
+  parts <- strsplit(ftxt, "\\|", perl = TRUE)[[1]]
+  if (length(parts) != 2) stop("Formula must be like: y ~ time | id")
+
+  left_txt <- trimws(parts[1])    # "y ~ time"
+  id_name  <- trimws(parts[2])    # "id"
+  f_left   <- stats::as.formula(left_txt)
+
+  y_name    <- all.vars(stats::update(f_left, . ~ 0))[1]
+  rhs_names <- all.vars(stats::update(f_left, 0 ~ .))
+  if (length(rhs_names) != 1) stop("Left side must have exactly one time covariate, e.g. y ~ Month | id")
+  time_name <- rhs_names[1]
+
+  mf_formula <- stats::as.formula(paste(y_name, "~", time_name, "+", id_name))
+
+  mf <- stats::model.frame(
+    mf_formula,
+    data = data,
+    # na.action = na.action,
+    drop.unused.levels = TRUE
+  )
+
+  if (!is.character(mf[[id_name]])) {
+    mf[[id_name]] <- as.character(mf[[id_name]])
   }
-  if (!is.integer(mf[[id_idx]]) && !is.numeric(mf[[id_idx]])) {
-    mf[[id_idx]] <- as.numeric(as.factor(mf[[id_idx]]))
+
+  ## 3) Construct z_i by subject: mean(y), intercept, slope -----------
+  split_list <- split(mf, mf[[id_name]])
+
+  z_fun <- function(df_id) {
+    y  <- df_id[[y_name]]
+    tt <- df_id[[time_name]]
+
+    fit <- stats::lm(y ~ tt, data = df_id) #, na.action = na.action)
+    c(mean = mean(y), intercept = stats::coef(fit)[1], slope = stats::coef(fit)[2])
   }
 
+  z_i <- vapply(split_list, z_fun, FUN.VALUE = c(mean = 0, intercept = 0, slope = 0))
+  colnames(z_i) <- names(split_list)
 
-  ## construct z_i: mean, intercept, slope
-
-  y_name   <- response_name
-  time_idx <- match(time_name, names(mf))
-  if (is.na(time_idx)) {
-    stop("time variable '", time_name, "' not found in data/model.frame")
-  }
-
-  reportAssertions(coll)
-
-  ## Response ~ Month|Patient: regressed on time
-  z_fun <- function(x) {
-    y  <- x[[y_name]]
-    tt <- x[[time_name]]
-    fit <- stats::lm(y ~ tt, na.action = na.action)
-    c(mean(y), stats::coef(fit))
-  }
-
-  z_i <- sapply(split(mf, mf[[id_idx]]), z_fun)
-  rownames(z_i) <- c("mean", "intercept", "slope")
-
-  ## z_mf: fixed effect matrix
+  ## 4) Fixed-effect design matrix for (Intercept + time) -------------
   z_mf <- stats::model.matrix(
     stats::reformulate(time_name, intercept = TRUE),
     data = mf
   )
+
 
   ## create/process cutpoints
 
@@ -590,7 +639,7 @@ ods <- function(
   }
 
 
-  ## calculate each subject's sampling probability p_sample_i
+  ## calculate each subject's sampling probability p_sample_i and define each subject's method, cutpoints, sampling probability
 
   if (identical(method, "bivariate")) {
 
@@ -603,8 +652,14 @@ ods <- function(
                  slps >  cutpoints["low",  "slope"] &
                  slps <  cutpoints["high", "slope"])
 
-    p_sample_i <- ifelse(inside, p_sample[2], p_sample[1])
-    names(p_sample_i) <- colnames(z_i)
+    p_sample_i <- ifelse(inside, p_sample[1], p_sample[2])
+    names(p_sample_i) <- names(split_list)
+
+    method_i         = rep(method, length(names(split_list)))
+
+    cutpoints_i      = matrix(rep(c(cutpoints["low",  "intercept"], cutpoints["high",  "intercept"], cutpoints["low",  "slope"], cutpoints["high", "slope"]), length(names(split_list))), ncol = 4, byrow = T)
+
+    acml_samp_prob_i = matrix(rep(p_sample, length(names(split_list))), ncol = 2, byrow = T)
 
   } else if (identical(method, "mixture")) {
 
@@ -614,7 +669,8 @@ ods <- function(
       cut(z_i['intercept',], c(-Inf, t(cutpoints[,'intercept']), Inf)))],
       p_slope = p_sample[as.numeric(
         cut(z_i['slope',],     c(-Inf, t(cutpoints[,'slope']),     Inf)))])
-    rownames(p_sample_vec) <- colnames(z_i)
+    rownames(p_sample_vec) <- names(split_list)
+
 
   } else {
 
@@ -628,7 +684,11 @@ ods <- function(
         )
       )
     ]
-    names(p_sample_i) <- colnames(z_i)
+    names(p_sample_i) <- names(split_list)
+
+    method_i         = rep(method, length(names(split_list)))
+    cutpoints_i      = matrix(rep(cutpoints, length(names(split_list))), ncol = 2, byrow = T)
+    acml_samp_prob_i = matrix(rep(p_sample, length(names(split_list))), ncol = 3, byrow = T)
   }
 
   ## sampling ids
@@ -637,8 +697,14 @@ ods <- function(
     sampled_by_intercept = stats::rbinom(nrow(p_sample_vec), 1, prob_intercept) > 0
     p_sample_i = ifelse(sampled_by_intercept, p_sample_vec[,"p_intercept"], p_sample_vec[,"p_slope"])
     smpl <- rownames(p_sample_vec)[((stats::rbinom(nrow(p_sample_vec), 1, p_sample_vec[,"p_intercept"]) > 0)*sampled_by_intercept) | ((stats::rbinom(nrow(p_sample_vec), 1, p_sample_vec[,"p_slope"]) > 0)*(1-sampled_by_intercept))]
-  }
-  else {
+
+    method_i         = ifelse(sampled_by_intercept, "intercept","slope")
+
+    cutpoints_i      = matrix(unlist(lapply(sampled_by_intercept, function(i) {c(cutpoints["low",  "intercept"], cutpoints["high",  "intercept"]) * i + (1-i)* c(cutpoints["low",  "slope"], cutpoints["high", "slope"])})),ncol = 2, byrow = T)
+
+    acml_samp_prob_i = matrix(unlist(lapply(sampled_by_intercept, function(i) {p_sample * i + (1-i)* p_sample})),ncol = 3, byrow = T)  # FIXME: allow 6 p_samples
+
+  }else {
     smpl <- names(p_sample_i)[stats::rbinom(length(p_sample_i), 1, p_sample_i) > 0]
   }
 
@@ -654,18 +720,25 @@ ods <- function(
       formula     = formula,
       model.frame = mf,
       method      = method,
+      method_i    = method_i,
+      weights     = weights,
       p_sample    = p_sample,
       p_sample_i  = p_sample_i,
+      acml_samp_prob_i = acml_samp_prob_i,
       sample_ids  = smpl,
       response    = response_name,
       time        = time_name,
       id          = id_name,
+      id_i        = names(split_list),
       quantiles   = quantiles,
       cutpoints   = cutpoints,
+      cutpoints_i = cutpoints_i,
       z_i         = z_i,
       z_mf        = z_mf,
       n_rand      = 2,
-      ProfileCol  = ProfileCol
+      ProfileCol  = ProfileCol,
+      xcol.phase1 = NULL,  ## only used for blup sampling
+      ests.phase1 = NULL   ## only used for blup sampling
     ),
     class = "odsdesign"
   )
