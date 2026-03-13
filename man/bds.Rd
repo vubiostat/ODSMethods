@@ -9,10 +9,10 @@ bds(
   method,
   p_sample,
   data = NULL,
+  weights = NULL,
   quantiles = NULL,
   cutpoints = NULL,
   subset = NULL,
-  weights = NULL,
   na.action = getOption("na.action"),
   ProfileCol = NULL
 )

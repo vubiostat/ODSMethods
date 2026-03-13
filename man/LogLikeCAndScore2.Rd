@@ -13,7 +13,6 @@ LogLikeCAndScore2(
   w.function,
   cutpoints,
   SampProb,
-  Weights,
   ProfileCol = NA,
   Keep.liC = FALSE,
   xcol.phase1,
@@ -34,8 +33,6 @@ LogLikeCAndScore2(
 \item{cutpoints}{A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions [bivariate Q_i: each row is a vector of length 4 c(xlow, xhigh, ylow, yhigh); univariate Q_i: each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high].  Each subject should have n_i rows of the same values.}
 
 \item{SampProb}{A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region [bivariate Q_i: each row is a vector of length 2 c(central region, outlying region); univariate Q_i: each row is a vector of length 3 with sampling probabilities for each region]. Each subject should have n_i rows of the same values.}
-
-\item{Weights}{Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
 
 \item{ProfileCol}{the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters while fixing these columns at the values of params at the location of ProfileCol}
 

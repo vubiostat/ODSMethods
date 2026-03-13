@@ -9,7 +9,6 @@ CreateSubjectData(
   y,
   x,
   z,
-  Weights,
   SampProb,
   cutpoints,
   w.function,
@@ -25,8 +24,6 @@ CreateSubjectData(
 \item{x}{sum(n_i) by p design matrix for fixed effects}
 
 \item{z}{sum(n_i) by 2 design matric for random effects (intercept and slope)}
-
-\item{Weights}{Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
 
 \item{SampProb}{A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region [bivariate Q_i: each row is a vector of length 2 c(central region, outlying region); univariate Q_i: each row is a vector of length 3 with sampling probabilities for each region]. Each subject should have n_i rows of the same values.}
 

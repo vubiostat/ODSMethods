@@ -248,10 +248,6 @@ print.summary.odsdesign <- function(x, digits = NULL, ...)
 #'   used in the fitting process. (See additional details about how this
 #'   argument interacts with data-dependent bases in the ‘Details’ section of
 #'   the model.frame documentation.)
-#' @param weights	an optional vector of weights to be used in the fitting
-#'   process. Should be NULL or a numeric vector. If non-NULL, weighted least
-#'   squares is used with weights weights (that is, minimizing sum(w*e^2));
-#'   otherwise ordinary least squares is used. See also ‘Details’,
 #' @param na.action a function which indicates what should happen when the data
 #'   contain NAs. The default is set by the na.action setting of options, and is
 #'   na.fail if that is unset. The ‘factory-fresh’ default is na.omit. Another
@@ -290,28 +286,87 @@ print.summary.odsdesign <- function(x, digits = NULL, ...)
 #' @importFrom stats model.frame terms as.formula quantile coef
 ods <- function(
     formula,
-    method,
-    p_sample,
+    method    = NULL,
+    p_sample  = NULL,
+    weights   = NULL,
     data      = NULL,
     quantiles = NULL,
     cutpoints = NULL,
     subset    = NULL,
     prob_intercept = NULL,
+    method_name  = NULL,
+    acml_samp_prob_name = NULL,
+    cutpoints_name = NULL,
+    sampled_name   = NULL,
     na.action = getOption('na.action'),
-    weights   = NULL,
     ProfileCol= NULL)## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
 {
   # Validate arguments
   coll <- makeAssertCollection()
 
-  ## method could only be 3 types: slope|intercept|bivariate|mean
-  assert_character(
-    method,
-    len           = 1,
-    any.missing   = FALSE,
-    pattern       = "^(slope|intercept|bivariate|mean|mixture)$",
-    add           = coll
+  have_main <- !is.null(method) &&
+    !is.null(p_sample) &&
+    xor(is.null(quantiles), is.null(cutpoints))
+
+  have_alt  <- !is.null(method_name) &&
+    !is.null(acml_samp_prob_name) &&
+    !is.null(cutpoints_name) &&
+    !is.null(sampled_name)
+
+  assert_true(
+    have_main || have_alt,
+    .var.name = paste(
+      "Either supply 'method' and 'p_sample' together with exactly one of",
+      "'quantiles' or 'cutpoints', or supply all of",
+      "'method_name', 'acml_samp_prob_name', 'cutpoints_name', and 'sampled_name'."
+    ),
+    add = coll
   )
+
+  ## method could only be 3 types: slope|intercept|bivariate|mean
+  if (!is.null(method)){
+    assert_character(
+      method,
+      len           = 1,
+      any.missing   = FALSE,
+      pattern       = "^(slope|intercept|bivariate|mean|mixture)$",
+      add           = coll
+    )
+    assert_true(
+      method %in% c("intercept", "slope", "bivariate", "mean", "mixture"),
+      .var.name = "when formula is Response ~ Month|Patient, method must be 'intercept', 'slope', 'bivariate', 'mean' or 'mixture'",
+      add = coll
+    )
+    if (identical(method, "bivariate")) {
+      ## square donut has inner and outer probability
+      assert_numeric(
+        p_sample,
+        lower        = 0,
+        upper        = 1,
+        len          = 2,
+        any.missing  = FALSE,
+        add          = coll
+      )
+    } else {
+      ## three regions, low, medium, high
+      assert_numeric(
+        p_sample,
+        lower        = 0,
+        upper        = 1,
+        len          = 3,
+        any.missing  = FALSE,
+        add          = coll
+      )
+    }
+
+    ## only one of quantiles or cutpoints can be specified
+    assert_true(
+      xor(is.null(quantiles), is.null(cutpoints)),
+      .var.name = "only one of quantiles or cutpoints can be specified",
+      add = coll
+    )
+  }
+
 
   ## formula type
   assert_formula(formula, add = coll)
@@ -368,45 +423,15 @@ ods <- function(
 
   ## method vs time
   ## Response ~ Month|Patient can only be c("intercept", "slope", "bivariate", "mean")
-  assert_true(
-    method %in% c("intercept", "slope", "bivariate", "mean", "mixture"),
-    .var.name = "when formula is Response ~ Month|Patient, method must be 'intercept', 'slope', 'bivariate', 'mean' or 'mixture'",
-    add = coll
-  )
+
 
   response_name <- as.character(lhs)
   time_name     <- as.character(time_term)
   id_name       <- as.character(id_term)
 
   ## p_sample must always be present，and it is consistent with method
-  if (identical(method, "bivariate")) {
-    ## square donut has inner and outer probability
-    assert_numeric(
-      p_sample,
-      lower        = 0,
-      upper        = 1,
-      len          = 2,
-      any.missing  = FALSE,
-      add          = coll
-    )
-  } else {
-    ## three regions, low, medium, high
-    assert_numeric(
-      p_sample,
-      lower        = 0,
-      upper        = 1,
-      len          = 3,
-      any.missing  = FALSE,
-      add          = coll
-    )
-    }
 
-  ## only one of quantiles or cutpoints can be specified
-  assert_true(
-    xor(is.null(quantiles), is.null(cutpoints)),
-    .var.name = "only one of quantiles or cutpoints can be specified",
-    add = coll
-  )
+  if (!is.null(method)){
 
   if (identical(method, "bivariate")) {
 
@@ -461,7 +486,7 @@ ods <- function(
       )
     }
   }
-
+}
   reportAssertions(coll)
 
   # ## model.frame (similar to lm)
@@ -532,7 +557,7 @@ ods <- function(
   mf <- stats::model.frame(
     mf_formula,
     data = data,
-    # na.action = na.action,
+    na.action = na.action,
     drop.unused.levels = TRUE
   )
 
@@ -562,189 +587,217 @@ ods <- function(
 
 
   ## create/process cutpoints
+  smpl <- NULL
+  if (!is.null(method)) {
+    if (is.null(cutpoints)) {
 
-  if (is.null(cutpoints)) {
+      ## from quantiles and data to calculate cutpoints
+      if (identical(method, "bivariate")) {
 
-    ## from quantiles and data to calculate cutpoints
-    if (identical(method, "bivariate")) {
+        ## bivariate: quantiles are PropInCentralRegion
+        p0   <- quantiles[1]
+        ints <- z_i["intercept", ]
+        slps <- z_i["slope",     ]
 
-      ## bivariate: quantiles are PropInCentralRegion
-      p0   <- quantiles[1]
-      ints <- z_i["intercept", ]
-      slps <- z_i["slope",     ]
+        q1  <- 0.99
+        Del <- 1
 
-      q1  <- 0.99
-      Del <- 1
+        ## marginal joint inside around p0
+        while (Del > 0.003 && q1 > 0.5) {
+          q1 <- q1 - 0.001
 
-      ## marginal joint inside around p0
-      while (Del > 0.003 && q1 > 0.5) {
-        q1 <- q1 - 0.001
+          I_low  <- as.numeric(stats::quantile(ints, probs = 1 - q1))
+          I_high <- as.numeric(stats::quantile(ints, probs = q1))
+          S_low  <- as.numeric(stats::quantile(slps, probs = 1 - q1))
+          S_high <- as.numeric(stats::quantile(slps, probs = q1))
 
-        I_low  <- as.numeric(stats::quantile(ints, probs = 1 - q1))
-        I_high <- as.numeric(stats::quantile(ints, probs = q1))
-        S_low  <- as.numeric(stats::quantile(slps, probs = 1 - q1))
-        S_high <- as.numeric(stats::quantile(slps, probs = q1))
+          inside <- (ints > I_low & ints < I_high &
+                       slps > S_low & slps < S_high)
 
-        inside <- (ints > I_low & ints < I_high &
-                     slps > S_low & slps < S_high)
+          Del <- abs(mean(inside) - p0)
+        }
 
-        Del <- abs(mean(inside) - p0)
-      }
+        cutpoints <- rbind(
+          low  = c(intercept = I_low,  slope = S_low),
+          high = c(intercept = I_high, slope = S_high)
+        )
 
-      cutpoints <- rbind(
-        low  = c(intercept = I_low,  slope = S_low),
-        high = c(intercept = I_high, slope = S_high)
-      )
+      } else if (identical(method, "mixture")) {
 
-    } else if (identical(method, "mixture")) {
-
-      cutpoints <- apply(z_i, 1, quantile, quantiles)[,c("intercept", "slope"), drop=FALSE]
-      cutpoints <- matrix(
-        cutpoints,
-        nrow=2, byrow=FALSE,
-        dimnames=list(c("low","high"), c("intercept", "slope"))
-      )
+        cutpoints <- apply(z_i, 1, quantile, quantiles)[,c("intercept", "slope"), drop=FALSE]
+        cutpoints <- matrix(
+          cutpoints,
+          nrow=2, byrow=FALSE,
+          dimnames=list(c("low","high"), c("intercept", "slope"))
+        )
 
       } else {
 
-      ## univariate: intercept or slope
-      n_c     <- length(p_sample) - 1L
-      cp_main <- as.numeric(stats::quantile(z_i[method, ], probs = quantiles))
-      cutpoints <- matrix(
-        cp_main,
-        nrow     = n_c,
-        ncol     = 1L,
-        dimnames = list(seq_len(n_c), method)
-      )
-    }
-
-  } else {
-
-    ## user defined cutpoints
-    if (method %in% c("bivariate","mixture")) {
-      ## c(IntLow, IntHigh, SlpLow, SlpHigh)
-      cutpoints <- rbind(
-        low  = c(intercept = cutpoints[1], slope = cutpoints[3]),
-        high = c(intercept = cutpoints[2], slope = cutpoints[4])
-      )
-    } else {
-      n_c <- length(p_sample) - 1L
-      cutpoints <- matrix(
-        cutpoints,
-        nrow     = n_c,
-        ncol     = 1L,
-        dimnames = list(seq_len(n_c), method)
-      )
-    }
-  }
-
-
-  ## calculate each subject's sampling probability p_sample_i and define each subject's method, cutpoints, sampling probability
-
-  if (identical(method, "bivariate")) {
-
-    ## square donut inside/outside
-    ints <- z_i["intercept", ]
-    slps <- z_i["slope",     ]
-
-    inside <- (ints >  cutpoints["low",  "intercept"] &
-                 ints <  cutpoints["high", "intercept"] &
-                 slps >  cutpoints["low",  "slope"] &
-                 slps <  cutpoints["high", "slope"])
-
-    p_sample_i <- ifelse(inside, p_sample[1], p_sample[2])
-    names(p_sample_i) <- names(split_list)
-
-    method_i         = rep(method, length(names(split_list)))
-    names(method_i)  = names(split_list)
-
-    cutpoints_i      = matrix(rep(c(cutpoints["low",  "intercept"], cutpoints["high",  "intercept"], cutpoints["low",  "slope"], cutpoints["high", "slope"]), length(names(split_list))), ncol = 4, byrow = T)
-    rownames(cutpoints_i)  = names(split_list)
-
-    acml_samp_prob_i = matrix(rep(p_sample, length(names(split_list))), ncol = 2, byrow = T)
-    rownames(acml_samp_prob_i)  = names(split_list)
-
-  } else if (identical(method, "mixture")) {
-
-    # for mixture design, the sampling probability should be a vector of 3, which is low, medium, high, the same as univariate.
-
-    p_sample_vec <- data.frame(p_intercept = p_sample[as.numeric(
-      cut(z_i['intercept',], c(-Inf, t(cutpoints[,'intercept']), Inf)))],
-      p_slope = p_sample[as.numeric(
-        cut(z_i['slope',],     c(-Inf, t(cutpoints[,'slope']),     Inf)))])
-    rownames(p_sample_vec) <- names(split_list)
-
-
-  } else {
-
-    ## univariate：from cutpoints to have n_c+1 regions
-    bounds <- as.numeric(cutpoints[, method])
-    p_sample_i <- p_sample[
-      as.numeric(
-        cut(
-          z_i[method, ],
-          c(-Inf, bounds, Inf)
+        ## univariate: intercept or slope
+        n_c     <- length(p_sample) - 1L
+        cp_main <- as.numeric(stats::quantile(z_i[method, ], probs = quantiles))
+        cutpoints <- matrix(
+          cp_main,
+          nrow     = n_c,
+          ncol     = 1L,
+          dimnames = list(seq_len(n_c), method)
         )
-      )
-    ]
-    names(p_sample_i) <- names(split_list)
+      }
 
-    method_i         = rep(method, length(names(split_list)))
-    names(method_i)  = names(split_list)
+    } else {
 
-    cutpoints_i      = matrix(rep(cutpoints, length(names(split_list))), ncol = 2, byrow = T)
-    rownames(cutpoints_i)  = names(split_list)
+      ## user defined cutpoints
+      if (method %in% c("bivariate","mixture")) {
+        ## c(IntLow, IntHigh, SlpLow, SlpHigh)
+        cutpoints <- rbind(
+          low  = c(intercept = cutpoints[1], slope = cutpoints[3]),
+          high = c(intercept = cutpoints[2], slope = cutpoints[4])
+        )
+      } else {
+        n_c <- length(p_sample) - 1L
+        cutpoints <- matrix(
+          cutpoints,
+          nrow     = n_c,
+          ncol     = 1L,
+          dimnames = list(seq_len(n_c), method)
+        )
+      }
+    }
 
-    acml_samp_prob_i = matrix(rep(p_sample, length(names(split_list))), ncol = 3, byrow = T)
-    rownames(acml_samp_prob_i)  = names(split_list)
 
+    ## calculate each subject's sampling probability p_sample_i and define each subject's method, cutpoints, sampling probability
+
+    if (identical(method, "bivariate")) {
+
+      ## square donut inside/outside
+      ints <- z_i["intercept", ]
+      slps <- z_i["slope",     ]
+
+      inside <- (ints >  cutpoints["low",  "intercept"] &
+                   ints <  cutpoints["high", "intercept"] &
+                   slps >  cutpoints["low",  "slope"] &
+                   slps <  cutpoints["high", "slope"])
+
+      p_sample_i <- ifelse(inside, p_sample[1], p_sample[2])
+      names(p_sample_i) <- names(split_list)
+
+      method_i         = rep(method, length(names(split_list)))
+      names(method_i)  = names(split_list)
+
+      cutpoints_i      = matrix(rep(c(cutpoints["low",  "intercept"], cutpoints["high",  "intercept"], cutpoints["low",  "slope"], cutpoints["high", "slope"]), length(names(split_list))), ncol = 4, byrow = T)
+      rownames(cutpoints_i)  = names(split_list)
+
+      acml_samp_prob_i = matrix(rep(p_sample, length(names(split_list))), ncol = 2, byrow = T)
+      rownames(acml_samp_prob_i)  = names(split_list)
+
+    } else if (identical(method, "mixture")) {
+
+      # for mixture design, the sampling probability should be a vector of 3, which is low, medium, high, the same as univariate.
+
+      p_sample_vec <- data.frame(p_intercept = p_sample[as.numeric(
+        cut(z_i['intercept',], c(-Inf, t(cutpoints[,'intercept']), Inf)))],
+        p_slope = p_sample[as.numeric(
+          cut(z_i['slope',],     c(-Inf, t(cutpoints[,'slope']),     Inf)))])
+      rownames(p_sample_vec) <- names(split_list)
+
+
+    } else {
+
+      ## univariate：from cutpoints to have n_c+1 regions
+      bounds <- as.numeric(cutpoints[, method])
+      p_sample_i <- p_sample[
+        as.numeric(
+          cut(
+            z_i[method, ],
+            c(-Inf, bounds, Inf)
+          )
+        )
+      ]
+      names(p_sample_i) <- names(split_list)
+
+      method_i         = rep(method, length(names(split_list)))
+      names(method_i)  = names(split_list)
+
+      cutpoints_i      = matrix(rep(cutpoints, length(names(split_list))), ncol = 2, byrow = T)
+      rownames(cutpoints_i)  = names(split_list)
+
+      acml_samp_prob_i = matrix(rep(p_sample, length(names(split_list))), ncol = 3, byrow = T)
+      rownames(acml_samp_prob_i)  = names(split_list)
+
+    }
+
+    ## sampling ids
+    if (identical(method, "mixture")) {
+      # prob_intercept is the proportion of sampled based on intercept.
+      sampled_by_intercept = stats::rbinom(nrow(p_sample_vec), 1, prob_intercept) > 0
+      p_sample_i = ifelse(sampled_by_intercept, p_sample_vec[,"p_intercept"], p_sample_vec[,"p_slope"])
+      smpl <- rownames(p_sample_vec)[((stats::rbinom(nrow(p_sample_vec), 1, p_sample_vec[,"p_intercept"]) > 0)*sampled_by_intercept) | ((stats::rbinom(nrow(p_sample_vec), 1, p_sample_vec[,"p_slope"]) > 0)*(1-sampled_by_intercept))]
+
+      method_i         = ifelse(sampled_by_intercept, "intercept","slope")
+      names(method_i)  = names(split_list)
+
+      cutpoints_i      = matrix(unlist(lapply(sampled_by_intercept, function(i) {c(cutpoints["low",  "intercept"], cutpoints["high",  "intercept"]) * i + (1-i)* c(cutpoints["low",  "slope"], cutpoints["high", "slope"])})),ncol = 2, byrow = T)
+      rownames(cutpoints_i)  = names(split_list)
+
+      acml_samp_prob_i = matrix(unlist(lapply(sampled_by_intercept, function(i) {p_sample * i + (1-i)* p_sample})),ncol = 3, byrow = T)  # FIXME: allow 6 p_samples
+      rownames(acml_samp_prob_i)  = names(split_list)
+
+    }else {
+      smpl <- names(p_sample_i)[stats::rbinom(length(p_sample_i), 1, p_sample_i) > 0]
+    }
   }
-
-  ## sampling ids
-  if (identical(method, "mixture")) {
-    # prob_intercept is the proportion of sampled based on intercept.
-    sampled_by_intercept = stats::rbinom(nrow(p_sample_vec), 1, prob_intercept) > 0
-    p_sample_i = ifelse(sampled_by_intercept, p_sample_vec[,"p_intercept"], p_sample_vec[,"p_slope"])
-    smpl <- rownames(p_sample_vec)[((stats::rbinom(nrow(p_sample_vec), 1, p_sample_vec[,"p_intercept"]) > 0)*sampled_by_intercept) | ((stats::rbinom(nrow(p_sample_vec), 1, p_sample_vec[,"p_slope"]) > 0)*(1-sampled_by_intercept))]
-
-    method_i         = ifelse(sampled_by_intercept, "intercept","slope")
-    names(method_i)  = names(split_list)
-
-    cutpoints_i      = matrix(unlist(lapply(sampled_by_intercept, function(i) {c(cutpoints["low",  "intercept"], cutpoints["high",  "intercept"]) * i + (1-i)* c(cutpoints["low",  "slope"], cutpoints["high", "slope"])})),ncol = 2, byrow = T)
-    rownames(cutpoints_i)  = names(split_list)
-
-    acml_samp_prob_i = matrix(unlist(lapply(sampled_by_intercept, function(i) {p_sample * i + (1-i)* p_sample})),ncol = 3, byrow = T)  # FIXME: allow 6 p_samples
-    rownames(acml_samp_prob_i)  = names(split_list)
-
-  }else {
-    smpl <- names(p_sample_i)[stats::rbinom(length(p_sample_i), 1, p_sample_i) > 0]
-  }
-
-  if (!is.character(weights)) {weights = as.character(weights)}
-  ## FIXME: adding sample() to sample exact numbers of subjects.
 
   if (is.null(ProfileCol)) {
     ProfileCol <- NA
   }
+
+  design_tab                    <- data
+  if (is.null(method_name)) {
+    design_tab$method_i           <- method_i[as.character(design_tab[, id_name])]
+  } else {
+    design_tab$method_i         <- data[, method_name]
+  }
+
+  if (is.null(acml_samp_prob_name)) {
+    design_tab$acml_samp_prob_i   <- lapply(as.character(design_tab[, id_name]), function(i) acml_samp_prob_i[i,])
+  } else {
+    design_tab$acml_samp_prob_i         <- data[, acml_samp_prob_name]
+  }
+
+  if (is.null(cutpoints_name)) {
+    design_tab$cutpoints_i   <- lapply(as.character(design_tab[, id_name]), function(i) cutpoints_i[i,])
+  } else {
+    design_tab$cutpoints_i         <- data[, cutpoints_name]
+  }
+
+  if (is.null(sampled_name)) {
+    design_tab$sampled         <- as.numeric(as.character(design_tab[, id_name]) %in% smpl)
+  } else {
+    design_tab$sampled         <- data[, sampled_name]
+  }
+
+  if (is.null(smpl)){
+    sample_ids    = data[data[,sampled_name] == 1, id_name]
+  } else {
+    sample_ids    = smpl
+  }
+
   structure(
     list(
       call        = cl,
       formula     = formula,
+      data        = design_tab,
       model.frame = mf,
-      method      = method,
-      method_i    = method_i,
+      # rand.covar  = matrix(cbind(rep(1, nrow(mf)), mf[,time]), ncol=2),  # FIXME:optional
       weights     = weights,
+      method      = method,
       p_sample    = p_sample,
-      p_sample_i  = p_sample_i,
-      acml_samp_prob_i = acml_samp_prob_i,
-      sample_ids  = smpl,
+      sample_ids  = sample_ids,
       response    = response_name,
       time        = time_name,
       id          = id_name,
-      id_i        = names(split_list),
       quantiles   = quantiles,
       cutpoints   = cutpoints,
-      cutpoints_i = cutpoints_i,
       z_i         = z_i,
       z_mf        = z_mf,
       n_rand      = 2,

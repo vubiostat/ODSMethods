@@ -6,15 +6,19 @@
 \usage{
 ods(
   formula,
-  method,
-  p_sample,
+  method = NULL,
+  p_sample = NULL,
+  weights = NULL,
   data = NULL,
   quantiles = NULL,
   cutpoints = NULL,
   subset = NULL,
   prob_intercept = NULL,
+  method_name = NULL,
+  acml_samp_prob_name = NULL,
+  cutpoints_name = NULL,
+  sampled_name = NULL,
   na.action = getOption("na.action"),
-  weights = NULL,
   ProfileCol = NULL
 )
 }
@@ -47,11 +51,6 @@ the model.frame documentation.)}
 contain NAs. The default is set by the na.action setting of options, and is
 na.fail if that is unset. The ‘factory-fresh’ default is na.omit. Another
 possible value is NULL, no action. Value na.exclude can be useful.}
-
-\item{weights}{an optional vector of weights to be used in the fitting
-process. Should be NULL or a numeric vector. If non-NULL, weighted least
-squares is used with weights weights (that is, minimizing sum(w*e^2));
-otherwise ordinary least squares is used. See also ‘Details’,}
 
 \item{...}{additional arguments.}
 }

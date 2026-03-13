@@ -1,0 +1,106 @@
+---
+title: "ODSMethods Application Example"
+author: "Shawn Garbett, Lucy Yan, Jonathan Schildcrout"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ODSMethods}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r setup}
+library(tidyverse)
+library(ODSMethods)
+```
+
+
+## Two-Phase Design
+
+During the two-phase study design, we first need to decide on the sampling strategy and sampling probabilities for each subject. 
+
+### Simulated Dataset
+
+Assuming we have a Phase-I dataset from a clinical trial.
+
+
+```{r data}
+data(gbti)
+dat =  gbti%>% filter(!is.na(Genotype))
+```
+
+### Propose ODS Design for the Phase-I Data
+
+The user needs to input the formula for modeling the random effects, the desired sampling by "mean", "intercept", "slope", "bivariate", "mixture", and the desired sampling probabilities for each region, the quantiles or cutpoints to separate each region. 
+
+#### Intercept Design Example
+
+```{r, fig.dim=c(6,4) }
+dat1 =  dat[,names(dat)!="Genotype"]
+design1 <- ods(Response ~ Month|Patient, method = 'intercept',
+            p_sample=c(1, 0.25, 1),
+            data=dat1, quantiles=c(0.1, 0.9))
+summary(design1)
+plot(design1)
+```
+
+The output also contains a dataset with sampled indicator and sampling probabilities, the resulting dataset can be used for phase-II study:
+```{r}
+print(design1$data[1:10,])
+```
+
+
+
+### Analysis After Phase-II Completed
+
+After phase-II data are gathered, the we can perform ACML analysis using the same dataset with the newly added genotype data 
+
+```{r, R.options=list(width=100)}
+dat2 <- design1$data %>% left_join(unique(gbti[, names(gbti)%in% c("Patient", "Genotype")]), by = "Patient")
+design2 <- ods(formula = Response ~ Month|Patient, data=dat2, 
+            method_name = 'method_i', acml_samp_prob_name = "acml_samp_prob_i", cutpoints_name = "cutpoints_i", sampled_name = "sampled")
+est <- acml(Response ~ Month*Genotype, design2, data = data)
+summary(est, digits=3)
+```
+
+One can also look at the coefficients transformed back to the original data scale.
+
+```{r transform_back}
+summary(est, digits=3, transform=TRUE)
+```
+
+#### Mixture Design Example
+
+```{r, fig.dim=c(6,4) }
+dat1 =  dat[,names(dat)!="Genotype"]
+design1 <- ods(Response ~ Month|Patient, method = 'mixture',
+            p_sample=c(1, 0.25, 1),
+            data=dat1, quantiles=c(0.1, 0.9), prob_intercept = 0.8)
+summary(design1)
+plot(design1)
+```
+
+The output also contains a dataset with sampled indicator and sampling probabilities, the resulting dataset can be used for phase-II study:
+```{r}
+print(rbind(design1$data[design1$data$method_i == "intercept",][1:5,],design1$data[design1$data$method_i == "slope",][1:5,]))
+```
+
+
+
+#### Analysis After Phase-II Completed
+
+After phase-II data are gathered, the we can perform ACML analysis using the same dataset with the newly added genotype data 
+
+```{r acml, R.options=list(width=100)}
+dat2 <- design1$data %>% left_join(unique(gbti[, names(gbti)%in% c("Patient", "Genotype")]), by = "Patient")
+design2 <- ods(formula = Response ~ Month|Patient, data=dat2, 
+            method_name = 'method_i', acml_samp_prob_name = "acml_samp_prob_i", cutpoints_name = "cutpoints_i", sampled_name = "sampled")
+est <- acml(Response ~ Month*Genotype, design2, data = data)
+summary(est, digits=3)
+```
+
+
+
+## References
+
+Schildcrout JS, Haneuse S, Tao R, Zelnick LR, Schisterman EF, Garbett SP, Mercaldo ND, Rathouz PJ, Heagerty PJ. Two-Phase, Generalized Case-Control Designs for the Study of Quantitative Longitudinal Outcomes. Am J Epidemiol. 2020 Feb 28;189(2):81-90. doi: 10.1093/aje/kwz127. PMID: 31165875; PMCID: PMC7298772.

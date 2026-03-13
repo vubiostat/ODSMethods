@@ -109,10 +109,10 @@ bds <- function(
   method,
   p_sample,
   data       = NULL,
+  weights    = NULL,
   quantiles  = NULL,
   cutpoints  = NULL,
   subset     = NULL,
-  weights    = NULL,
   na.action  = getOption('na.action'),
   ProfileCol = NULL)   ## Columns to be held fixed while doing profile likelihood.  It is fixed at its initial value.
 {
@@ -471,10 +471,11 @@ bds <- function(
   structure(list(
     call        = cl,
     formula     = formula,
+    data        = data,
     model.frame = mf,
+    weights     = weights,
     method      = paste0("blup.",method),
     method_i    = paste0("blup.",method_i),
-    weights     = weights,
     p_sample    = p_sample,
     p_sample_i  = p_sample_i,
     acml_samp_prob_i = acml_samp_prob_i,
