@@ -354,35 +354,46 @@ CreateSubjectDataWL <- function(id,y,x,z,Weights){
 #' @export
 
 WL_internal <- function(formula,
-                          design,
-                          InitVals,
-                          ProfileCol
+                        design,
+                        InitVals,
+                        ProfileCol
 ){ ## only used for blup sampling
-  if(is.null(formula)) {stop('Specify the formula of the model.  It is currently NULL.')}
-  if(is.null(weights)) {stop("Specify the weights of the model.  It is currently NULL.")}
+  if (is.null(formula)) {
+    stop("Specify the formula of the model. It is currently NULL.")
+  }
+  if (is.null(design$weights)) {
+    stop("Specify the weights of the model. It is currently NULL.")
+  }
 
   ftxt  <- paste(deparse(design$formula), collapse = "")
   parts <- strsplit(ftxt, "\\|", perl = TRUE)[[1]]
   if (length(parts) != 2) stop("Formula must be like: y ~ x1 + x2 | id")
 
-  left_txt <- trimws(parts[1])          # "y ~ x1 + x2"
-  id_txt   <- trimws(parts[2])          # "id"
+  left_txt <- trimws(parts[1])   # "y ~ x1 + x2"
+  id_txt   <- trimws(parts[2])   # "id"
 
   f_left <- stats::as.formula(left_txt)
   x_vars <- all.vars(stats::update(f_left, 0 ~ .))
 
   all_vars_formula <- as.formula(
-    paste(design$response, "~", paste(unique(c(all.vars(formula), x_vars,  design$id, design$weights)), collapse = " + ")
+    paste(
+      design$response, "~",
+      paste(unique(c(all.vars(formula), x_vars, design$id, design$weights)),
+            collapse = " + ")
     )
   )
-  mf <- model.frame(all_vars_formula, data = design$data[design$data$sampled == 1,],
-                    drop.unused.levels = TRUE)
+
+  mf <- model.frame(
+    all_vars_formula,
+    data = design$data[design$data$sampled == 1, , drop = FALSE],
+    drop.unused.levels = TRUE
+  )
 
   # y
   y <- unlist(mf[, design$response, drop = FALSE])
 
   # id
-  id <- mf[, design$id]
+  id <- as.character(mf[, design$id])
 
   # fixed X
   fixed.mf <- model.frame(formula, mf)
@@ -395,85 +406,96 @@ WL_internal <- function(formula,
     check.names = FALSE
   ))
 
-  Weights    = mf[, design$weights]
+  # weights
+  Weights <- mf[, design$weights, drop = TRUE]
 
-  WL.fit <- nlm(LogLikeCAndScoreWL,
-                  InitVals,
-                  y=y,
-                  x=x,
-                  z=z,
-                  id=id,
-                  Weights=Weights,
-                  ProfileCol=design$ProfileCol,
-                  stepmax=4, iterlim=250,
-                  check.analyticals = TRUE, print.level=0)
+  WL.fit <- nlm(
+    LogLikeCAndScoreWL,
+    InitVals,
+    y = y,
+    x = x,
+    z = z,
+    id = id,
+    Weights = Weights,
+    ProfileCol = design$ProfileCol,
+    stepmax = 4,
+    iterlim = 250,
+    check.analyticals = TRUE,
+    print.level = 0
+  )
 
-  # ## Calculate the observed information and then invert to get the covariance matrix
   npar        <- length(WL.fit$estimate)
-  # ObsInfo    = LogLikeC.Hessian(params = acml.fit$estimate,y=y, x=x, z=z, w.function=w.function, id=id, cutpoints=cutpoints, SampProb=SampProb, Weights=Weights, xcol.phase1=xcol.phase1, ests.phase1=ests.phase1)
-
   Hessian.eps <- 1e-7
   eps.mtx     <- diag(rep(Hessian.eps, npar))
   grad.at.max <- WL.fit$gradient
   ObsInfo.tmp <- ObsInfo <- matrix(NA, npar, npar)
 
-
-  ## Observed Information## Observed Informatiyon
-  for (j in 1:npar){
-    temp            <- LogLikeCAndScoreWL(WL.fit$estimate+eps.mtx[j,],
-                                         y=y,
-                                         x=x,
-                                         z=z,
-                                         id=id,
-                                         Weights=Weights,
-                                         ProfileCol=design$ProfileCol)
-    ObsInfo.tmp[j,] <- (attr(temp,"gradient")-grad.at.max)/(Hessian.eps)
+  ## Observed Information
+  for (j in 1:npar) {
+    temp <- LogLikeCAndScoreWL(
+      WL.fit$estimate + eps.mtx[j, ],
+      y = y,
+      x = x,
+      z = z,
+      id = id,
+      Weights = Weights,
+      ProfileCol = design$ProfileCol
+    )
+    ObsInfo.tmp[j, ] <- (attr(temp, "gradient") - grad.at.max) / Hessian.eps
   }
-  for (m in 1:npar){
-    for (n in 1:npar){ ObsInfo[m,n] <-  (ObsInfo.tmp[m,n]+ObsInfo.tmp[n,m])/2}}
+
+  for (m in 1:npar) {
+    for (n in 1:npar) {
+      ObsInfo[m, n] <- (ObsInfo.tmp[m, n] + ObsInfo.tmp[n, m]) / 2
+    }
+  }
 
   ## Cheese part of the sandwich estimator
-  nbeta <- ncol(x)
-  nVCsd <- ncol(z)
-  nVCrho <- choose(nVCsd,2)
-  nERRsd <- npar-nbeta-nVCsd-nVCrho
+  nbeta  <- ncol(x)
+  nVCsd  <- ncol(z)
+  nVCrho <- choose(nVCsd, 2)
+  nERRsd <- npar - nbeta - nVCsd - nVCrho
 
   beta.index   <- c(1:nbeta)
   vc.sd.index  <- nbeta + (c(1:nVCsd))
   vc.rho.index <- nbeta + nVCsd + (c(1:nVCrho))
   err.sd.index <- nbeta + nVCsd + nVCrho + c(1:nERRsd)
 
-  Cheese <- LogLikeC.ScoreWL(y=y,
-                            x=x,
-                            z=z,
-                            id=id,
-                            beta=WL.fit$estimate[beta.index],
-                            sigma.vc=exp(WL.fit$estimate[vc.sd.index]),
-                            rho.vc=   (exp(WL.fit$estimate[vc.rho.index])-1) / (exp(WL.fit$estimate[vc.rho.index])+1),
-                            sigma.e=exp(WL.fit$estimate[err.sd.index]),
-                            Weights=Weights,
-                            CheeseCalc=TRUE)
+  Cheese <- LogLikeC.ScoreWL(
+    y = y,
+    x = x,
+    z = z,
+    id = id,
+    beta = WL.fit$estimate[beta.index],
+    sigma.vc = exp(WL.fit$estimate[vc.sd.index]),
+    rho.vc = (exp(WL.fit$estimate[vc.rho.index]) - 1) /
+      (exp(WL.fit$estimate[vc.rho.index]) + 1),
+    sigma.e = exp(WL.fit$estimate[err.sd.index]),
+    Weights = Weights,
+    CheeseCalc = TRUE
+  )
 
-  if (!is.na(design$ProfileCol)){
+  if (!is.na(design$ProfileCol)) {
     WL.fit$estimate <- WL.fit$estimate[-design$ProfileCol]
-    ObsInfo           <- ObsInfo[-ProfileCol, -design$ProfileCol]
-    Cheese            <- Cheese[-ProfileCol, -design$ProfileCol]
+    ObsInfo <- ObsInfo[-design$ProfileCol, -design$ProfileCol, drop = FALSE]
+    Cheese  <- Cheese[-design$ProfileCol, -design$ProfileCol, drop = FALSE]
   }
 
-
-  out              <- NULL
+  out <- NULL
   out$call         <- match.call()
   out$coefficients <- WL.fit$estimate
   out$covariance   <- solve(ObsInfo)
-  out$robcov       <- solve(ObsInfo)%*%Cheese%*%solve(ObsInfo)
+  out$robcov       <- solve(ObsInfo) %*% Cheese %*% solve(ObsInfo)
   out$logLik       <- -WL.fit$minimum
   out$Code         <- WL.fit$code
-  attr(out,'args') <- list(formula    = formula,
-                           design_formula = design$formula,
-                           id         = id,
-                           Weights    = Weights,
-                           ProfileCol = design$ProfileCol)
-  if(kappa(out$covariance) > 1e5) warning("Poorly Conditioned Model")
+  attr(out, "args") <- list(
+    formula = formula,
+    design_formula = design$formula,
+    id = id,
+    Weights = Weights,
+    ProfileCol = design$ProfileCol
+  )
+  if (kappa(out$covariance) > 1e5) warning("Poorly Conditioned Model")
   out
 }
 
@@ -950,9 +972,6 @@ WL <- function(
 
   mm <- model.matrix(formula, design$data)
 
-  # mm <- model.matrix(formula2, mf, na.action=na.action)
-  assert_true(all(as.character(design$data[,design$id]) %in% names(design$p_sample_i)),
-              .var.name='Group variables provided to acml that were not part of design', add=coll)
   reportAssertions(coll)
 
   fit <- WL_internal(

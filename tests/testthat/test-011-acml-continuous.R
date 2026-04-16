@@ -17,10 +17,12 @@ test_that("ACML continuous response mean",
   )
 
   expect_silent(
+    # est <- acml(Response ~ Month*Genotype,
+    #             design,
+    #             gbti,
+    #             init=rep(1, 8))
     est <- acml(Response ~ Month*Genotype,
-                design,
-                gbti,
-                init=rep(1, 8))
+                design)
   )
 
   # Did it converge and return an object of the right type?
@@ -43,10 +45,12 @@ test_that("ACML continuous response intercept",
   )
 
   expect_silent(
+    # est <- acml(Response ~ Month*Genotype,
+    #             design,
+    #             gbti,
+    #             init=rep(1, 8))
     est <- acml(Response ~ Month*Genotype,
-                design,
-                gbti,
-                init=rep(1, 8))
+                design)
   )
 
   expect_true(inherits(est, "acml"))
@@ -68,10 +72,12 @@ test_that("ACML continuous response slope",
   )
 
   expect_silent(
+    # est <- acml(Response ~ Month*Genotype,
+    #            design,
+    #            gbti,
+    #            init=rep(1, 8))
     est <- acml(Response ~ Month*Genotype,
-               design,
-               gbti,
-               init=rep(1, 8))
+                design)
   )
 
   expect_true(inherits(est, "acml"))
@@ -93,10 +99,12 @@ test_that("ACML continuous response bivariate",
   )
 
   expect_silent(
+    # est <- acml(Response ~ Month*Genotype,
+    #             design,
+    #             gbti,
+    #             init=rep(1, 8))
     est <- acml(Response ~ Month*Genotype,
-                design,
-                gbti,
-                init=rep(1, 8))
+                design)
   )
 
   expect_true(inherits(est, "acml"))

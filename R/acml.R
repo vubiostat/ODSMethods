@@ -819,7 +819,7 @@ acml_internal <- function(formula,
   all_vars_formula <- as.formula(
     paste(design$response, "~", paste(all_vars[all_vars != design$response], collapse = " + ")) #, method, cutpoints, acml_samp_prob)
   )
-  mf <- model.frame(all_vars_formula, data = design$data[design$data$sampled == 1,],
+  mf <- model.frame(all_vars_formula, data = design$data,
                     drop.unused.levels = TRUE)
 
   # y
@@ -839,17 +839,20 @@ acml_internal <- function(formula,
     check.names = FALSE
   ))
 
-  method_i = design$data[,"method_i"]
-  names(method_i) = design$data[,design$id]
-  w.function =  method_i[as.character(id)]
+  # one-row-per-subject lookup, but still from design$data
+  lookup <- design$data[!duplicated(as.character(design$data[, design$id])),
+                        c(design$id, "method_i", "cutpoints_i", "acml_samp_prob_i"),
+                        drop = FALSE]
 
-  cutpoints_i = do.call(rbind, design$data[,"cutpoints_i"])
-  rownames(cutpoints_i) <- design$data[,design$id]
-  cutpoints = cutpoints_i[as.character(id),]
+  id_key <- as.character(lookup[, design$id])
 
-  acml_samp_prob_i = do.call(rbind, design$data[,"acml_samp_prob_i"])
-  rownames(acml_samp_prob_i) <- design$data[,design$id]
-  SampProb = acml_samp_prob_i[as.character(id),]
+  method_map <- setNames(as.character(lookup$method_i), id_key)
+  cut_map    <- setNames(lookup$cutpoints_i, id_key)
+  prob_map   <- setNames(lookup$acml_samp_prob_i, id_key)
+
+  w.function <- unname(method_map[as.character(id)])
+  cutpoints  <- do.call(rbind, unname(cut_map[as.character(id)]))
+  SampProb   <- do.call(rbind, unname(prob_map[as.character(id)]))
 
   xcol.phase1=design$xcol.phase1
   ests.phase1=design$ests.phase1

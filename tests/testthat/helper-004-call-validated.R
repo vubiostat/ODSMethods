@@ -55,3 +55,4 @@ validated_ll <- function(data, est, method, cuts=c(0.1, 0.9), probs=c(1, 0.25, 1
     est, y, x, z, id, method, cuts, c(1, 0.25, 1),
     rep(1, length(y)), NA)
 }
+
