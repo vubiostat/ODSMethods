@@ -49,8 +49,6 @@ unconstrained optimization scale.
 }
 \examples{
 data(gbti)
-design <- ods(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
-              data=gbti, quantiles=c(0.1, 0.9))
 est <- acml(Response ~ Month*Genotype, design, gbti)
 coef(est)
 ranef(est)

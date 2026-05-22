@@ -11,8 +11,6 @@ LogLikeCAndScoreWL(
   z,
   id,
   w.function,
-  cutpoints,
-  SampProb,
   Weights,
   ProfileCol = NA,
   Keep.liC = FALSE,

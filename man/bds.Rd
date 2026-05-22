@@ -6,13 +6,18 @@
 \usage{
 bds(
   formula,
-  method,
-  p_sample,
-  data = NULL,
+  method = NULL,
+  p_sample = NULL,
   weights = NULL,
+  data = NULL,
   quantiles = NULL,
   cutpoints = NULL,
   subset = NULL,
+  prob_intercept = NULL,
+  method_name = NULL,
+  acml_samp_prob_name = NULL,
+  cutpoints_name = NULL,
+  sampled_name = NULL,
   na.action = getOption("na.action"),
   ProfileCol = NULL
 )

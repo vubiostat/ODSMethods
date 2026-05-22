@@ -1376,7 +1376,11 @@ acml <- function(
   # Validate arguments
   coll <- makeAssertCollection()
   assert_formula(formula, add=coll)
-  assert_class(design, "odsdesign", add=coll)
+  assert_true(
+    inherits(design, "odsdesign") || inherits(design, "bdsdesign"),
+    .var.name = "design must inherit from class 'odsdesign' or 'bdsdesign'",
+    add = coll
+  )
   # assert_logical(MI, len=1, add=coll)
   # assert_choice(MImethod, c("direct", "indirect"))
   reportAssertions(coll)

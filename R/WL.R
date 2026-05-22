@@ -31,8 +31,6 @@
 #' @param sigma.vc vector of variance components on standard deviation scale
 #' @param rho.vc vector of correlations among the random effects.  The length should be q choose 2
 #' @param sigma.e std dev of the measurement error distribution
-#' @param cutpoints A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions [bivariate Q_i: each row is a vector of length 4 c(xlow, xhigh, ylow, yhigh); univariate Q_i: each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high].  Each subject should have n_i rows of the same values.
-#' @param SampProb A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region [bivariate Q_i: each row is a vector of length 2 c(central region, outlying region); univariate Q_i: each row is a vector of length 3 with sampling probabilities for each region]. Each subject should have n_i rows of the same values.
 #' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
 #' @param Keep.liC If FALSE, the function returns the conditional log likelihood across all subjects.  If TRUE, subject specific contributions and exponentiated subject specific ascertainment corrections are returned in a list.
 #' @param xcol.phase1 This only applied if doing BLUP-based sampling.  It is the column numbers of the design matrix x that were used in phase 1 to conduct analyses from which BLUP estimates are calculated. e.g. xcol.phase1 = c(1,2,4) if the first second and fourth columns of x were used in phase 1
@@ -83,8 +81,6 @@ LogLikeWL <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sigma.e, 
 #' @param sigma.vc vector of variance components on standard deviation scale
 #' @param rho.vc vector of correlations among the random effects.  The length should be q choose 2
 #' @param sigma.e std dev of the measurement error distribution
-#' @param cutpoints cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
-#' @param SampProb Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
 #' @return ss contributions to the conditional log likelihood.  This is an internal function used by LogLikeWL
 #' @export
 #'
@@ -197,8 +193,6 @@ li.lme.scoreWL <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
 #' @param sigma.vc vector of variance components on standard deviation scale
 #' @param rho.vc vector of correlations among the random effects.  The length should be q choose 2
 #' @param sigma.e std dev of the measurement error distribution
-#' @param cutpoints A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions [bivariate Q_i: each row is a vector of length 4 c(xlow, xhigh, ylow, yhigh); univariate Q_i: each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high].  Each subject should have n_i rows of the same values.
-#' @param SampProb A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region [bivariate Q_i: each row is a vector of length 2 c(central region, outlying region); univariate Q_i: each row is a vector of length 3 with sampling probabilities for each region]. Each subject should have n_i rows of the same values.
 #' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
 #' @param CheeseCalc If FALSE, the function returns the gradient of the conditional log likelihood across all subjects.  If TRUE, the cheese part of the sandwich esitmator is calculated.
 #' @param xcol.phase1 This only applied if doing BLUP-based sampling.  It is the column numbers of the design matrix x that were used in phase 1 to conduct analyses from which BLUP estimates are calculated. e.g. xcol.phase1 = c(1,2,4) if the first second and fourth columns of x were used in phase 1
@@ -252,7 +246,7 @@ LogLikeC.ScoreWL <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, si
 #' @param Keep.liC If TRUE outputs subject specific conditional log lileihoods to be used for the imputation procedure described in the AOAS paper keep z sum(n_i) by 2 design matric for random effects (intercept and slope)
 #' @return The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) and subject specific contributions to the conditional likelihood if Keep.liC=TRUE).
 #' @export
-LogLikeCAndScoreWL <- function(params, y, x, z, id, w.function, cutpoints, SampProb, Weights, ProfileCol=NA, Keep.liC=FALSE, xcol.phase1, ests.phase1){
+LogLikeCAndScoreWL <- function(params, y, x, z, id, w.function, Weights, ProfileCol=NA, Keep.liC=FALSE, xcol.phase1, ests.phase1){
     npar   <- length(params)
 
     nbeta <- ncol(x)
@@ -334,13 +328,11 @@ CreateSubjectDataWL <- function(id,y,x,z,Weights){
 #'
 #' @param formula.fixed formula for the fixed effects (of the form y~x)
 #' @param formula.random formula for the random effects (of the form ~z).  Right now this model only fits random intercept and slope models.
-#' @param data data frame that should contain everything in formula.fixed, formula.random, id, and Weights.  It does not include: w.function, cutpoints, SampProb
+#' @param data data frame that should contain everything in formula.fixed, formula.random, id, and Weights.  It does not include: w.function
 #' @param id sum(n_i) vector of subject ids (a variable contained in data)
 #' @param method sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi* zi) * t.zi)[1,]), "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[1,]). "intercept2" (second intercept of the regression of the Yi ~
 ##zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[3,]), "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[4,]) "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[c(1,2),]) "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) * t.zi)[c(1,3),]) "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[c(1,3),]).  There should be one unique value per subject.  NOTE: We also have the same designs but for BLUP based sampling, in which case, the character string should begin with "blup.".  For example "blup.intercept". There should be one unique value per subject but n_i replicates of that value.  Note that w.function should NOT be in the dat dataframe.
 #' @param InitVals starting values for c(beta, log(sigma0), log(sigma1), log((1+rho)/(1-rho)), log(sigmae))
-#' @param cutpoints A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions for individual subjects.  If using a low, medium, high, sampling scheme, this is a sum(n_i) by 2 matrix that must be a distinct object not contained in the dat dataframe.  Each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high.  If using a square doughnut design this should be sum(n_i) by 4 matrix (var1lower, var1upper, var2lower, var2upper). Each subject should have n_i rows of the same values.
-#' @param acml_samp_prob A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region. For low medium high sampling, each row is a vector of length 3 with sampling probabilities for each region. For bivariate stratum sampling each row is a vector of length 2 with sampling probabilities for the inner and outer strata. Each subject should have n_i rows of the same values.  Not in data.
 #' @param weights Subject specific sampling weights.  A vector of length sum(n_i).  This should be a variable in the data dataframe. It should only be used if doing IPWL.  Note if doing IPWL, only use robcov (robust variances) and not covar.  If not doing IPWL, this must be a vectors of 1s.
 #' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
 #'                   while fixing these columns at the values of InitVals[ProfileCol]
@@ -557,8 +549,6 @@ ranef.WL <- function(object, transform=FALSE, ...)
 #' @return A named vector of desired coeffients.
 #' @examples
 #' data(gbti)
-#' design <- ods(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
-#'               data=gbti, quantiles=c(0.1, 0.9))
 #' est <- acml(Response ~ Month*Genotype, design, gbti)
 #' coef(est)
 #' ranef(est)
@@ -913,8 +903,6 @@ logLik.WL <- function(object, ...)
 #' @importFrom stats lm model.matrix model.frame
 #' @examples
 #' data(gbti)
-#' design <- ods(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
-#'               data=gbti, quantiles=c(0.1, 0.9))
 #' est <- acml(Response ~ Month*Genotype, design, gbti)
 #' est
 #' summary(est)
