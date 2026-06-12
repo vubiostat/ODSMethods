@@ -1,0 +1,41 @@
+Package: ODSMethods
+Type: Package
+Title: Outcome Dependent Sampling Methods
+Version: 0.1.0
+Authors@R: c(
+    person("Lucy", "Yan", email = "bailu.yan@vanderbilt.edu",
+           comment = c(ORCID="0000-0002-3718-3117"),
+           role = c("cre", "aut")),
+    person("Shawn", "Garbett", email = "shawn.garbett@vumc.org",
+           comment = c(ORCID="0000-0003-4079-5621"),
+           role = c("aut","ctb")),
+    person("Jonathan", "Schildcrout", email="jonny.schild@vumc.org",
+           comment = c(ORCID="0000-0003-2276-2551"),
+           role = c("aut", "ctb"))
+    )
+Description: When outcome covariates are available one can perform biased
+  sampling to maximize information returned, or outcome dependent sampling
+  (ODS). This is especially helpful
+  to minimize exposure or an expensive test. The statistical analysis
+  requires correction and this package has routines to assist in this
+  process via multiple methods. See 'Two-Phase, Generalized Case-Control
+  Designs for the Study of Quantitative Longitudinal Outcomes' Schildcrout,
+  et al. (2020) <doi: 10.1093/aje/kwz127>.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+URL: https://github.com/vubiostat/ODSMethods
+BugReports: https://github.com/vubiostat/ODSMethods/issues
+Depends: R (>= 3.5.0), lme4, numDeriv
+Suggests: testthat (>= 3.0.0), MASS, numDeriv, knitr, rmarkdown
+VignetteBuilder: knitr
+Imports: mvtnorm, checkmate, lme4
+RoxygenNote: 7.3.3
+NeedsCompilation: no
+Packaged: 2026-05-22 04:31:06 UTC; bailuyan
+Author: Lucy Yan [cre, aut] (ORCID: <https://orcid.org/0000-0002-3718-3117>),
+  Shawn Garbett [aut, ctb] (ORCID:
+    <https://orcid.org/0000-0003-4079-5621>),
+  Jonathan Schildcrout [aut, ctb] (ORCID:
+    <https://orcid.org/0000-0003-2276-2551>)
+Maintainer: Lucy Yan <bailu.yan@vanderbilt.edu>

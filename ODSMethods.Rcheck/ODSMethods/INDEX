@@ -1,0 +1,70 @@
+ACi1q                   Ascertainment correction piece for univariate
+                        sampling
+ACi2q                   Ascertainment correction piece for bivariate
+                        sampling
+acml                    Fit model using ascertainment corrected
+                        likelihood model (ACML)
+acml_internal           Fitting function: ACML or WL for a linear mixed
+                        effects model (random intercept and slope)
+bds                     Specify a given design for BLUP Dependent
+                        Sampling (BDS)
+CreateSubjectData       Create a list of subject-specific data
+CreateSubjectDataWL     Create a list of subject-specific data
+fixef                   Extract parameters from fitted models
+gbti                    Simulated Group by Time Interaction (gbti)
+                        dataset
+li.lme                  Calculate a subject-specific contribution to a
+                        log-likelihood for longitudinal normal data
+li.lme.score2           Subject specific contribution to the lme model
+                        score (also returns marginal Vi=Cov(Y|X))
+li.lme.scoreWL          Subject specific contribution to the lme model
+                        score (also returns marginal Vi=Cov(Y|X))
+logACi1q                Log of the Ascertainment correction for
+                        univariate sampling
+logACi1q.score2         Gradient of the log of the ascertainment
+                        correction piece for sampling based on
+                        univariate Q_i
+logACi2q                Log of the Ascertainment correction piece for
+                        bivariate sampling
+logACi2q.score2         Gradient of the log of the ascertainment
+                        correction piece for sampling based on
+                        bivariate Q_i.
+LogLikeC.Score2         Calculate the gradient of the conditional
+                        likelihood
+LogLikeC.ScoreWL        Calculate the gradient of the conditional
+                        likelihood
+LogLikeC2               Calculate the conditional likelihood for the
+                        univariate and bivariate sampling cases across
+                        all subjects (Keep.liC=FALSE) or the subject
+                        specific contributions to the conditional
+                        likelihood along with the log-transformed
+                        ascertainment correction for multiple
+                        imputation (Keep.liC=TRUE).
+LogLikeCAndScore2       Calculate the ascertainment corrected log
+                        likelihood and score
+LogLikeCAndScoreWL      Calculate the ascertainment corrected log
+                        likelihood and score
+LogLikeiC2              Calculate the ss contributions to the
+                        conditional likelihood for the univariate and
+                        bivariate sampling cases.
+LogLikeiWL              Calculate the ss contributions to the
+                        conditional likelihood for the univariate and
+                        bivariate sampling cases.
+LogLikeWL               Calculate the conditional likelihood for the
+                        univariate and bivariate sampling cases across
+                        all subjects (Keep.liC=FALSE) or the subject
+                        specific contributions to the conditional
+                        likelihood along with the log-transformed
+                        ascertainment correction for multiple
+                        imputation (Keep.liC=TRUE).
+ods                     Specify a given design for Outcome Dependent
+                        Sampling (ODS)
+ODSMethods              Outcome Dependent Sampling (ODS) correction
+                        methods
+plot.odsdesign          Scatter plot an ODS design
+robcov                  robcov: Return the robust covariance matrix.
+vi.calc                 Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_n_i
+WL                      Fit model using ascertainment corrected
+                        likelihood model (ACML)
+WL_internal             Fitting function: ACML or WL for a linear mixed
+                        effects model (random intercept and slope)

@@ -1,0 +1,502 @@
+
+R version 4.5.1 (2025-06-13) -- "Great Square Root"
+Copyright (C) 2025 The R Foundation for Statistical Computing
+Platform: aarch64-apple-darwin20
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> pkgname <- "ODSMethods"
+> source(file.path(R.home("share"), "R", "examples-header.R"))
+> options(warn = 1)
+> library('ODSMethods')
+Loading required package: lme4
+Loading required package: Matrix
+Loading required package: numDeriv
+
+Attaching package: ‘ODSMethods’
+
+The following objects are masked from ‘package:lme4’:
+
+    fixef, ranef
+
+> 
+> base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
+> base::assign(".old_wd", base::getwd(), pos = 'CheckExEnv')
+> cleanEx()
+> nameEx("WL")
+> ### * WL
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: WL
+> ### Title: Fit model using ascertainment corrected likelihood model (ACML)
+> ### Aliases: WL
+> 
+> ### ** Examples
+> 
+> data(gbti)
+> design <- ods(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
++               data=gbti, quantiles=c(0.1, 0.9), weights="pSample")
+> est <- WL(Response ~ Month, design)
+> est
+
+Calls:
+ods(formula = Response ~ Month | Patient, method = "intercept", 
+    p_sample = c(1, 0.25, 1), weights = "pSample", data = gbti, 
+    quantiles = c(0.1, 0.9))
+WL(formula = Response ~ Month, design = design)
+
+Cutpoints:
+
+Fixed Effects:
+[1] 10.1374297  0.4919324
+
+Random Effects:
+[1]  1.2129136 -0.5397044 -0.2656883  0.0139076
+
+Number of Subjects:
+[1] 1000
+> summary(est)
+
+Calls:
+ods(formula = Response ~ Month | Patient, method = "intercept", 
+    p_sample = c(1, 0.25, 1), weights = "pSample", data = gbti, 
+    quantiles = c(0.1, 0.9))
+WL(formula = Response ~ Month, design = design)
+
+Cutpoints:
+
+Fixed Effects:
+      Estimate Std. Error       L95       U95 z value     Pr(>|z|)    
+[1,] 10.137430   0.248495  9.650388 10.624472 40.7953 < 2.2204e-16 ***
+[2,]  0.491932   0.046868  0.400073  0.583792 10.4961 < 2.2204e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Random Effects:
+                         Estimate Std. Error        L95        U95
+Patient log(Intercept)  1.2129136  0.0548697  1.1053709  1.3204563
+        log(Month)     -0.5397044  0.0654678 -0.6680190 -0.4113897
+        2*atanh(rho)   -0.2656883  0.1679096 -0.5947850  0.0634084
+log(Residual)           0.0139076  0.0287599 -0.0424607  0.0702759
+
+Number of Subjects: 1000
+Number of Observations: 5000
+> 
+> 
+> 
+> cleanEx()
+> nameEx("acml")
+> ### * acml
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: acml
+> ### Title: Fit model using ascertainment corrected likelihood model (ACML)
+> ### Aliases: acml
+> 
+> ### ** Examples
+> 
+> data(gbti)
+> design <- ods(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
++               data=gbti, quantiles=c(0.1, 0.9))
+> est <- acml(Response ~ Month*Genotype, design)
+> est
+
+Calls:
+ods(formula = Response ~ Month | Patient, method = "intercept", 
+    p_sample = c(1, 0.25, 1), data = gbti, quantiles = c(0.1, 
+        0.9))
+acml(formula = Response ~ Month * Genotype, design = design)
+
+Cutpoints:
+  intercept
+1  7.325998
+2 12.890474
+
+Fixed Effects:
+[1] 10.2473395  0.4928268 -0.2757772  0.2338916
+
+Random Effects:
+[1]  0.5238252 -0.4312768  0.2014851  0.0096641
+
+Number of Subjects:
+[1] 1000
+> summary(est)
+
+Calls:
+ods(formula = Response ~ Month | Patient, method = "intercept", 
+    p_sample = c(1, 0.25, 1), data = gbti, quantiles = c(0.1, 
+        0.9))
+acml(formula = Response ~ Month * Genotype, design = design)
+
+Cutpoints:
+
+Fixed Effects:
+       Estimate Std. Error        L95        U95   z value   Pr(>|z|)    
+[1,] 10.2473395  0.0805170 10.0895290 10.4051499 127.26924 < 2.22e-16 ***
+[2,]  0.4928268  0.0395332  0.4153431  0.5703105  12.46614 < 2.22e-16 ***
+[3,] -0.2757772  0.1943350 -0.6566667  0.1051123  -1.41908 0.15587516    
+[4,]  0.2338916  0.0953984  0.0469142  0.4208690   2.45173 0.01421694 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Random Effects:
+                         Estimate Std. Error        L95        U95
+Patient log(Intercept)  0.5238252  0.0366671  0.4519590  0.5956913
+        log(Month)     -0.4312768  0.0436974 -0.5169222 -0.3456314
+        2*atanh(rho)    0.2014851  0.1049403 -0.0041942  0.4071643
+log(Residual)           0.0096641  0.0203616 -0.0302439  0.0495720
+
+Number of Subjects: 1000
+Number of Observations: 5000
+> 
+> 
+> 
+> cleanEx()
+> nameEx("bds")
+> ### * bds
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: bds
+> ### Title: Specify a given design for BLUP Dependent Sampling (BDS)
+> ### Aliases: bds
+> 
+> ### ** Examples
+> 
+> data(gbti)
+> 
+> odsd <- bds(Response ~ Month|Patient, 'mean', p_sample=c(1, 0.25, 1),
++             data=gbti, quantiles=c(0.1, 0.9))
+> summary(odsd)
+$call
+bds(formula = Response ~ Month | Patient, method = "mean", p_sample = c(1, 
+    0.25, 1), data = gbti, quantiles = c(0.1, 0.9))
+
+$cutpoints
+       mean
+1  8.401508
+2 15.236062
+
+$digits
+[1] 7
+
+$descriptive
+          Response       mean  intercept      slope
+Min.     2.3427714  4.2388833  3.4636736 -1.5405884
+1st Qu.  9.8660120 10.1392107  8.7922158  0.1294732
+Mean    11.8116566 11.8116566 10.2089674  0.5342298
+Median  11.6908438 11.8154157 10.2606785  0.5154688
+3rd Qu. 13.6673592 13.6123603 11.6923957  0.9231523
+Max.    23.3867489 18.4012563 16.3443191  2.1980391
+
+$N
+          N     Patient E[N_sample] 
+       5000        1000         400 
+
+attr(,"class")
+[1] "summary.bdsdesign"
+> plot(odsd)
+> 
+> odsd <- bds(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
++             data=gbti, quantiles=c(0.1, 0.9))
+> summary(odsd)
+$call
+bds(formula = Response ~ Month | Patient, method = "intercept", 
+    p_sample = c(1, 0.25, 1), data = gbti, quantiles = c(0.1, 
+        0.9))
+
+$cutpoints
+  intercept
+1  7.325998
+2 12.890474
+
+$digits
+[1] 7
+
+$descriptive
+          Response       mean  intercept      slope
+Min.     2.3427714  4.2388833  3.4636736 -1.5405884
+1st Qu.  9.8660120 10.1392107  8.7922158  0.1294732
+Mean    11.8116566 11.8116566 10.2089674  0.5342298
+Median  11.6908438 11.8154157 10.2606785  0.5154688
+3rd Qu. 13.6673592 13.6123603 11.6923957  0.9231523
+Max.    23.3867489 18.4012563 16.3443191  2.1980391
+
+$N
+          N     Patient E[N_sample] 
+       5000        1000         400 
+
+attr(,"class")
+[1] "summary.bdsdesign"
+> plot(odsd)
+> 
+> odsd <- bds(Response ~ Month|Patient, 'slope', p_sample=c(1, 0.25, 1),
++             data=gbti, quantiles=c(0.1, 0.9))
+> summary(odsd)
+$call
+bds(formula = Response ~ Month | Patient, method = "slope", p_sample = c(1, 
+    0.25, 1), data = gbti, quantiles = c(0.1, 0.9))
+
+$cutpoints
+       slope
+1 -0.2073044
+2  1.2969380
+
+$digits
+[1] 7
+
+$descriptive
+          Response       mean  intercept      slope
+Min.     2.3427714  4.2388833  3.4636736 -1.5405884
+1st Qu.  9.8660120 10.1392107  8.7922158  0.1294732
+Mean    11.8116566 11.8116566 10.2089674  0.5342298
+Median  11.6908438 11.8154157 10.2606785  0.5154688
+3rd Qu. 13.6673592 13.6123603 11.6923957  0.9231523
+Max.    23.3867489 18.4012563 16.3443191  2.1980391
+
+$N
+          N     Patient E[N_sample] 
+       5000        1000         400 
+
+attr(,"class")
+[1] "summary.bdsdesign"
+> plot(odsd)
+> 
+> odsd <- bds(Response ~ Month|Patient, 'bivariate', p_sample=c(0.25, 1),
++             data=gbti, quantiles=0.8)
+> summary(odsd)
+$call
+bds(formula = Response ~ Month | Patient, method = "bivariate", 
+    p_sample = c(0.25, 1), data = gbti, quantiles = 0.8)
+
+$cutpoints
+     intercept      slope
+low   6.726278 -0.3547519
+high 13.642389  1.5298958
+
+$digits
+[1] 7
+
+$descriptive
+          Response       mean  intercept      slope
+Min.     2.3427714  4.2388833  3.4636736 -1.5405884
+1st Qu.  9.8660120 10.1392107  8.7922158  0.1294732
+Mean    11.8116566 11.8116566 10.2089674  0.5342298
+Median  11.6908438 11.8154157 10.2606785  0.5154688
+3rd Qu. 13.6673592 13.6123603 11.6923957  0.9231523
+Max.    23.3867489 18.4012563 16.3443191  2.1980391
+
+$N
+          N     Patient E[N_sample] 
+       5000        1000         400 
+
+attr(,"class")
+[1] "summary.bdsdesign"
+> plot(odsd)
+> 
+> 
+> 
+> 
+> cleanEx()
+> nameEx("coef")
+> ### * coef
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: fixef
+> ### Title: Extract parameters from fitted models
+> ### Aliases: fixef ranef coef.WL calc_D coef.acml
+> 
+> ### ** Examples
+> 
+> data(gbti)
+> design <- ods(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
++               data=gbti, quantiles=c(0.1, 0.9), weights="pSample")
+> est <- WL(Response ~ Month, design)
+> coef(est)
+[1] 10.13742968  0.49193237  1.21291357 -0.53970436 -0.26568832  0.01390765
+> ranef(est)
+[1]  1.21291357 -0.53970436 -0.26568832  0.01390765
+> fixef(est)
+[1] 10.1374297  0.4919324
+> data(gbti)
+> design <- ods(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
++               data=gbti, quantiles=c(0.1, 0.9))
+> est <- acml(Response ~ Month*Genotype, design)
+> coef(est)
+[1] 10.247339466  0.492826828 -0.275777198  0.233891580  0.523825155
+[6] -0.431276822  0.201485069  0.009664087
+> ranef(est)
+[1]  0.523825155 -0.431276822  0.201485069  0.009664087
+> fixef(est)
+[1] 10.2473395  0.4928268 -0.2757772  0.2338916
+> 
+> 
+> 
+> cleanEx()
+> nameEx("gbti")
+> ### * gbti
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: gbti
+> ### Title: Simulated Group by Time Interaction (gbti) dataset
+> ### Aliases: gbti
+> 
+> ### ** Examples
+> 
+>   data(gbti)
+> 
+> 
+> 
+> cleanEx()
+> nameEx("ods")
+> ### * ods
+> 
+> flush(stderr()); flush(stdout())
+> 
+> ### Name: ods
+> ### Title: Specify a given design for Outcome Dependent Sampling (ODS)
+> ### Aliases: ods
+> 
+> ### ** Examples
+> 
+> data(gbti)
+> 
+> odsd <- ods(Response ~ Month|Patient, 'mean', p_sample=c(1, 0.25, 1),
++             data=gbti, quantiles=c(0.1, 0.9))
+> summary(odsd)
+
+Call:
+ods(formula = Response ~ Month | Patient, method = "mean", p_sample = c(1, 
+    0.25, 1), data = gbti, quantiles = c(0.1, 0.9))
+
+Cutpoints:
+       mean
+1  8.401508
+2 15.236062
+
+          Response       mean  intercept      slope
+Min.     2.3427714  4.2388833  3.4636736 -1.5405884
+1st Qu.  9.8660120 10.1392107  8.7922158  0.1294732
+Mean    11.8116566 11.8116566 10.2089674  0.5342298
+Median  11.6908438 11.8154157 10.2606785  0.5154688
+3rd Qu. 13.6673592 13.6123603 11.6923957  0.9231523
+Max.    23.3867489 18.4012563 16.3443191  2.1980391
+
+          N     Patient E[N_sample] 
+       5000        1000           0 
+
+> plot(odsd)
+> 
+> odsd <- ods(Response ~ Month|Patient, 'intercept', p_sample=c(1, 0.25, 1),
++             data=gbti, quantiles=c(0.1, 0.9))
+> summary(odsd)
+
+Call:
+ods(formula = Response ~ Month | Patient, method = "intercept", 
+    p_sample = c(1, 0.25, 1), data = gbti, quantiles = c(0.1, 
+        0.9))
+
+Cutpoints:
+  intercept
+1  7.325998
+2 12.890474
+
+          Response       mean  intercept      slope
+Min.     2.3427714  4.2388833  3.4636736 -1.5405884
+1st Qu.  9.8660120 10.1392107  8.7922158  0.1294732
+Mean    11.8116566 11.8116566 10.2089674  0.5342298
+Median  11.6908438 11.8154157 10.2606785  0.5154688
+3rd Qu. 13.6673592 13.6123603 11.6923957  0.9231523
+Max.    23.3867489 18.4012563 16.3443191  2.1980391
+
+          N     Patient E[N_sample] 
+       5000        1000           0 
+
+> plot(odsd)
+> 
+> odsd <- ods(Response ~ Month|Patient, 'slope', p_sample=c(1, 0.25, 1),
++             data=gbti, quantiles=c(0.1, 0.9))
+> summary(odsd)
+
+Call:
+ods(formula = Response ~ Month | Patient, method = "slope", p_sample = c(1, 
+    0.25, 1), data = gbti, quantiles = c(0.1, 0.9))
+
+Cutpoints:
+       slope
+1 -0.2073044
+2  1.2969380
+
+          Response       mean  intercept      slope
+Min.     2.3427714  4.2388833  3.4636736 -1.5405884
+1st Qu.  9.8660120 10.1392107  8.7922158  0.1294732
+Mean    11.8116566 11.8116566 10.2089674  0.5342298
+Median  11.6908438 11.8154157 10.2606785  0.5154688
+3rd Qu. 13.6673592 13.6123603 11.6923957  0.9231523
+Max.    23.3867489 18.4012563 16.3443191  2.1980391
+
+          N     Patient E[N_sample] 
+       5000        1000           0 
+
+> plot(odsd)
+> 
+> odsd <- ods(Response ~ Month|Patient, 'bivariate', p_sample=c(0.25, 1),
++             data=gbti, quantiles=0.8)
+> summary(odsd)
+
+Call:
+ods(formula = Response ~ Month | Patient, method = "bivariate", 
+    p_sample = c(0.25, 1), data = gbti, quantiles = 0.8)
+
+Cutpoints:
+     intercept      slope
+low   6.726278 -0.3547519
+high 13.642389  1.5298958
+
+          Response       mean  intercept      slope
+Min.     2.3427714  4.2388833  3.4636736 -1.5405884
+1st Qu.  9.8660120 10.1392107  8.7922158  0.1294732
+Mean    11.8116566 11.8116566 10.2089674  0.5342298
+Median  11.6908438 11.8154157 10.2606785  0.5154688
+3rd Qu. 13.6673592 13.6123603 11.6923957  0.9231523
+Max.    23.3867489 18.4012563 16.3443191  2.1980391
+
+          N     Patient E[N_sample] 
+       5000        1000           0 
+
+> plot(odsd)
+> 
+> 
+> 
+> 
+> ### * <FOOTER>
+> ###
+> cleanEx()
+> options(digits = 7L)
+> base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
+Time elapsed:  18.33 0.09 18.476 0 0 
+> grDevices::dev.off()
+null device 
+          1 
+> ###
+> ### Local variables: ***
+> ### mode: outline-minor ***
+> ### outline-regexp: "\\(> \\)?### [*]+" ***
+> ### End: ***
+> quit('no')

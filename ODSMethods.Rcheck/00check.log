@@ -1,0 +1,207 @@
+* using log directory ‘/Users/bailuyan/Documents/Dissertation Projects/ODSMethods/ODSMethods.Rcheck’
+* using R version 4.5.1 (2025-06-13)
+* using platform: aarch64-apple-darwin20
+* R was compiled by
+    Apple clang version 16.0.0 (clang-1600.0.26.6)
+    GNU Fortran (GCC) 14.2.0
+* running under: macOS Sequoia 15.6.1
+* using session charset: UTF-8
+* using options ‘--no-manual --no-build-vignettes’
+* checking for file ‘ODSMethods/DESCRIPTION’ ... OK
+* checking extension type ... Package
+* this is package ‘ODSMethods’ version ‘0.1.0’
+* package encoding: UTF-8
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... OK
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking whether package ‘ODSMethods’ can be installed ... OK
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking DESCRIPTION meta-information ... NOTE
+Packages listed in more than one of Depends, Imports, Suggests, Enhances:
+  ‘lme4’ ‘numDeriv’
+A package should be listed in only one of these fields.
+* checking top-level files ... OK
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... OK
+* checking code files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking dependencies in R code ... OK
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... NOTE
+acml: no visible binding for global variable ‘data’
+acml_internal: no visible global function definition for ‘setNames’
+gen.std.binormal: no visible global function definition for ‘rnorm’
+gen.std.binormal: no visible global function definition for ‘var’
+gen.std.gam: no visible global function definition for ‘rgamma’
+gen.std.mixnorm: no visible global function definition for ‘rnorm’
+gen.std.mixnorm: no visible global function definition for ‘var’
+gen.std.t: no visible global function definition for ‘rt’
+GenerateX: no visible global function definition for ‘rnorm’
+GenerateY: no visible global function definition for ‘mvrnorm’
+GenerateY: no visible binding for global variable ‘pr.grp.1.overall’
+GenerateY: no visible binding for global variable ‘grp.i’
+LogLikeWL: no visible global function definition for ‘head’
+plot.odsdesign: no visible global function definition for ‘text’
+Undefined global functions or variables:
+  data grp.i head mvrnorm pr.grp.1.overall rgamma rnorm rt setNames
+  text var
+Consider adding
+  importFrom("graphics", "text")
+  importFrom("stats", "rgamma", "rnorm", "rt", "setNames", "var")
+  importFrom("utils", "data", "head")
+to your NAMESPACE file.
+* checking Rd files ... NOTE
+checkRd: (-1) vi.calc.Rd:5: Lost braces; missing escapes or markup?
+     5 | \title{Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}}
+       |                                                 ^
+checkRd: (-1) vi.calc.Rd:22: Lost braces; missing escapes or markup?
+    22 | Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}
+       |                                          ^
+* checking Rd metadata ... OK
+* checking Rd cross-references ... OK
+* checking for missing documentation entries ... WARNING
+Undocumented code objects:
+  ‘mi_acml_summary_table_wide_b’ ‘rand.effect.matrix’ ‘ranef_transform’
+Undocumented data sets:
+  ‘mi_acml_summary_table_wide_b’
+All user-level objects in a package should have documentation entries.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking for code/documentation mismatches ... OK
+* checking Rd \usage sections ... WARNING
+Undocumented arguments in Rd file 'LogLikeC.Score2.Rd'
+  ‘w.function’
+
+Undocumented arguments in Rd file 'LogLikeC.ScoreWL.Rd'
+  ‘w.function’
+Documented arguments not in \usage in Rd file 'LogLikeC.ScoreWL.Rd':
+  ‘xcol.phase1’ ‘ests.phase1’
+
+Undocumented arguments in Rd file 'LogLikeCAndScore2.Rd'
+  ‘w.function’
+
+Undocumented arguments in Rd file 'LogLikeCAndScoreWL.Rd'
+  ‘w.function’ ‘xcol.phase1’ ‘ests.phase1’
+
+Documented arguments not in \usage in Rd file 'LogLikeWL.Rd':
+  ‘xcol.phase1’ ‘ests.phase1’
+
+Documented arguments not in \usage in Rd file 'LogLikeiC2.Rd':
+  ‘w.function’ ‘cutpoints’ ‘SampProb’
+
+Documented arguments not in \usage in Rd file 'LogLikeiWL.Rd':
+  ‘w.function’
+
+Undocumented arguments in Rd file 'WL.Rd'
+  ‘ProfileCol’
+Documented arguments not in \usage in Rd file 'WL.Rd':
+  ‘data’ ‘weights’ ‘MI’ ‘MImethod’
+
+Undocumented arguments in Rd file 'WL_internal.Rd'
+  ‘formula’ ‘design’
+Documented arguments not in \usage in Rd file 'WL_internal.Rd':
+  ‘formula.fixed’ ‘formula.random’ ‘data’ ‘id’ ‘method’ ‘weights’
+
+Undocumented arguments in Rd file 'acml.Rd'
+  ‘ProfileCol’
+Documented arguments not in \usage in Rd file 'acml.Rd':
+  ‘data’ ‘MI’ ‘MImethod’
+
+Undocumented arguments in Rd file 'acml_internal.Rd'
+  ‘formula’ ‘design’
+Documented arguments not in \usage in Rd file 'acml_internal.Rd':
+  ‘formula.fixed’ ‘formula.random’ ‘data’ ‘id’ ‘method’ ‘cutpoints’
+  ‘acml_samp_prob’
+
+Undocumented arguments in Rd file 'bds.Rd'
+  ‘weights’ ‘prob_intercept’ ‘method_name’ ‘acml_samp_prob_name’
+  ‘cutpoints_name’ ‘sampled_name’ ‘ProfileCol’
+Documented arguments not in \usage in Rd file 'bds.Rd':
+  ‘...’
+
+Documented arguments not in \usage in Rd file 'logACi2q.score2.Rd':
+  ‘sigmae’
+
+Undocumented arguments in Rd file 'ods.Rd'
+  ‘weights’ ‘prob_intercept’ ‘method_name’ ‘acml_samp_prob_name’
+  ‘cutpoints_name’ ‘sampled_name’ ‘ProfileCol’
+Documented arguments not in \usage in Rd file 'ods.Rd':
+  ‘...’
+
+Undocumented arguments in Rd file 'plot.odsdesign.Rd'
+  ‘label_strata’
+Documented arguments not in \usage in Rd file 'plot.odsdesign.Rd':
+  ‘col’
+
+Functions with \usage entries need to have the appropriate \alias
+entries, and all their arguments documented.
+The \usage entries must correspond to syntactically valid R code.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking Rd contents ... OK
+* checking for unstated dependencies in examples ... OK
+* checking contents of ‘data’ directory ... OK
+* checking data for non-ASCII characters ... OK
+* checking LazyData ... OK
+* checking data for ASCII and uncompressed saves ... OK
+* checking files in ‘vignettes’ ... WARNING
+Files in the 'vignettes' directory but no files in 'inst/doc':
+  ‘application_ex.Rmd’ ‘ImputationFns.R’
+  ‘ODSMethods_report_files/figure-html/unnamed-chunk-10-1.png’
+  ‘ODSMethods_report_files/figure-html/unnamed-chunk-11-1.png’
+  ‘ODSMethods_report_files/figure-html/unnamed-chunk-15-1.png’
+  ‘ODSMethods_report_files/figure-html/unnamed-chunk-16-1.png’
+  ‘ODSMethods_report_files/figure-html/unnamed-chunk-17-1.png’
+  ‘ODSMethods_report_files/figure-html/unnamed-chunk-18-1.png’
+  ‘ODSMethods_report_files/figure-html/unnamed-chunk-19-1.png’
+  ‘ODSMethods_report_files/figure-html/unnamed-chunk-20-1.png’
+  ‘ODSMethods_report_files/figure-html/unnamed-chunk-21-1.png’
+  ‘ODSMethods_report_files/figure-html/unnamed-chunk-22-1.png’
+  ‘ODSMethods_report_files/figure-html/unnamed-chunk-25-1.png’
+  ‘ODSMethods_report_files/figure-html/unnamed-chunk-5-1.png’
+  ‘ODSMethods_report_files/figure-html/unnamed-chunk-9-1.png’
+  ‘ODSMethods_report_files/libs/bootstrap/bootstrap-icons.css’
+  ‘ODSMethods_report_files/libs/bootstrap/bootstrap-icons.woff’
+  ‘ODSMethods_report_files/libs/bootstrap/bootstrap.min.css’
+  ‘ODSMethods_report_files/libs/bootstrap/bootstrap.min.js’
+  ‘ODSMethods_report_files/libs/clipboard/clipboard.min.js’
+  ‘ODSMethods_report_files/libs/pagedtable-1.1/css/pagedtable.css’
+  ‘ODSMethods_report_files/libs/pagedtable-1.1/js/pagedtable.js’
+  ‘ODSMethods_report_files/libs/quarto-html/anchor.min.js’
+  ‘ODSMethods_report_files/libs/quarto-html/popper.min.js’
+  ‘ODSMethods_report_files/libs/quarto-html/quarto-syntax-highlighting.css’
+  ‘ODSMethods_report_files/libs/quarto-html/quarto.js’
+  ‘ODSMethods_report_files/libs/quarto-html/tippy.css’
+  ‘ODSMethods_report_files/libs/quarto-html/tippy.umd.min.js’
+  ‘ODSMethods_report.html’ ‘ODSMethods_report.qmd’ ‘ODSMethods.Rmd’
+  ‘sim_fit1_accre.R’ ‘sim_rep.R’ ‘SimGenAndFitDat.R’ ‘SimGenDatFns.R’
+  ‘simulation_res.Rmd’
+* checking examples ... OK
+* checking for unstated dependencies in vignettes ... OK
+* checking package vignettes ... WARNING
+Directory 'inst/doc' does not exist.
+Package vignettes without corresponding single PDF/HTML:
+  ‘application_ex.Rmd’
+  ‘ODSMethods.Rmd’
+  ‘simulation_res.Rmd’
+* checking running R code from vignettes ... OK
+  ‘application_ex.Rmd’ using ‘UTF-8’... OK
+  ‘ODSMethods.Rmd’ using ‘UTF-8’... OK
+  ‘simulation_res.Rmd’ using ‘UTF-8’... OK
+* checking re-building of vignette outputs ... SKIPPED
+* DONE
+Status: 4 WARNINGs, 3 NOTEs

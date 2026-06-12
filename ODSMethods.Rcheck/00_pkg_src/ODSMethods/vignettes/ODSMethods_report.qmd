@@ -1,0 +1,620 @@
+---
+title: "ODSMethods Progress Report"
+subtitle: "Package functionality and slope-sampling simulation performance"
+author: "Lucy Yan"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: false
+    theme: cosmo
+    df-print: paged
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4.5
+)
+
+pkg_root <- normalizePath(if (file.exists("DESCRIPTION")) "." else "..")
+if (requireNamespace("devtools", quietly = TRUE)) {
+  devtools::load_all(pkg_root, quiet = TRUE)
+} else {
+  library(ODSMethods)
+}
+
+set.seed(20260519)
+data(gbti)
+
+sim_path <- file.path(pkg_root, "data", "mi_acml_summary_table_wide_b.csv")
+sim_results <- read.csv(sim_path, check.names = FALSE, stringsAsFactors = FALSE)
+sim_results <- sim_results[!is.na(sim_results$coef_name) & sim_results$coef_name != "", ]
+
+coef_labels <- c(
+  beta1 = "Intercept",
+  beta2 = "Time",
+  beta3 = "SNP",
+  beta4 = "Confounder",
+  beta5 = "SNP x time",
+  beta6 = "log SD(intercept)",
+  beta7 = "log SD(slope)",
+  beta8 = "RE correlation",
+  beta9 = "log residual SD"
+)
+
+sim_results$parameter <- ifelse(
+  sim_results$coef_name %in% names(coef_labels),
+  unname(coef_labels[sim_results$coef_name]),
+  sim_results$coef_name
+)
+
+parse_percent <- function(x) {
+  as.numeric(gsub("%", "", x, fixed = TRUE))
+}
+
+sim_results$rel_bias_acml_num <- parse_percent(sim_results$rel_bias_acml)
+sim_results$rel_bias_mi_num <- parse_percent(sim_results$rel_bias_mi)
+sim_results$rel_bias_se_acml_num <- parse_percent(sim_results$rel_bias_se_acml)
+sim_results$rel_bias_se_mi_num <- parse_percent(sim_results$rel_bias_se_mi)
+
+fmt_num <- function(x, digits = 3) {
+  ifelse(is.na(x), NA, round(x, digits))
+}
+
+format_design_columns <- function(data, cols, n = 6, digits = 3) {
+  out <- head(data[, cols, drop = FALSE], n)
+  list_cols <- c("acml_samp_prob_i", "cutpoints_i")
+
+  for (col in intersect(list_cols, names(out))) {
+    if (is.list(out[[col]])) {
+      out[[col]] <- vapply(
+        out[[col]],
+        function(x) paste(format(round(as.numeric(x), digits), trim = TRUE), collapse = ", "),
+        character(1)
+      )
+    }
+  }
+
+  out
+}
+```
+
+# Overview
+
+This report summarizes the current progress of the `ODSMethods` R package.
+The package is being developed for outcome-dependent sampling (ODS) methods in
+two-phase study design for longitudinal data.
+
+Here we demonstrate what the package can currently do with different input/design settings, and present estimate bias and standard error bias for ACML and multiple imputation (MI) under a slope-based ODS example.
+
+# Package Motivation
+
+Outcome-dependent sampling is useful when the longitudinal outcome is available
+for a full phase-I cohort, but an exposure or biomarker is expensive
+and can only be measured in a phase-II subset.
+
+The package currently supports:
+
+- constructing ODS and BDS two-phase sampling designs;
+- visualizing the selected sampling regions;
+- fitting ascertainment-corrected maximum likelihood (ACML) models;
+- fitting weighted likelihood models.
+
+# Example Phase-I Data
+
+The package includes a simulated longitudinal dataset, `gbti`.
+
+```{r}
+str(gbti)
+```
+
+```{r}
+data.frame(
+  rows = nrow(gbti),
+  subjects = length(unique(gbti$Patient)),
+  visits_per_subject = length(unique(gbti$Month)),
+  genotyped_subjects = length(unique(gbti$Patient[!is.na(gbti$Genotype)])),
+  missing_genotype_rows = sum(is.na(gbti$Genotype))
+)
+```
+
+The minimum design input is a long-format dataset with:
+
+- a longitudinal response, here `Response`;
+- a time variable, here `Month`;
+- a subject identifier, here `Patient`;
+- design choices such as sampling method, sampling probabilities, and cutpoints or quantiles.
+
+```{r}
+head(gbti)
+```
+
+# Design Formula
+
+The design interface uses a formula of the form:
+
+```r
+Response ~ Month | Patient
+```
+
+This means:
+
+- `Response`: the longitudinal outcome;
+- `Month`: the time variable;
+- `Patient`: the subject ID.
+
+# Slope-Sampling Example
+
+The main example uses slope sampling, where subjects with extreme estimated slopes (within subject variation) are sampled with higher probability.
+
+```{r}
+slope_design <- ods(
+  Response ~ Month | Patient,
+  method = "slope",
+  p_sample = c(1, 0.25, 1),
+  data = gbti,
+  quantiles = c(0.10, 0.90)
+)
+
+summary(slope_design)
+```
+
+```{r}
+#| fig-cap: "Slope-based ODS design. Points in the tails have higher sampling probability."
+plot(slope_design)
+```
+
+The design object keeps the full phase-I dataset and adds design columns that
+can be carried into the phase-II study.
+
+```{r}
+format_design_columns(slope_design$data, c(
+  "Patient", "Month", "Response", "method_i",
+  "acml_samp_prob_i", "cutpoints_i", "sampled"
+))
+```
+
+```{r}
+data.frame(
+  total_subjects = length(unique(slope_design$data$Patient)),
+  sampled_subjects = length(slope_design$sample_ids),
+  sampled_rows = sum(slope_design$data$sampled == 1),
+  observed_genotype_rows = sum(!is.na(slope_design$data$Genotype))
+)
+```
+
+# BDS Example
+
+```{r}
+bds_slope_design <- bds(
+  Response ~ Month | Patient,
+  method = "slope",
+  p_sample = c(1, 0.25, 1),
+  data = gbti,
+  quantiles = c(0.10, 0.90)
+)
+
+summary(bds_slope_design)
+```
+
+```{r}
+#| fig-cap: "Slope-based BDS design."
+plot(bds_slope_design)
+```
+
+```{r}
+format_design_columns(bds_slope_design$data, c(
+  "Patient", "Month", "Response", "method_i",
+  "acml_samp_prob_i", "cutpoints_i", "sampled"
+))
+```
+
+```{r}
+data.frame(
+  total_subjects = length(unique(bds_slope_design$data$Patient)),
+  sampled_subjects = length(unique(bds_slope_design$data$Patient[bds_slope_design$data$sampled == 1])),
+  sampled_rows = sum(bds_slope_design$data$sampled == 1)
+)
+```
+
+# Complete Two-Phase Workflow
+
+This section shows the workflow of a two-phase study. The first step is
+done before the expensive covariate is measured. The second step is done after
+the phase-II data collection is complete.
+
+## Step 1: Choose The Study Design
+
+Assume the phase-I clinical-trial data contain the longitudinal outcome and
+basic variables, but not the expensive covariate. Here `Genotype` is removed to
+mimic that setting.
+
+```{r}
+phase1_data <- gbti[, setdiff(names(gbti), "Genotype")]
+
+phase1_design <- ods(
+  Response ~ Month | Patient,
+  method = "slope",
+  p_sample = c(1, 0.25, 1),
+  data = phase1_data,
+  quantiles = c(0.10, 0.90)
+)
+
+summary(phase1_design)
+```
+
+The output suggests which subjects should be selected for phase-II
+measurement.
+
+```{r}
+phase2_subjects <- unique(phase1_design$data$Patient[phase1_design$data$sampled == 1])
+
+data.frame(
+  phase1_subjects = length(unique(phase1_design$data$Patient)),
+  selected_phase2_subjects = length(phase2_subjects),
+  selected_phase2_rows = sum(phase1_design$data$sampled == 1)
+)
+```
+
+The study team can export this subject list for lab measurements.
+
+```{r}
+head(data.frame(Patient = phase2_subjects))
+```
+
+## Step 2: Analyze The Completed Phase-II Data
+
+After phase-II data collection, the expensive covariate is available for the
+selected subjects. In this example, we create a completed lab result table for
+the selected subjects.
+
+```{r}
+phase2_patient_info <- unique(
+  gbti[gbti$Patient %in% phase2_subjects, c("Patient", "Ancestry", "Genotype")]
+)
+phase2_patient_info <- phase2_patient_info[!duplicated(phase2_patient_info$Patient), ]
+
+set.seed(20260520)
+missing_genotype <- is.na(phase2_patient_info$Genotype)
+prob_genotype <- 0.10 + 0.15 * (phase2_patient_info$Ancestry == "Hispanic")
+phase2_patient_info$Genotype[missing_genotype] <- as.logical(
+  rbinom(sum(missing_genotype), 1, prob_genotype[missing_genotype])
+)
+
+phase2_lab_results <- phase2_patient_info[, c("Patient", "Genotype")]
+
+analysis_data <- merge(
+  phase1_design$data,
+  phase2_lab_results,
+  by = "Patient",
+  all.x = TRUE
+)
+
+data.frame(
+  analysis_rows = nrow(analysis_data),
+  phase2_lab_subjects = nrow(phase2_lab_results),
+  subjects_with_genotype = length(unique(analysis_data$Patient[!is.na(analysis_data$Genotype)])),
+  rows_with_genotype = sum(!is.na(analysis_data$Genotype))
+)
+```
+
+The design columns created before phase-II are kept in the analysis dataset:
+`method_i`, `acml_samp_prob_i`, `cutpoints_i`, and `sampled`.
+
+```{r}
+format_design_columns(analysis_data, c(
+  "Patient", "Month", "Response", "Genotype",
+  "method_i", "acml_samp_prob_i", "cutpoints_i", "sampled"
+))
+```
+
+Now rebuild the design object from the stored design columns and fit the ACML
+analysis model.
+
+```{r}
+completed_design <- ods(
+  Response ~ Month | Patient,
+  data = analysis_data,
+  method_name = "method_i",
+  acml_samp_prob_name = "acml_samp_prob_i",
+  cutpoints_name = "cutpoints_i",
+  sampled_name = "sampled"
+)
+
+completed_fit <- acml(Response ~ Month * Genotype, completed_design)
+summary(completed_fit, digits = 3, transform = TRUE)
+```
+
+This is the intended applied workflow: use `ods()` to define the phase-II
+sample, store the design columns, then use the same design information for
+the ACML analysis after data collection is complete.
+
+# Other Design Inputs
+
+The same interface can specify other ODS designs.
+
+```{r}
+intercept_design <- ods(
+  Response ~ Month | Patient,
+  method = "intercept",
+  p_sample = c(1, 0.25, 1),
+  data = gbti,
+  quantiles = c(0.10, 0.90)
+)
+
+mean_design <- ods(
+  Response ~ Month | Patient,
+  method = "mean",
+  p_sample = c(1, 0.25, 1),
+  data = gbti,
+  quantiles = c(0.10, 0.90)
+)
+
+bivariate_design <- ods(
+  Response ~ Month | Patient,
+  method = "bivariate",
+  p_sample = c(0.25, 1),
+  data = gbti,
+  quantiles = 0.80
+)
+
+mixture_design <- ods(
+  Response ~ Month | Patient,
+  method = "mixture",
+  p_sample = c(1, 0.25, 1),
+  data = gbti,
+  quantiles = c(0.10, 0.90),
+  prob_intercept = 0.70
+)
+
+designs <- list(
+  mean = mean_design,
+  intercept = intercept_design,
+  slope = slope_design,
+  bivariate = bivariate_design,
+  mixture = mixture_design
+)
+
+data.frame(
+  method = names(designs),
+  sampled_subjects = vapply(designs, function(x) length(x$sample_ids), integer(1)),
+  sampled_rows = vapply(designs, function(x) sum(x$data$sampled == 1), integer(1))
+)
+```
+
+```{r}
+#| fig-cap: "Intercept-based ODS design."
+plot(intercept_design)
+```
+
+```{r}
+#| fig-cap: "Mean-response ODS design."
+plot(mean_design)
+```
+
+```{r}
+#| fig-cap: "Bivariate ODS design using both intercept and slope."
+plot(bivariate_design)
+```
+
+```{r}
+#| fig-cap: "Mixture ODS design using both intercept and slope."
+plot(mixture_design)
+```
+
+# Quantiles and Cutpoints
+
+Users can define sampling regions either by empirical quantiles:
+
+```{r}
+quantile_design <- ods(
+  Response ~ Month | Patient,
+  method = "slope",
+  p_sample = c(1, 0.25, 1),
+  data = gbti,
+  quantiles = c(0.10, 0.90)
+)
+
+quantile_design$cutpoints
+```
+
+or by explicit cutpoints:
+
+```{r}
+cutpoint_design <- ods(
+  Response ~ Month | Patient,
+  method = "slope",
+  p_sample = c(1, 0.25, 1),
+  data = gbti,
+  cutpoints = c(-0.20, 1.30)
+)
+
+cutpoint_design$cutpoints
+```
+
+# Analysis Example: ACML
+
+After the design is specified, `acml()` fits the corrected longitudinal model.
+
+```{r}
+acml_fit <- acml(Response ~ Month * Genotype, slope_design)
+summary(acml_fit, digits = 3, transform = TRUE)
+```
+
+```{r}
+coef(acml_fit, transform = TRUE)
+```
+
+# Analysis Example: Weighted Likelihood
+
+Weighted likelihood can use an existing sampling weight column.
+
+```{r}
+weighted_design <- ods(
+  Response ~ Month | Patient,
+  method = "intercept",
+  p_sample = c(1, 0.25, 1),
+  data = gbti,
+  quantiles = c(0.10, 0.90),
+  weights = "pSample"
+)
+
+wl_fit <- WL(Response ~ Month, weighted_design)
+summary(wl_fit, digits = 3, transform = TRUE)
+```
+
+# Existing Phase-II Design Columns
+
+If the sampling design has already been generated and stored in the dataset,
+the package can rebuild a design object using those columns.
+
+```{r}
+rebuilt_design <- ods(
+  Response ~ Month | Patient,
+  data = slope_design$data,
+  method_name = "method_i",
+  acml_samp_prob_name = "acml_samp_prob_i",
+  cutpoints_name = "cutpoints_i",
+  sampled_name = "sampled"
+)
+
+data.frame(
+  object_class = class(rebuilt_design)[1],
+  total_subjects = length(unique(rebuilt_design$data$Patient)),
+  sampled_subjects = length(unique(rebuilt_design$data$Patient[rebuilt_design$data$sampled == 1])),
+  sampled_rows = sum(rebuilt_design$data$sampled == 1)
+)
+
+format_design_columns(rebuilt_design$data, c(
+  "Patient", "Month", "Response", "method_i",
+  "acml_samp_prob_i", "cutpoints_i", "sampled"
+))
+```
+
+# Simulation Study: ACML and MI Bias
+
+The simulation compares ACML and MI under slope sampling. For this report, the
+focus is estimate bias (%) and standard error bias (%).
+
+## Simulation Setting
+
+The simulation setting follows a linear mixed model with slope-based phase-II sampling.
+
+The two performance metrics shown here are:
+
+- estimate bias (%), comparing the average estimate with the true parameter;
+- SE bias (%), comparing the average model-based SE with the empirical SD.
+
+## Estimate Bias
+
+```{r}
+estimate_bias_table <- data.frame(
+  parameter = sim_results$parameter,
+  true = fmt_num(sim_results$true_acml),
+  acml_mean = fmt_num(sim_results$mean_est_acml),
+  mi_mean = fmt_num(sim_results$mean_est_mi),
+  estimate_bias_acml = sim_results$rel_bias_acml,
+  estimate_bias_mi = sim_results$rel_bias_mi
+)
+
+knitr::kable(estimate_bias_table)
+```
+
+## Standard Error Bias
+
+This table compares the empirical standard deviation with the average estimated
+standard error.
+
+```{r}
+se_bias_table <- data.frame(
+  parameter = sim_results$parameter,
+  emp_sd_acml = fmt_num(sim_results$emp_sd_acml),
+  mean_se_acml = fmt_num(sim_results$mean_se_acml),
+  se_bias_acml = sim_results$rel_bias_se_acml,
+  emp_sd_mi = fmt_num(sim_results$emp_sd_mi),
+  mean_se_mi = fmt_num(sim_results$mean_se_mi),
+  se_bias_mi = sim_results$rel_bias_se_mi
+)
+
+knitr::kable(se_bias_table)
+```
+
+
+# Input Checks
+
+The package gives targeted messages for common input mistakes.
+
+```{r}
+show_error <- function(expr) {
+  out <- try(expr, silent = TRUE)
+  if (!inherits(out, "try-error")) return("No error")
+  msg <- conditionMessage(attr(out, "condition"))
+  msg <- gsub("[\r\n]+", " ", msg)
+  msg <- gsub("\\*", "", msg)
+  msg <- gsub("\\s+", " ", msg)
+  trimws(msg)
+}
+
+input_checks <- data.frame(
+  input_problem = c(
+    "Missing | id in formula",
+    "Unknown sampling method",
+    "Wrong p_sample length for bivariate",
+    "Both quantiles and cutpoints supplied"
+  ),
+  message = c(
+    show_error(ods(Response ~ Month,
+      method = "intercept", p_sample = c(1, 0.25, 1),
+      data = gbti, quantiles = c(0.10, 0.90)
+    )),
+    show_error(ods(Response ~ Month | Patient,
+      method = "random", p_sample = c(1, 0.25, 1),
+      data = gbti, quantiles = c(0.10, 0.90)
+    )),
+    show_error(ods(Response ~ Month | Patient,
+      method = "bivariate", p_sample = c(1, 0.25, 1),
+      data = gbti, quantiles = 0.80
+    )),
+    show_error(ods(Response ~ Month | Patient,
+      method = "slope", p_sample = c(1, 0.25, 1),
+      data = gbti, quantiles = c(0.10, 0.90),
+      cutpoints = c(-1, 1)
+    ))
+  )
+)
+
+knitr::kable(input_checks, format = "html")
+```
+
+# Current Status and Discussion Points
+
+What is working now:
+
+- ODS and BDS design construction for `mean`, `intercept`, `slope`, `bivariate`, and `mixture` design;
+- design summaries and plots;
+- ACML and weighted likelihood fitting;
+- basic input validation.
+
+Next steps:
+
+- MI treating $X_e$ as ordinal, using `orm` function;
+- what additional diagnostics should be added for `acml()` and `WL()` objects;
+- Adding SMLE to the estimating functions.
+
+# Reference
+
+Schildcrout JS, Haneuse S, Tao R, Zelnick LR, Schisterman EF, Garbett SP,
+Mercaldo ND, Rathouz PJ, Heagerty PJ. Two-Phase, Generalized Case-Control
+Designs for the Study of Quantitative Longitudinal Outcomes. *American Journal
+of Epidemiology*. 2020;189(2):81-90. doi: 10.1093/aje/kwz127.

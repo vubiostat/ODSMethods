@@ -474,6 +474,98 @@ wl_fit <- WL(Response ~ Month, weighted_design)
 summary(wl_fit, digits = 3, transform = TRUE)
 ```
 
+# Analysis Example: Multiple Imputation
+
+For MI, the phase-I data contain the longitudinal outcome and inexpensive
+covariates for everyone, while the expensive continuous covariate is observed
+only in the phase-II sample.
+
+```{r}
+set.seed(20260522)
+
+n_subject <- 45
+n_visit <- 4
+id <- rep(seq_len(n_subject), each = n_visit)
+time <- rep(0:(n_visit - 1), times = n_subject)
+
+conf_subject <- rnorm(n_subject)
+grp_subject <- rnorm(n_subject, mean = 0.30 * conf_subject, sd = 1)
+b0_subject <- rnorm(n_subject, mean = 0, sd = 1.50)
+b1_subject <- rnorm(n_subject, mean = 0, sd = 0.30)
+
+mi_data <- data.frame(
+  id = id,
+  time = time,
+  conf = rep(conf_subject, each = n_visit),
+  grp = rep(grp_subject, each = n_visit)
+)
+
+mi_data$y <- 3 +
+  0.70 * mi_data$grp +
+  0.20 * mi_data$time +
+  0.50 * mi_data$conf +
+  0.15 * mi_data$grp * mi_data$time +
+  rep(b0_subject, each = n_visit) +
+  rep(b1_subject, each = n_visit) * mi_data$time +
+  rnorm(nrow(mi_data), sd = 1)
+
+slope_by_id <- tapply(
+  seq_len(nrow(mi_data)),
+  mi_data$id,
+  function(row_id) coef(lm(y ~ time, data = mi_data[row_id, , drop = FALSE]))[2]
+)
+
+slope_cutpoints <- as.numeric(quantile(slope_by_id, probs = c(0.20, 0.80)))
+samp_region_by_id <- as.integer(cut(
+  slope_by_id,
+  breaks = c(-Inf, slope_cutpoints, Inf)
+))
+samp_prob_by_id <- setNames(c(1, 0.45, 1)[samp_region_by_id], names(slope_by_id))
+
+mi_data$samp_prob <- samp_prob_by_id[as.character(mi_data$id)]
+mi_data$wt <- mi_data$samp_prob
+
+mi_design <- ods(
+  y ~ time | id,
+  method = "slope",
+  p_sample = c(1, 0.45, 1),
+  data = mi_data,
+  cutpoints = slope_cutpoints,
+  weights = "wt"
+)
+
+mi_design$data$grp[mi_design$data$sampled == 0] <- NA
+
+data.frame(
+  phase1_subjects = length(unique(mi_design$data$id)),
+  selected_phase2_subjects = length(unique(mi_design$data$id[mi_design$data$sampled == 1])),
+  sampling_probabilities = paste(sort(unique(mi_design$data$samp_prob)), collapse = ", "),
+  rows_missing_expensive_covariate = sum(is.na(mi_design$data$grp))
+)
+```
+
+```{r}
+mi_fit <- MI(
+  y ~ grp * time + conf,
+  mi_design,
+  exposure = grp,
+  exposure_model = ~ conf,
+  M = 2,
+  n_imp = 1,
+  L = 5,
+  seed = 20260522
+)
+
+mi_summary <- summary(mi_fit)
+knitr::kable(
+  data.frame(
+    parameter = rownames(mi_summary$coefficients)[seq_len(mi_summary$n_fixed)],
+    round(mi_summary$coefficients[seq_len(mi_summary$n_fixed), c("Estimate", "Std. Error")], 3),
+    row.names = NULL
+  )
+)
+```
+
 # Existing Phase-II Design Columns
 
 If the sampling design has already been generated and stored in the dataset,

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Lucy Yan">
-<meta name="dcterms.date" content="2026-05-20">
+<meta name="dcterms.date" content="2026-05-27">
 
 <title>ODSMethods Progress Report</title>
 <style>
@@ -101,16 +101,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#quantiles-and-cutpoints" id="toc-quantiles-and-cutpoints" class="nav-link" data-scroll-target="#quantiles-and-cutpoints"><span class="header-section-number">9</span> Quantiles and Cutpoints</a></li>
   <li><a href="#analysis-example-acml" id="toc-analysis-example-acml" class="nav-link" data-scroll-target="#analysis-example-acml"><span class="header-section-number">10</span> Analysis Example: ACML</a></li>
   <li><a href="#analysis-example-weighted-likelihood" id="toc-analysis-example-weighted-likelihood" class="nav-link" data-scroll-target="#analysis-example-weighted-likelihood"><span class="header-section-number">11</span> Analysis Example: Weighted Likelihood</a></li>
-  <li><a href="#existing-phase-ii-design-columns" id="toc-existing-phase-ii-design-columns" class="nav-link" data-scroll-target="#existing-phase-ii-design-columns"><span class="header-section-number">12</span> Existing Phase-II Design Columns</a></li>
-  <li><a href="#simulation-study-acml-and-mi-bias" id="toc-simulation-study-acml-and-mi-bias" class="nav-link" data-scroll-target="#simulation-study-acml-and-mi-bias"><span class="header-section-number">13</span> Simulation Study: ACML and MI Bias</a>
+  <li><a href="#analysis-example-multiple-imputation" id="toc-analysis-example-multiple-imputation" class="nav-link" data-scroll-target="#analysis-example-multiple-imputation"><span class="header-section-number">12</span> Analysis Example: Multiple Imputation</a></li>
+  <li><a href="#existing-phase-ii-design-columns" id="toc-existing-phase-ii-design-columns" class="nav-link" data-scroll-target="#existing-phase-ii-design-columns"><span class="header-section-number">13</span> Existing Phase-II Design Columns</a></li>
+  <li><a href="#simulation-study-acml-and-mi-bias" id="toc-simulation-study-acml-and-mi-bias" class="nav-link" data-scroll-target="#simulation-study-acml-and-mi-bias"><span class="header-section-number">14</span> Simulation Study: ACML and MI Bias</a>
   <ul class="collapse">
-  <li><a href="#simulation-setting" id="toc-simulation-setting" class="nav-link" data-scroll-target="#simulation-setting"><span class="header-section-number">13.1</span> Simulation Setting</a></li>
-  <li><a href="#estimate-bias" id="toc-estimate-bias" class="nav-link" data-scroll-target="#estimate-bias"><span class="header-section-number">13.2</span> Estimate Bias</a></li>
-  <li><a href="#standard-error-bias" id="toc-standard-error-bias" class="nav-link" data-scroll-target="#standard-error-bias"><span class="header-section-number">13.3</span> Standard Error Bias</a></li>
+  <li><a href="#simulation-setting" id="toc-simulation-setting" class="nav-link" data-scroll-target="#simulation-setting"><span class="header-section-number">14.1</span> Simulation Setting</a></li>
+  <li><a href="#estimate-bias" id="toc-estimate-bias" class="nav-link" data-scroll-target="#estimate-bias"><span class="header-section-number">14.2</span> Estimate Bias</a></li>
+  <li><a href="#standard-error-bias" id="toc-standard-error-bias" class="nav-link" data-scroll-target="#standard-error-bias"><span class="header-section-number">14.3</span> Standard Error Bias</a></li>
   </ul></li>
-  <li><a href="#input-checks" id="toc-input-checks" class="nav-link" data-scroll-target="#input-checks"><span class="header-section-number">14</span> Input Checks</a></li>
-  <li><a href="#current-status-and-discussion-points" id="toc-current-status-and-discussion-points" class="nav-link" data-scroll-target="#current-status-and-discussion-points"><span class="header-section-number">15</span> Current Status and Discussion Points</a></li>
-  <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference"><span class="header-section-number">16</span> Reference</a></li>
+  <li><a href="#input-checks" id="toc-input-checks" class="nav-link" data-scroll-target="#input-checks"><span class="header-section-number">15</span> Input Checks</a></li>
+  <li><a href="#current-status-and-discussion-points" id="toc-current-status-and-discussion-points" class="nav-link" data-scroll-target="#current-status-and-discussion-points"><span class="header-section-number">16</span> Current Status and Discussion Points</a></li>
+  <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference"><span class="header-section-number">17</span> Reference</a></li>
   </ul>
 </nav>
 </div>
@@ -136,7 +137,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">May 20, 2026</p>
+      <p class="date">May 27, 2026</p>
     </div>
   </div>
   
@@ -775,25 +776,159 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb28-38"><a href="#cb28-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Std. errors approximated via delta method. Confidence intervals are computed on transformed scale and transformed back and will not be symmetric.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="existing-phase-ii-design-columns" class="level1" data-number="12">
-<h1 data-number="12"><span class="header-section-number">12</span> Existing Phase-II Design Columns</h1>
+<section id="analysis-example-multiple-imputation" class="level1" data-number="12">
+<h1 data-number="12"><span class="header-section-number">12</span> Analysis Example: Multiple Imputation</h1>
+<p>For MI, the phase-I data contain the longitudinal outcome and inexpensive covariates for everyone, while the expensive continuous covariate is observed only in the phase-II sample.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">20260522</span>)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>n_subject <span class="ot">&lt;-</span> <span class="dv">45</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>n_visit <span class="ot">&lt;-</span> <span class="dv">4</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>id <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">seq_len</span>(n_subject), <span class="at">each =</span> n_visit)</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span><span class="sc">:</span>(n_visit <span class="sc">-</span> <span class="dv">1</span>), <span class="at">times =</span> n_subject)</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>conf_subject <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_subject)</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>grp_subject <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_subject, <span class="at">mean =</span> <span class="fl">0.30</span> <span class="sc">*</span> conf_subject, <span class="at">sd =</span> <span class="dv">1</span>)</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>b0_subject <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_subject, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="fl">1.50</span>)</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>b1_subject <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_subject, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="fl">0.30</span>)</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>mi_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">id =</span> id,</span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">time =</span> time,</span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">conf =</span> <span class="fu">rep</span>(conf_subject, <span class="at">each =</span> n_visit),</span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">grp =</span> <span class="fu">rep</span>(grp_subject, <span class="at">each =</span> n_visit)</span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>mi_data<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="dv">3</span> <span class="sc">+</span></span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>  <span class="fl">0.70</span> <span class="sc">*</span> mi_data<span class="sc">$</span>grp <span class="sc">+</span></span>
+<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>  <span class="fl">0.20</span> <span class="sc">*</span> mi_data<span class="sc">$</span>time <span class="sc">+</span></span>
+<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a>  <span class="fl">0.50</span> <span class="sc">*</span> mi_data<span class="sc">$</span>conf <span class="sc">+</span></span>
+<span id="cb29-24"><a href="#cb29-24" aria-hidden="true" tabindex="-1"></a>  <span class="fl">0.15</span> <span class="sc">*</span> mi_data<span class="sc">$</span>grp <span class="sc">*</span> mi_data<span class="sc">$</span>time <span class="sc">+</span></span>
+<span id="cb29-25"><a href="#cb29-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rep</span>(b0_subject, <span class="at">each =</span> n_visit) <span class="sc">+</span></span>
+<span id="cb29-26"><a href="#cb29-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rep</span>(b1_subject, <span class="at">each =</span> n_visit) <span class="sc">*</span> mi_data<span class="sc">$</span>time <span class="sc">+</span></span>
+<span id="cb29-27"><a href="#cb29-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rnorm</span>(<span class="fu">nrow</span>(mi_data), <span class="at">sd =</span> <span class="dv">1</span>)</span>
+<span id="cb29-28"><a href="#cb29-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-29"><a href="#cb29-29" aria-hidden="true" tabindex="-1"></a>slope_by_id <span class="ot">&lt;-</span> <span class="fu">tapply</span>(</span>
+<span id="cb29-30"><a href="#cb29-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">seq_len</span>(<span class="fu">nrow</span>(mi_data)),</span>
+<span id="cb29-31"><a href="#cb29-31" aria-hidden="true" tabindex="-1"></a>  mi_data<span class="sc">$</span>id,</span>
+<span id="cb29-32"><a href="#cb29-32" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(row_id) <span class="fu">coef</span>(<span class="fu">lm</span>(y <span class="sc">~</span> time, <span class="at">data =</span> mi_data[row_id, , <span class="at">drop =</span> <span class="cn">FALSE</span>]))[<span class="dv">2</span>]</span>
+<span id="cb29-33"><a href="#cb29-33" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-34"><a href="#cb29-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-35"><a href="#cb29-35" aria-hidden="true" tabindex="-1"></a>slope_cutpoints <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">quantile</span>(slope_by_id, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.20</span>, <span class="fl">0.80</span>)))</span>
+<span id="cb29-36"><a href="#cb29-36" aria-hidden="true" tabindex="-1"></a>samp_region_by_id <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(<span class="fu">cut</span>(</span>
+<span id="cb29-37"><a href="#cb29-37" aria-hidden="true" tabindex="-1"></a>  slope_by_id,</span>
+<span id="cb29-38"><a href="#cb29-38" aria-hidden="true" tabindex="-1"></a>  <span class="at">breaks =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, slope_cutpoints, <span class="cn">Inf</span>)</span>
+<span id="cb29-39"><a href="#cb29-39" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb29-40"><a href="#cb29-40" aria-hidden="true" tabindex="-1"></a>samp_prob_by_id <span class="ot">&lt;-</span> <span class="fu">setNames</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.45</span>, <span class="dv">1</span>)[samp_region_by_id], <span class="fu">names</span>(slope_by_id))</span>
+<span id="cb29-41"><a href="#cb29-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-42"><a href="#cb29-42" aria-hidden="true" tabindex="-1"></a>mi_data<span class="sc">$</span>samp_prob <span class="ot">&lt;-</span> samp_prob_by_id[<span class="fu">as.character</span>(mi_data<span class="sc">$</span>id)]</span>
+<span id="cb29-43"><a href="#cb29-43" aria-hidden="true" tabindex="-1"></a>mi_data<span class="sc">$</span>wt <span class="ot">&lt;-</span> mi_data<span class="sc">$</span>samp_prob</span>
+<span id="cb29-44"><a href="#cb29-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-45"><a href="#cb29-45" aria-hidden="true" tabindex="-1"></a>mi_design <span class="ot">&lt;-</span> <span class="fu">ods</span>(</span>
+<span id="cb29-46"><a href="#cb29-46" aria-hidden="true" tabindex="-1"></a>  y <span class="sc">~</span> time <span class="sc">|</span> id,</span>
+<span id="cb29-47"><a href="#cb29-47" aria-hidden="true" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">"slope"</span>,</span>
+<span id="cb29-48"><a href="#cb29-48" aria-hidden="true" tabindex="-1"></a>  <span class="at">p_sample =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.45</span>, <span class="dv">1</span>),</span>
+<span id="cb29-49"><a href="#cb29-49" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> mi_data,</span>
+<span id="cb29-50"><a href="#cb29-50" aria-hidden="true" tabindex="-1"></a>  <span class="at">cutpoints =</span> slope_cutpoints,</span>
+<span id="cb29-51"><a href="#cb29-51" aria-hidden="true" tabindex="-1"></a>  <span class="at">weights =</span> <span class="st">"wt"</span></span>
+<span id="cb29-52"><a href="#cb29-52" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-53"><a href="#cb29-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-54"><a href="#cb29-54" aria-hidden="true" tabindex="-1"></a>mi_design<span class="sc">$</span>data<span class="sc">$</span>grp[mi_design<span class="sc">$</span>data<span class="sc">$</span>sampled <span class="sc">==</span> <span class="dv">0</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb29-55"><a href="#cb29-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-56"><a href="#cb29-56" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
+<span id="cb29-57"><a href="#cb29-57" aria-hidden="true" tabindex="-1"></a>  <span class="at">phase1_subjects =</span> <span class="fu">length</span>(<span class="fu">unique</span>(mi_design<span class="sc">$</span>data<span class="sc">$</span>id)),</span>
+<span id="cb29-58"><a href="#cb29-58" aria-hidden="true" tabindex="-1"></a>  <span class="at">selected_phase2_subjects =</span> <span class="fu">length</span>(<span class="fu">unique</span>(mi_design<span class="sc">$</span>data<span class="sc">$</span>id[mi_design<span class="sc">$</span>data<span class="sc">$</span>sampled <span class="sc">==</span> <span class="dv">1</span>])),</span>
+<span id="cb29-59"><a href="#cb29-59" aria-hidden="true" tabindex="-1"></a>  <span class="at">sampling_probabilities =</span> <span class="fu">paste</span>(<span class="fu">sort</span>(<span class="fu">unique</span>(mi_design<span class="sc">$</span>data<span class="sc">$</span>samp_prob)), <span class="at">collapse =</span> <span class="st">", "</span>),</span>
+<span id="cb29-60"><a href="#cb29-60" aria-hidden="true" tabindex="-1"></a>  <span class="at">rows_missing_expensive_covariate =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(mi_design<span class="sc">$</span>data<span class="sc">$</span>grp))</span>
+<span id="cb29-61"><a href="#cb29-61" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["phase1_subjects"],"name":[1],"type":["int"],"align":["right"]},{"label":["selected_phase2_subjects"],"name":[2],"type":["int"],"align":["right"]},{"label":["sampling_probabilities"],"name":[3],"type":["chr"],"align":["left"]},{"label":["rows_missing_expensive_covariate"],"name":[4],"type":["int"],"align":["right"]}],"data":[{"1":"45","2":"32","3":"0.45, 1","4":"52"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>mi_fit <span class="ot">&lt;-</span> <span class="fu">MI</span>(</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  y <span class="sc">~</span> grp <span class="sc">*</span> time <span class="sc">+</span> conf,</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  mi_design,</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">exposure =</span> grp,</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">exposure_model =</span> <span class="sc">~</span> conf,</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">M =</span> <span class="dv">2</span>,</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">n_imp =</span> <span class="dv">1</span>,</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">L =</span> <span class="dv">5</span>,</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">20260522</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>mi_summary <span class="ot">&lt;-</span> <span class="fu">summary</span>(mi_fit)</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">parameter =</span> <span class="fu">rownames</span>(mi_summary<span class="sc">$</span>coefficients)[<span class="fu">seq_len</span>(mi_summary<span class="sc">$</span>n_fixed)],</span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">round</span>(mi_summary<span class="sc">$</span>coefficients[<span class="fu">seq_len</span>(mi_summary<span class="sc">$</span>n_fixed), <span class="fu">c</span>(<span class="st">"Estimate"</span>, <span class="st">"Std. Error"</span>)], <span class="dv">3</span>),</span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">row.names =</span> <span class="cn">NULL</span></span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">parameter</th>
+<th style="text-align: right;">Estimate</th>
+<th style="text-align: right;">Std..Error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">(Intercept)</td>
+<td style="text-align: right;">3.156</td>
+<td style="text-align: right;">0.311</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">grp</td>
+<td style="text-align: right;">0.733</td>
+<td style="text-align: right;">0.400</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">time</td>
+<td style="text-align: right;">0.019</td>
+<td style="text-align: right;">0.088</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">conf</td>
+<td style="text-align: right;">-0.009</td>
+<td style="text-align: right;">0.392</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">grp:time</td>
+<td style="text-align: right;">0.255</td>
+<td style="text-align: right;">0.086</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="existing-phase-ii-design-columns" class="level1" data-number="13">
+<h1 data-number="13"><span class="header-section-number">13</span> Existing Phase-II Design Columns</h1>
 <p>If the sampling design has already been generated and stored in the dataset, the package can rebuild a design object using those columns.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>rebuilt_design <span class="ot">&lt;-</span> <span class="fu">ods</span>(</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  Response <span class="sc">~</span> Month <span class="sc">|</span> Patient,</span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> slope_design<span class="sc">$</span>data,</span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">method_name =</span> <span class="st">"method_i"</span>,</span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">acml_samp_prob_name =</span> <span class="st">"acml_samp_prob_i"</span>,</span>
-<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">cutpoints_name =</span> <span class="st">"cutpoints_i"</span>,</span>
-<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">sampled_name =</span> <span class="st">"sampled"</span></span>
-<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
-<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">object_class =</span> <span class="fu">class</span>(rebuilt_design)[<span class="dv">1</span>],</span>
-<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">total_subjects =</span> <span class="fu">length</span>(<span class="fu">unique</span>(rebuilt_design<span class="sc">$</span>data<span class="sc">$</span>Patient)),</span>
-<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">sampled_subjects =</span> <span class="fu">length</span>(<span class="fu">unique</span>(rebuilt_design<span class="sc">$</span>data<span class="sc">$</span>Patient[rebuilt_design<span class="sc">$</span>data<span class="sc">$</span>sampled <span class="sc">==</span> <span class="dv">1</span>])),</span>
-<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">sampled_rows =</span> <span class="fu">sum</span>(rebuilt_design<span class="sc">$</span>data<span class="sc">$</span>sampled <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>rebuilt_design <span class="ot">&lt;-</span> <span class="fu">ods</span>(</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  Response <span class="sc">~</span> Month <span class="sc">|</span> Patient,</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> slope_design<span class="sc">$</span>data,</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">method_name =</span> <span class="st">"method_i"</span>,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">acml_samp_prob_name =</span> <span class="st">"acml_samp_prob_i"</span>,</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">cutpoints_name =</span> <span class="st">"cutpoints_i"</span>,</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">sampled_name =</span> <span class="st">"sampled"</span></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">object_class =</span> <span class="fu">class</span>(rebuilt_design)[<span class="dv">1</span>],</span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">total_subjects =</span> <span class="fu">length</span>(<span class="fu">unique</span>(rebuilt_design<span class="sc">$</span>data<span class="sc">$</span>Patient)),</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">sampled_subjects =</span> <span class="fu">length</span>(<span class="fu">unique</span>(rebuilt_design<span class="sc">$</span>data<span class="sc">$</span>Patient[rebuilt_design<span class="sc">$</span>data<span class="sc">$</span>sampled <span class="sc">==</span> <span class="dv">1</span>])),</span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">sampled_rows =</span> <span class="fu">sum</span>(rebuilt_design<span class="sc">$</span>data<span class="sc">$</span>sampled <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 
 <div data-pagedtable="false">
@@ -802,11 +937,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </script>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">format_design_columns</span>(rebuilt_design<span class="sc">$</span>data, <span class="fu">c</span>(</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Patient"</span>, <span class="st">"Month"</span>, <span class="st">"Response"</span>, <span class="st">"method_i"</span>,</span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"acml_samp_prob_i"</span>, <span class="st">"cutpoints_i"</span>, <span class="st">"sampled"</span></span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="fu">format_design_columns</span>(rebuilt_design<span class="sc">$</span>data, <span class="fu">c</span>(</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Patient"</span>, <span class="st">"Month"</span>, <span class="st">"Response"</span>, <span class="st">"method_i"</span>,</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"acml_samp_prob_i"</span>, <span class="st">"cutpoints_i"</span>, <span class="st">"sampled"</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 
 <div data-pagedtable="false">
@@ -817,11 +952,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </section>
-<section id="simulation-study-acml-and-mi-bias" class="level1" data-number="13">
-<h1 data-number="13"><span class="header-section-number">13</span> Simulation Study: ACML and MI Bias</h1>
+<section id="simulation-study-acml-and-mi-bias" class="level1" data-number="14">
+<h1 data-number="14"><span class="header-section-number">14</span> Simulation Study: ACML and MI Bias</h1>
 <p>The simulation compares ACML and MI under slope sampling. For this report, the focus is estimate bias (%) and standard error bias (%).</p>
-<section id="simulation-setting" class="level2" data-number="13.1">
-<h2 data-number="13.1" class="anchored" data-anchor-id="simulation-setting"><span class="header-section-number">13.1</span> Simulation Setting</h2>
+<section id="simulation-setting" class="level2" data-number="14.1">
+<h2 data-number="14.1" class="anchored" data-anchor-id="simulation-setting"><span class="header-section-number">14.1</span> Simulation Setting</h2>
 <p>The simulation setting follows a linear mixed model with slope-based phase-II sampling.</p>
 <p>The two performance metrics shown here are:</p>
 <ul>
@@ -829,19 +964,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>SE bias (%), comparing the average model-based SE with the empirical SD.</li>
 </ul>
 </section>
-<section id="estimate-bias" class="level2" data-number="13.2">
-<h2 data-number="13.2" class="anchored" data-anchor-id="estimate-bias"><span class="header-section-number">13.2</span> Estimate Bias</h2>
+<section id="estimate-bias" class="level2" data-number="14.2">
+<h2 data-number="14.2" class="anchored" data-anchor-id="estimate-bias"><span class="header-section-number">14.2</span> Estimate Bias</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>estimate_bias_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">parameter =</span> sim_results<span class="sc">$</span>parameter,</span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">true =</span> <span class="fu">fmt_num</span>(sim_results<span class="sc">$</span>true_acml),</span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">acml_mean =</span> <span class="fu">fmt_num</span>(sim_results<span class="sc">$</span>mean_est_acml),</span>
-<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">mi_mean =</span> <span class="fu">fmt_num</span>(sim_results<span class="sc">$</span>mean_est_mi),</span>
-<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimate_bias_acml =</span> sim_results<span class="sc">$</span>rel_bias_acml,</span>
-<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimate_bias_mi =</span> sim_results<span class="sc">$</span>rel_bias_mi</span>
-<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(estimate_bias_table)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>estimate_bias_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">parameter =</span> sim_results<span class="sc">$</span>parameter,</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">true =</span> <span class="fu">fmt_num</span>(sim_results<span class="sc">$</span>true_acml),</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">acml_mean =</span> <span class="fu">fmt_num</span>(sim_results<span class="sc">$</span>mean_est_acml),</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">mi_mean =</span> <span class="fu">fmt_num</span>(sim_results<span class="sc">$</span>mean_est_mi),</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimate_bias_acml =</span> sim_results<span class="sc">$</span>rel_bias_acml,</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimate_bias_mi =</span> sim_results<span class="sc">$</span>rel_bias_mi</span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(estimate_bias_table)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <table class="table table-sm table-striped small">
 <colgroup>
@@ -940,21 +1075,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </section>
-<section id="standard-error-bias" class="level2" data-number="13.3">
-<h2 data-number="13.3" class="anchored" data-anchor-id="standard-error-bias"><span class="header-section-number">13.3</span> Standard Error Bias</h2>
+<section id="standard-error-bias" class="level2" data-number="14.3">
+<h2 data-number="14.3" class="anchored" data-anchor-id="standard-error-bias"><span class="header-section-number">14.3</span> Standard Error Bias</h2>
 <p>This table compares the empirical standard deviation with the average estimated standard error.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>se_bias_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">parameter =</span> sim_results<span class="sc">$</span>parameter,</span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">emp_sd_acml =</span> <span class="fu">fmt_num</span>(sim_results<span class="sc">$</span>emp_sd_acml),</span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">mean_se_acml =</span> <span class="fu">fmt_num</span>(sim_results<span class="sc">$</span>mean_se_acml),</span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">se_bias_acml =</span> sim_results<span class="sc">$</span>rel_bias_se_acml,</span>
-<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">emp_sd_mi =</span> <span class="fu">fmt_num</span>(sim_results<span class="sc">$</span>emp_sd_mi),</span>
-<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">mean_se_mi =</span> <span class="fu">fmt_num</span>(sim_results<span class="sc">$</span>mean_se_mi),</span>
-<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">se_bias_mi =</span> sim_results<span class="sc">$</span>rel_bias_se_mi</span>
-<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(se_bias_table)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>se_bias_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">parameter =</span> sim_results<span class="sc">$</span>parameter,</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">emp_sd_acml =</span> <span class="fu">fmt_num</span>(sim_results<span class="sc">$</span>emp_sd_acml),</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">mean_se_acml =</span> <span class="fu">fmt_num</span>(sim_results<span class="sc">$</span>mean_se_acml),</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">se_bias_acml =</span> sim_results<span class="sc">$</span>rel_bias_se_acml,</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">emp_sd_mi =</span> <span class="fu">fmt_num</span>(sim_results<span class="sc">$</span>emp_sd_mi),</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">mean_se_mi =</span> <span class="fu">fmt_num</span>(sim_results<span class="sc">$</span>mean_se_mi),</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">se_bias_mi =</span> sim_results<span class="sc">$</span>rel_bias_se_mi</span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(se_bias_table)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <table class="table table-sm table-striped small">
 <colgroup>
@@ -1065,49 +1200,49 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </section>
 </section>
-<section id="input-checks" class="level1" data-number="14">
-<h1 data-number="14"><span class="header-section-number">14</span> Input Checks</h1>
+<section id="input-checks" class="level1" data-number="15">
+<h1 data-number="15"><span class="header-section-number">15</span> Input Checks</h1>
 <p>The package gives targeted messages for common input mistakes.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>show_error <span class="ot">&lt;-</span> <span class="cf">function</span>(expr) {</span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  out <span class="ot">&lt;-</span> <span class="fu">try</span>(expr, <span class="at">silent =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">inherits</span>(out, <span class="st">"try-error"</span>)) <span class="fu">return</span>(<span class="st">"No error"</span>)</span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  msg <span class="ot">&lt;-</span> <span class="fu">conditionMessage</span>(<span class="fu">attr</span>(out, <span class="st">"condition"</span>))</span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  msg <span class="ot">&lt;-</span> <span class="fu">gsub</span>(<span class="st">"[</span><span class="sc">\r\n</span><span class="st">]+"</span>, <span class="st">" "</span>, msg)</span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  msg <span class="ot">&lt;-</span> <span class="fu">gsub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">*"</span>, <span class="st">""</span>, msg)</span>
-<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  msg <span class="ot">&lt;-</span> <span class="fu">gsub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">s+"</span>, <span class="st">" "</span>, msg)</span>
-<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">trimws</span>(msg)</span>
-<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>input_checks <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">input_problem =</span> <span class="fu">c</span>(</span>
-<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Missing | id in formula"</span>,</span>
-<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Unknown sampling method"</span>,</span>
-<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Wrong p_sample length for bivariate"</span>,</span>
-<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Both quantiles and cutpoints supplied"</span></span>
-<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">message =</span> <span class="fu">c</span>(</span>
-<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">show_error</span>(<span class="fu">ods</span>(Response <span class="sc">~</span> Month,</span>
-<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>      <span class="at">method =</span> <span class="st">"intercept"</span>, <span class="at">p_sample =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.25</span>, <span class="dv">1</span>),</span>
-<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> gbti, <span class="at">quantiles =</span> <span class="fu">c</span>(<span class="fl">0.10</span>, <span class="fl">0.90</span>)</span>
-<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>    )),</span>
-<span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">show_error</span>(<span class="fu">ods</span>(Response <span class="sc">~</span> Month <span class="sc">|</span> Patient,</span>
-<span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a>      <span class="at">method =</span> <span class="st">"random"</span>, <span class="at">p_sample =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.25</span>, <span class="dv">1</span>),</span>
-<span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> gbti, <span class="at">quantiles =</span> <span class="fu">c</span>(<span class="fl">0.10</span>, <span class="fl">0.90</span>)</span>
-<span id="cb33-26"><a href="#cb33-26" aria-hidden="true" tabindex="-1"></a>    )),</span>
-<span id="cb33-27"><a href="#cb33-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">show_error</span>(<span class="fu">ods</span>(Response <span class="sc">~</span> Month <span class="sc">|</span> Patient,</span>
-<span id="cb33-28"><a href="#cb33-28" aria-hidden="true" tabindex="-1"></a>      <span class="at">method =</span> <span class="st">"bivariate"</span>, <span class="at">p_sample =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.25</span>, <span class="dv">1</span>),</span>
-<span id="cb33-29"><a href="#cb33-29" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> gbti, <span class="at">quantiles =</span> <span class="fl">0.80</span></span>
-<span id="cb33-30"><a href="#cb33-30" aria-hidden="true" tabindex="-1"></a>    )),</span>
-<span id="cb33-31"><a href="#cb33-31" aria-hidden="true" tabindex="-1"></a>    <span class="fu">show_error</span>(<span class="fu">ods</span>(Response <span class="sc">~</span> Month <span class="sc">|</span> Patient,</span>
-<span id="cb33-32"><a href="#cb33-32" aria-hidden="true" tabindex="-1"></a>      <span class="at">method =</span> <span class="st">"slope"</span>, <span class="at">p_sample =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.25</span>, <span class="dv">1</span>),</span>
-<span id="cb33-33"><a href="#cb33-33" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> gbti, <span class="at">quantiles =</span> <span class="fu">c</span>(<span class="fl">0.10</span>, <span class="fl">0.90</span>),</span>
-<span id="cb33-34"><a href="#cb33-34" aria-hidden="true" tabindex="-1"></a>      <span class="at">cutpoints =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>)</span>
-<span id="cb33-35"><a href="#cb33-35" aria-hidden="true" tabindex="-1"></a>    ))</span>
-<span id="cb33-36"><a href="#cb33-36" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb33-37"><a href="#cb33-37" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb33-38"><a href="#cb33-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-39"><a href="#cb33-39" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(input_checks, <span class="at">format =</span> <span class="st">"html"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>show_error <span class="ot">&lt;-</span> <span class="cf">function</span>(expr) {</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  out <span class="ot">&lt;-</span> <span class="fu">try</span>(expr, <span class="at">silent =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">inherits</span>(out, <span class="st">"try-error"</span>)) <span class="fu">return</span>(<span class="st">"No error"</span>)</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  msg <span class="ot">&lt;-</span> <span class="fu">conditionMessage</span>(<span class="fu">attr</span>(out, <span class="st">"condition"</span>))</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  msg <span class="ot">&lt;-</span> <span class="fu">gsub</span>(<span class="st">"[</span><span class="sc">\r\n</span><span class="st">]+"</span>, <span class="st">" "</span>, msg)</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  msg <span class="ot">&lt;-</span> <span class="fu">gsub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">*"</span>, <span class="st">""</span>, msg)</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  msg <span class="ot">&lt;-</span> <span class="fu">gsub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">s+"</span>, <span class="st">" "</span>, msg)</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">trimws</span>(msg)</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>input_checks <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">input_problem =</span> <span class="fu">c</span>(</span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Missing | id in formula"</span>,</span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Unknown sampling method"</span>,</span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Wrong p_sample length for bivariate"</span>,</span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Both quantiles and cutpoints supplied"</span></span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">message =</span> <span class="fu">c</span>(</span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">show_error</span>(<span class="fu">ods</span>(Response <span class="sc">~</span> Month,</span>
+<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a>      <span class="at">method =</span> <span class="st">"intercept"</span>, <span class="at">p_sample =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.25</span>, <span class="dv">1</span>),</span>
+<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> gbti, <span class="at">quantiles =</span> <span class="fu">c</span>(<span class="fl">0.10</span>, <span class="fl">0.90</span>)</span>
+<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a>    )),</span>
+<span id="cb35-23"><a href="#cb35-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">show_error</span>(<span class="fu">ods</span>(Response <span class="sc">~</span> Month <span class="sc">|</span> Patient,</span>
+<span id="cb35-24"><a href="#cb35-24" aria-hidden="true" tabindex="-1"></a>      <span class="at">method =</span> <span class="st">"random"</span>, <span class="at">p_sample =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.25</span>, <span class="dv">1</span>),</span>
+<span id="cb35-25"><a href="#cb35-25" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> gbti, <span class="at">quantiles =</span> <span class="fu">c</span>(<span class="fl">0.10</span>, <span class="fl">0.90</span>)</span>
+<span id="cb35-26"><a href="#cb35-26" aria-hidden="true" tabindex="-1"></a>    )),</span>
+<span id="cb35-27"><a href="#cb35-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">show_error</span>(<span class="fu">ods</span>(Response <span class="sc">~</span> Month <span class="sc">|</span> Patient,</span>
+<span id="cb35-28"><a href="#cb35-28" aria-hidden="true" tabindex="-1"></a>      <span class="at">method =</span> <span class="st">"bivariate"</span>, <span class="at">p_sample =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.25</span>, <span class="dv">1</span>),</span>
+<span id="cb35-29"><a href="#cb35-29" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> gbti, <span class="at">quantiles =</span> <span class="fl">0.80</span></span>
+<span id="cb35-30"><a href="#cb35-30" aria-hidden="true" tabindex="-1"></a>    )),</span>
+<span id="cb35-31"><a href="#cb35-31" aria-hidden="true" tabindex="-1"></a>    <span class="fu">show_error</span>(<span class="fu">ods</span>(Response <span class="sc">~</span> Month <span class="sc">|</span> Patient,</span>
+<span id="cb35-32"><a href="#cb35-32" aria-hidden="true" tabindex="-1"></a>      <span class="at">method =</span> <span class="st">"slope"</span>, <span class="at">p_sample =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.25</span>, <span class="dv">1</span>),</span>
+<span id="cb35-33"><a href="#cb35-33" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> gbti, <span class="at">quantiles =</span> <span class="fu">c</span>(<span class="fl">0.10</span>, <span class="fl">0.90</span>),</span>
+<span id="cb35-34"><a href="#cb35-34" aria-hidden="true" tabindex="-1"></a>      <span class="at">cutpoints =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb35-35"><a href="#cb35-35" aria-hidden="true" tabindex="-1"></a>    ))</span>
+<span id="cb35-36"><a href="#cb35-36" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb35-37"><a href="#cb35-37" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-38"><a href="#cb35-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-39"><a href="#cb35-39" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(input_checks, <span class="at">format =</span> <span class="st">"html"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <table data-quarto-postprocess="true" class="table table-sm table-striped small">
 <thead>
@@ -1140,8 +1275,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </section>
-<section id="current-status-and-discussion-points" class="level1" data-number="15">
-<h1 data-number="15"><span class="header-section-number">15</span> Current Status and Discussion Points</h1>
+<section id="current-status-and-discussion-points" class="level1" data-number="16">
+<h1 data-number="16"><span class="header-section-number">16</span> Current Status and Discussion Points</h1>
 <p>What is working now:</p>
 <ul>
 <li>ODS and BDS design construction for <code>mean</code>, <code>intercept</code>, <code>slope</code>, <code>bivariate</code>, and <code>mixture</code> design;</li>
@@ -1156,8 +1291,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Adding SMLE to the estimating functions.</li>
 </ul>
 </section>
-<section id="reference" class="level1" data-number="16">
-<h1 data-number="16"><span class="header-section-number">16</span> Reference</h1>
+<section id="reference" class="level1" data-number="17">
+<h1 data-number="17"><span class="header-section-number">17</span> Reference</h1>
 <p>Schildcrout JS, Haneuse S, Tao R, Zelnick LR, Schisterman EF, Garbett SP, Mercaldo ND, Rathouz PJ, Heagerty PJ. Two-Phase, Generalized Case-Control Designs for the Study of Quantitative Longitudinal Outcomes. <em>American Journal of Epidemiology</em>. 2020;189(2):81-90. doi: 10.1093/aje/kwz127.</p>
 </section>
 

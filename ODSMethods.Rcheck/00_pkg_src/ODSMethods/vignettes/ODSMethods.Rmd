@@ -1,0 +1,584 @@
+---
+title: "ODSMethods"
+author: "Shawn Garbett, Lucy Yan, Jonathan Schildcrout"
+date: "2025-11-22"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ODSMethods}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(ODSMethods)
+```
+
+## Introduction
+
+When outcome covariates are available one can perform biased
+sampling to maximize information returned, or outcome dependent sampling
+(ODS). This is especially helpful
+to minimize exposure or an expensive test. The statistical analysis
+requires correction and this package has routines to assist in this
+process via multiple methods. See 'Two-Phase, Generalized Case-Control
+Designs for the Study of Quantitative Longitudinal Outcomes' Schildcrout,
+et al. (2020) <doi: 10.1093/aje/kwz127>.
+
+This process is similar to mixed effect modeling in that sampling is done
+on an outcome that is a random effect, in the case of ascertainment corrected
+maximum likelihood (ACML), the slope, intercept, mean or bivariate slope and intercept of a longitudinal response is used to inform sampling for the 
+more expensive covariate. Cases in the tails of this random effect distribution are considered more informative and the "hump" in the middle
+is less informative so sampling is biased.
+
+
+## Design
+
+### Simulated Dataset
+
+The package includes a small simulated data set with known "truth". The dataset consists of
+1000 patients and a measured response to a hypothetical drug over the course
+of 5 months. Further, some ethnicity information is available if
+Hispanic origin or not. An expensive genotype analysis exists, and to
+minimize exposure a biased sample is performed. Patients that are in the
+outer 20% of responses for intercept and slope are sampled for the genotyping
+with a probability of 1. Patients that are in the inner 80% of responses for
+intercept and slope are sampled with a probability of 0.25 for genotyping.
+Thus on average 400 patients of the 1000 would be genotyped.
+
+The model was generated using the following:
+
+$$Y_{ij} = 10 + 0.5 \cdot Month - 0.5 \cdot Genotype  + 0.25 \cdot Month
+\cdot Genotype + 0.5 \cdot Ancestry + b_{0i} + b_{1i} \cdot Month + \epsilon_{ij}$$
+
+where
+
+$$b_{0i} \sim N(\mu=0, \sigma^2_0=4)$$
+$$b_{1i} \sim N(\mu=0, \sigma^2_1=0.25)$$
+$$\rho(b_{0i}, b_{1i}) = 0.1$$
+$$\epsilon_{ij} \sim N(\mu=0, \sigma^2=1)$$
+
+Further,
+
+$$\pi(genotype_i = 1 | ancestry_i) = 0.1 + 0.15 \cdot I(ancestry_i=1)$$
+
+```{r data}
+data(gbti)
+```
+
+### Specify the Design
+
+To specify the design, we'll using a simple intercept sampling model for this example.
+This example design to sample assumes that the slope is the most informative. One
+can plot the result of this design versus it's quantiles. 
+
+```{r, fig.dim=c(6,4) }
+design <- ods(Response ~ Month|Patient, 'slope',
+            p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9))
+summary(design)
+plot(design)
+```
+
+
+## Sample
+
+The design object contains a recommended sample for ACML.
+
+```{r sampling_acml}
+data <- gbti[gbti$Patient %in% design$sample_ids,]
+```
+
+## ACML
+
+To fit the model using ascertainment corrected likelihood (ACML) a simple call
+specifying the fixed effects. The random effects will be pulled from the
+specified design. 
+
+```{r acml, R.options=list(width=100)}
+design <- ods(Response ~ Month|Patient, 'slope',
+            p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9))
+est <- acml(Response ~ Month*Genotype, design, data = data)
+summary(est, digits=3)
+```
+
+One can also look at the coefficients transformed back to the original data scale.
+
+```{r transform_back}
+summary(est, digits=3, transform=TRUE)
+```
+
+### Other designs are possible
+
+#### Mean Design
+
+```{r, fig.dim=c(6,4) }
+design <- ods(Response ~ Month|Patient, 'mean',
+            p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9))
+summary(design)
+plot(design)
+```
+
+#### Intercept Design
+
+```{r, fig.dim=c(6,4) }
+design <- ods(Response ~ Month|Patient, 'intercept',
+            p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9))
+summary(design)
+plot(design)
+```
+
+#### Bivariate Design
+
+Also known as "the square donut". 
+
+```{r, fig.dim=c(6,4) }
+design <- ods(Response ~ Month|Patient, 'bivariate',
+            p_sample=c(0.8, 0.2),
+            data=gbti, quantiles=c(0.9))
+summary(design)
+plot(design)
+```
+
+#### Mixture Design
+
+```{r, fig.dim=c(6,4) }
+design <- ods(Response ~ Month|Patient, 'mixture',
+            p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9), prob_intercept = 0.8)
+summary(design)
+plot(design)
+```
+#### Weighted Likelihood
+```{r}
+design <- ods(Response ~ Month|Patient, 'intercept',
+            p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9), weights = "pSample")
+est <- WL(Response ~ Month, design, data = data_wt) 
+```
+
+
+## Demo of ODS Error Input Message
+### Error in formula, missing |id
+
+```{r}
+try(ods(Response ~ Month,
+      method    = "intercept",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9)))
+```
+
+### Wrong structure of right-hand side
+```{r}
+try(
+  ods(Response ~ Month + Patient,
+      method    = "intercept",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+
+### Error in formula: time is not a single variable
+
+```{r}
+try(
+  ods(Response ~ I(Month^2 | Patient),
+      method    = "intercept",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+### id is not a single variable
+```{r}
+try(
+  ods(Response ~ Month | (Patient + 1),
+      method    = "intercept",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+### Method is not allowed
+```{r}
+try(
+  ods(Response ~ Month | Patient,
+      method    = "random",  # not in slope/intercept/bivariate/mean
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+### Sampling probability length does not match method (bivariate)
+```{r}
+try(
+  ods(Response ~ Month | Patient,
+      method    = "bivariate",
+      p_sample  = c(1, 0.25, 1),  # should be length of 2
+      data      = gbti,
+      quantiles = 0.5)
+)
+```
+
+### Sampling probability length does not match method (intercept)
+```{r}
+try(
+  ods(Response ~ Month | Patient,
+      method    = "intercept",
+      p_sample  = c(1, 0.25),     # should be length of 3
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+### Assigning quantiles and cutpoints together
+```{r}
+try(
+  ods(Response ~ Month | Patient,
+      method    = "slope",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9),
+      cutpoints = c(-1, 1))
+)
+```
+
+### Univariate sampling design the length of quantile does not equal to length(p_sample)-1
+
+```{r}
+try(
+  ods(Response ~ Month | Patient,
+      method    = "intercept",                 # or "mean"/"slope"
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = 0.1)                    
+)
+```
+
+### Bivariate sampling design the length of quantile does not equal to 1
+
+```{r}
+try(
+  ods(Response ~ Month | Patient,
+      method    = "bivariate",
+      p_sample  = c(1, 0.25),
+      data      = gbti,
+      quantiles = c(0.2, 0.8))            
+)
+```
+
+### Bivariate sampling design the length of cutpoints does not equal to 4
+```{r}
+try(
+  ods(Response ~ Month | Patient,
+      method    = "bivariate",
+      p_sample  = c(1, 0.25),
+      data      = gbti,
+      cutpoints = c(-2, -1, 1))          
+)
+```
+
+
+## Best Linear Unbiased Predictor Design (BLUP)
+
+It is also possible to fit using BLUP designs.
+
+```{r, fig.dim=c(6,4) }
+design1 <- bds(
+  formula = Response ~ Month | Patient,
+  method = "slope",
+  p_sample = c(1, 0.25, 1),
+  data = gbti,
+  quantiles = c(0.1, 0.9)
+)
+
+summary(design1)
+plot(design1)
+```
+
+### Fit the BLUP Model
+
+```{r blupacml, R.options=list(width=100)}
+est <- acml(Response ~ Month*Genotype, design1, data = gbti[gbti$Patient %in% design1$sample_ids,])
+summary(est, digits=3)
+```
+
+
+#### Intercept Design
+
+```{r, fig.dim=c(6,4) }
+design <- bds(Response ~ Month|Patient, 'intercept',
+            p_sample=c(1, 0.25, 1),
+            data=gbti, quantiles=c(0.1, 0.9))
+summary(design)
+plot(design)
+```
+
+#### Bivariate Design
+
+```{r, fig.dim=c(6,4) }
+design <- bds(Response ~ Month|Patient, 'bivariate',
+            p_sample=c(0.8, 0.2),
+            data=gbti, quantiles=c(0.9))
+summary(design)
+plot(design)
+```
+
+
+## Demo of BDS Error Input Message
+### Error in formula, missing |id
+
+```{r}
+try(bds(Response ~ Month,
+      method    = "intercept",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9)))
+```
+
+### Error in formula, id format incorrect
+
+```{r}
+try(
+  bds(Response ~ Genotype + (Month | Patient:Genotype),
+      method    = "intercept",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+
+```
+
+
+### Method is not allowed
+```{r}
+try(
+  bds(Response ~ Month | Patient,
+      method    = "random",  # not in slope/intercept/bivariate/mean
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+### Sampling probability length does not match method (bivariate)
+```{r}
+try(
+  bds(Response ~ Month | Patient,
+      method    = "bivariate",
+      p_sample  = c(1, 0.25, 1),  # should be length of 2
+      data      = gbti,
+      quantiles = 0.5)
+)
+```
+
+### Sampling probability length does not match method (intercept)
+```{r}
+try(
+  bds(Response ~ Month | Patient,
+      method    = "intercept",
+      p_sample  = c(1, 0.25),     # should be length of 3
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+### Assigning quantiles and cutpoints together
+```{r}
+try(
+  bds(Response ~ Month | Patient,
+      method    = "slope",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9),
+      cutpoints = c(-1, 1))
+)
+```
+
+### Univariate sampling design the length of quantile does not equal to length(p_sample)-1
+
+```{r}
+try(
+  bds(Response ~ Month | Patient,
+      method    = "intercept",                 # or "mean"/"slope"
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = 0.1)                    
+)
+```
+
+### Bivariate sampling design the length of quantile does not equal to 1
+
+```{r}
+try(
+  bds(Response ~ Month | Patient,
+      method    = "bivariate",
+      p_sample  = c(1, 0.25),
+      data      = gbti,
+      quantiles = c(0.2, 0.8))            
+)
+```
+
+### Bivariate sampling design the length of cutpoints does not equal to 4
+```{r}
+try(
+  bds(Response ~ Month | Patient,
+      method    = "bivariate",
+      p_sample  = c(1, 0.25),
+      data      = gbti,
+      cutpoints = c(-2, -1, 1))          
+)
+```
+
+
+### Random effect does not match method (no random slope)
+```{r}
+try(
+  bds(Response ~ Genotype + (1 | Patient),
+      method    = "slope",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+```{r}
+try(
+  bds(Response ~ Genotype + (1 | Patient),
+      method    = "bivariate",
+      p_sample  = c(1, 0.25),
+      data      = gbti,
+      quantiles = 0.5)
+)
+```
+
+### Random effect does not match method (no random intercept)
+
+```{r}
+try(
+  bds(Response ~ Genotype + (0 + Month | Patient),
+      method    = "intercept",
+      p_sample  = c(1, 0.25, 1),
+      data      = gbti,
+      quantiles = c(0.1, 0.9))
+)
+```
+
+
+<!-- ## Simulation -->
+
+<!-- The setting of the simulation is chosen to resemble the Lung Health Study data. Data were generated under the following model:  -->
+
+<!-- $$ -->
+<!-- Y_{ij} = \beta_0 + \beta_t t_{ij} + \beta_s snp_i + \beta_c c_i + \beta_{st}(snp_i t_{ij})  -->
+<!--         + b_{0i} + b_{1i} t_{ij} + e_{ij}. -->
+<!-- $$ -->
+
+<!-- The variable $\text{snp}_i$ is binary with prevalence 0.3.  -->
+
+<!-- Fixed-effect coefficients are $(\beta_0, \beta_t, \beta_s, \beta_c, \beta_{st}) = (75,\,-1,\,-0.5,\,-2,\,-0.5)$. -->
+
+<!-- The random effects $(b_{0i}, b_{1i})$ are **uncorrelated**, normally distributed with variance components: $(\sigma_0^2, \sigma_1^2) = (81,\; 1.56)$. -->
+
+<!-- The measurement error $e_{ij}$ is normally distributed: $e_{ij} \sim N(0,\; \sigma_e^2), \qquad \sigma_e^2 = 12.25$. -->
+
+<!-- The confounder $c_i$ follows: $c_i \sim N\!\left(0.25 + 0.5\,\text{snp}_i,\; 1\right)$. -->
+
+<!-- The time variable $t_{ij}$ ranges from: $t_{ij} = 0 \text{ (baseline)} \quad \text{to} \quad 5 \text{ (end of study)}$. -->
+
+<!-- ### Intercept Sampling -->
+
+<!-- **Intercept sampling** creates sampling strata based on the empirical 10th and 90th percentiles of the subject-specific intercepts: -->
+
+<!-- Sampling probabilities are assigned as follows: -->
+
+<!-- - Subjects in the **high** and **low** strata are sampled with probability $\frac{150}{200} = 0.75$ -->
+
+<!-- - Subjects in the **central** stratum are sampled with probability $\frac{100}{1600} = 0.0625$ -->
+
+
+<!-- ```{r, echo = FALSE, message=FALSE} -->
+<!-- library(tidyverse) -->
+<!-- library(knitr) -->
+<!-- library(kableExtra) -->
+<!-- res_ls <- list.files('acml_sim1') -->
+<!-- dat_ls <- lapply(res_ls, function(x) {read.csv(paste0("acml_sim1/", x))}) -->
+<!-- dat_comb1 <- do.call(rbind, dat_ls) -->
+
+<!-- true_coef = c(75, -1, -.5, -2, -.5) -->
+<!-- coef_int = dat_comb1[dat_comb1$type == "coef" & dat_comb1$design == "int",][2:6] -->
+<!-- bias_int = ((apply(coef_int, 2, mean) - true_coef)/true_coef)*100 -->
+
+<!-- sd_int = apply(coef_int, 2, sd)  -->
+<!-- se_int = dat_comb1[dat_comb1$type == "se" & dat_comb1$design == "int",][2:6]  -->
+<!-- bias_se_int = ((apply(se_int, 2, mean) - sd_int)/sd_int)*100 -->
+
+<!-- rob_se_int = dat_comb1[dat_comb1$type == "rob_se" & dat_comb1$design == "int",][2:6]  -->
+<!-- bias_rob_se_int = ((apply(rob_se_int, 2, mean) - sd_int)/sd_int)*100 -->
+
+<!-- rob_se_covered = data.frame(matrix(NA, nrow = 2000, ncol = 5)) -->
+<!-- for (i in 1:5) { -->
+<!--   rob_se_covered[,i] = (true_coef[i] >= coef_int[,i]-1.96*rob_se_int[,i]) & (true_coef[i] <= coef_int[,i] + 1.96*rob_se_int[,i]) -->
+<!-- } -->
+<!-- cov_prob = apply(rob_se_covered, 2, mean) -->
+
+<!-- res_int <- data.frame(var = c("beta_0","beta_s","beta_t", "beta_c", "beta_st"),coef_est = round(apply(coef_int, 2, mean),2), bias_int = paste0(round(bias_int,2), "%"),  sd_int = round(sd_int,2), rob_se_est = round(apply(rob_se_int, 2, mean),2), cov_prob = paste0(round(cov_prob,4)*100,"%"), bias_se_int = paste0(round(bias_se_int,2), "%"), bias_rob_se_int = paste0(round(bias_rob_se_int,2), "%")) -->
+<!-- kable(res_int, row.names = F, col.names = c("Variable", "Mean of Coef Est", "Coef Est % Bias", "SD of Coef Est", "Robust SE Est","Coverage Prob", "SE Est % Bias", "Robust SE % Bias")) %>% -->
+<!--   kable_styling(full_width = F) %>% -->
+<!--   column_spec(1, bold = T) %>% -->
+<!--   kableExtra::kable_styling(position = "left") -->
+<!-- ``` -->
+
+
+<!-- ### Slope Sampling -->
+
+<!-- **Slope sampling** creates sampling strata based on the empirical 10th and 90th percentiles of the subject-specific slopes: -->
+
+<!-- Sampling probabilities are assigned as follows: -->
+
+<!-- - Subjects in the **high** and **low** strata are sampled with probability $\frac{150}{200} = 0.75$ -->
+
+<!-- - Subjects in the **central** stratum are sampled with probability $\frac{100}{1600} = 0.0625$ -->
+
+<!-- ```{r, echo = FALSE} -->
+<!-- coef_slp = dat_comb1[dat_comb1$type == "coef" & dat_comb1$design == "slp",][2:6] -->
+<!-- bias_slp = ((apply(coef_slp, 2, mean) - true_coef)/true_coef)*100 -->
+
+<!-- sd_slp = apply(coef_slp, 2, sd) -->
+<!-- se_slp = dat_comb1[dat_comb1$type == "se" & dat_comb1$design == "slp",][2:6] -->
+<!-- bias_se_slp = ((apply(se_slp, 2, mean) - sd_slp)/sd_slp)*100 -->
+
+<!-- rob_se_slp = dat_comb1[dat_comb1$type == "rob_se" & dat_comb1$design == "slp",][2:6] -->
+<!-- bias_rob_se_slp = ((apply(rob_se_slp, 2, mean) - sd_slp)/sd_slp)*100 -->
+
+<!-- rob_se_covered = data.frame(matrix(NA, nrow = 2000, ncol = 5)) -->
+<!-- for (i in 1:5) { -->
+<!--   rob_se_covered[,i] = (true_coef[i] >= coef_slp[,i]-1.96*rob_se_slp[,i]) & (true_coef[i] <= coef_slp[,i] + 1.96*rob_se_slp[,i]) -->
+<!-- } -->
+<!-- cov_prob = apply(rob_se_covered, 2, mean) -->
+
+<!-- res_slp <- data.frame(var = c("beta_0","beta_s","beta_t", "beta_c", "beta_st"),coef_est = round(apply(coef_slp, 2, mean),2), bias_slp = paste0(round(bias_slp,2), "%"),  sd_slp = round(sd_slp,2), rob_se_est = round(apply(rob_se_slp, 2, mean),2), cov_prob = paste0(round(cov_prob,4)*100,"%"), bias_se_slp = paste0(round(bias_se_slp,2), "%"), bias_rob_se_slp = paste0(round(bias_rob_se_slp,2), "%")) -->
+<!-- kable(res_slp, row.names = F, col.names = c("Variable", "Mean of Coef Est", "Coef Est % Bias", "SD of Coef Est", "Robust SE Est","Coverage Prob", "SE Est % Bias", "Robust SE % Bias")) %>% -->
+<!--   kable_styling(full_width = F) %>% -->
+<!--   column_spec(1, bold = T) %>% -->
+<!--   kableExtra::kable_styling(position = "left") -->
+<!-- ``` -->
+
+<!-- ## References -->
+
+<!-- Schildcrout JS, Haneuse S, Tao R, Zelnick LR, Schisterman EF, Garbett SP, Mercaldo ND, Rathouz PJ, Heagerty PJ. Two-Phase, Generalized Case-Control Designs for the Study of Quantitative Longitudinal Outcomes. Am J Epidemiol. 2020 Feb 28;189(2):81-90. doi: 10.1093/aje/kwz127. PMID: 31165875; PMCID: PMC7298772. -->
