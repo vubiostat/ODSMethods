@@ -1121,7 +1121,10 @@ print.summary.acml <- function(x, digits=NULL, signif.stars = getOption("show.si
       sep="")
   # print(round(object$design$cutpoints, digits=digits), ...)
   cat("\nFixed Effects:\n")
-  printCoefmat(object$coefficients[1:object$n_fixed,], digits = digits-1, dig.tst=digits, signif.stars = signif.stars,
+  coef_fixed <- object$coefficients[1:object$n_fixed,]
+  rownames(coef_fixed) <- colnames(object$model.matrix)
+
+  printCoefmat(coef_fixed, digits = digits-1, dig.tst=digits, signif.stars = signif.stars,
                na.print = "NA", ...)
 
   cat("\nRandom Effects:\n")
