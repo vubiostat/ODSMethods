@@ -31,6 +31,8 @@ gen.std.mixnorm <- function(n.obs, mn0, mn1, sd0, sd1, p1, group){
 	out     <- (val-mean(val.tmp))/(sqrt(var(val.tmp)))
     out
 }
+
+# @importFrom stats rnorm
 GenerateX <- function(N, n, prev.grp, c.parm){
     id   <- rep(1:N, each=n)
     time <- rep(c(0:(n-1)), N)
@@ -42,6 +44,7 @@ GenerateX <- function(N, n, prev.grp, c.parm){
     out
 }
 
+# @importFrom stats mvrnorm
 GenerateY <- function(X, Z, id, beta, sig.b0 = 0.25, sig.b1 = 0.25, rho = 0, sig.e = 0.5, RanefDist, ErrorDist){
     lp <- X %*% beta
     cov.mat  <- matrix(c(sig.b0^2, rho*sig.b0*sig.b1, rho*sig.b0*sig.b1, sig.b1^2),2,2)

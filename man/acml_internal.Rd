@@ -16,8 +16,6 @@ while fixing these columns at the values of InitVals[ProfileCol]}
 
 \item{formula.random}{formula for the random effects (of the form ~z).  Right now this model only fits random intercept and slope models.}
 
-\item{data}{data frame that should contain everything in formula.fixed, formula.random, id.  It does not include: w.function, cutpoints, SampProb}
-
 \item{id}{sum(n_i) vector of subject ids (a variable contained in data)}
 
 \item{method}{sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi* zi) * t.zi)[1,]), "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[1,]). "intercept2" (second intercept of the regression of the Yi ~}

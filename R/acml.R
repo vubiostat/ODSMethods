@@ -21,9 +21,11 @@
 # NOTE: This is the editable version of ACML fitting. The tests will make
 # sure that it returns the right results.
 
-#' Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}
+#' Calculate Variance-Covariance of Y for subject i
 #'
-#' Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}
+#' Calculates the variance-covariance of Y for a linear mixed model
+#' for subject i using \eqn{V_i = Z_i D t(Z_i) + \sigma_e^2 I_{n_i}}.
+#'
 #' @param zi n_i by q design matrix for the random effects
 #' @param sigma.vc vector of variance components on standard deviation scale
 #' @param rho.vc vector of correlations among the random effects.  The length should be q choose 2
@@ -780,7 +782,6 @@ CreateSubjectData <- function(id,y,x,z,SampProb,cutpoints,w.function, xcol.phase
 #'
 #' @param formula.fixed formula for the fixed effects (of the form y~x)
 #' @param formula.random formula for the random effects (of the form ~z).  Right now this model only fits random intercept and slope models.
-#' @param data data frame that should contain everything in formula.fixed, formula.random, id.  It does not include: w.function, cutpoints, SampProb
 #' @param id sum(n_i) vector of subject ids (a variable contained in data)
 #' @param method sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi* zi) * t.zi)[1,]), "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[1,]). "intercept2" (second intercept of the regression of the Yi ~
 ##zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[3,]), "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[4,]) "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[c(1,2),]) "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) * t.zi)[c(1,3),]) "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[c(1,3),]).  There should be one unique value per subject.  NOTE: We also have the same designs but for BLUP based sampling, in which case, the character string should begin with "blup.".  For example "blup.intercept". There should be one unique value per subject but n_i replicates of that value.  Note that w.function should NOT be in the dat dataframe.
@@ -796,7 +797,6 @@ CreateSubjectData <- function(id,y,x,z,SampProb,cutpoints,w.function, xcol.phase
 #' @importFrom stats na.omit
 #' @importFrom stats nlm
 #' @importFrom stats pnorm
-#' @export
 
 acml_internal <- function(formula,
                           design,

@@ -2,7 +2,7 @@
 % Please edit documentation in R/acml.R
 \name{vi.calc}
 \alias{vi.calc}
-\title{Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}}
+\title{Calculate Variance-Covariance of Y for subject i}
 \usage{
 vi.calc(zi, sigma.vc, rho.vc, sigma.e)
 }
@@ -19,5 +19,6 @@ vi.calc(zi, sigma.vc, rho.vc, sigma.e)
 V_i
 }
 \description{
-Calculate V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}
+Calculates the variance-covariance of Y for a linear mixed model
+for subject i using \eqn{V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}}.
 }

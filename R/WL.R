@@ -37,7 +37,7 @@
 #' @param ests.phase1 This only applied if doing BLUP-based sampling.  These are the estimates from the phase 1 analysis.  It is assumed that the columns of the design matrix in phase 1 are a subset of those in phase II.  The estimates should be ordered in the following way and appropriately transformed: (beta, log(variance component SDs), FisherZ(correlation parameters in random effects covariance matrix), log(error SDs)).  The transformed variance component SDs and correlations should be ordered the same way they are ordered in the phase II model
 #' @return If Keep.liC=FALSE, conditional log likelihood.  If Keep.liC=TRUE, a two-element list that contains subject specific likelihood contributions and exponentiated ascertainment corrections.
 #' @export
-#'
+#' @importFrom utils head
 LogLikeWL <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sigma.e, Weights, Keep.liC=FALSE){
 
     subjectData    <- CreateSubjectDataWL(id=id,y=y,x=x,z=z,Weights=Weights)
