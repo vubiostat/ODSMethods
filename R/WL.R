@@ -683,7 +683,6 @@ print.summary.WL <- function(x, digits=NULL, signif.stars = getOption("show.sign
   invisible(object)
 }
 
-#' @export
 rand.effect.matrix <- function(gamma)
 {
   sigma_0 <- gamma[1]
