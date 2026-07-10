@@ -508,16 +508,6 @@ fixef.WL <- function(object, ...)
 }
 
 #' @export
-ranef_transform <- function(ran, n_rand)
-{
-  x        <- exp(ran)
-  rng      <- (n_rand+1):(length(ran) - 1)
-  x[rng]   <- tanh(ran[rng]/2)
-  names(x) <- gsub(".*\\((.*)\\).*", "\\1", names(x), perl=TRUE)
-  x
-}
-
-#' @export
 #' @rdname coef
 ranef <- function(object, transform=FALSE, ...) UseMethod("ranef")
 

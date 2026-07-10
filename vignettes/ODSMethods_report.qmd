@@ -15,6 +15,10 @@ execute:
   echo: true
   warning: false
   message: false
+vignette: >
+  %\VignetteIndexEntry{ODSMethods Progress Report}
+  %\VignetteEngine{quarto::format}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r}
@@ -37,7 +41,7 @@ if (requireNamespace("devtools", quietly = TRUE)) {
 set.seed(20260519)
 data(gbti)
 
-sim_path <- file.path(pkg_root, "data", "mi_acml_summary_table_wide_b.csv")
+sim_path <- file.path(pkg_root, "vignettes", "mi_acml_summary_table_wide_b.csv")
 sim_results <- read.csv(sim_path, check.names = FALSE, stringsAsFactors = FALSE)
 sim_results <- sim_results[!is.na(sim_results$coef_name) & sim_results$coef_name != "", ]
 

@@ -20,5 +20,5 @@ V_i
 }
 \description{
 Calculates the variance-covariance of Y for a linear mixed model
-for subject i using \eqn{V_i = Z_i D t(Z_i) + sig_e^2 I_{n_i}}.
+for subject i using \eqn{V_i = Z_i D t(Z_i) + \sigma_e^2 I_{n_i}}.
 }

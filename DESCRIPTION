@@ -30,7 +30,9 @@ Depends: R (>= 3.5.0), lme4, numDeriv
 Suggests: 
     testthat (>= 3.0.0),
     knitr,
-    rmarkdown
+    rmarkdown,
+    quarto,
+    tidyverse
 VignetteBuilder: knitr
 Imports:
     MASS,

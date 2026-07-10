@@ -1,10 +1,10 @@
 ---
-title: "ODSMethods"
+title: "ODS Simulation Results"
 author: "Shawn Garbett, Lucy Bailu, Jonathan Schildcrout"
 date: "2025-06-30"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{ODSMethods}
+  %\VignetteIndexEntry{ODS Simulation Results}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
