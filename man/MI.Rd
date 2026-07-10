@@ -2,13 +2,6 @@
 % Please edit documentation in R/MI.R
 \name{MI}
 \alias{MI}
-\alias{fixef.MI}
-\alias{ranef.MI}
-\alias{coef.MI}
-\alias{vcov.MI}
-\alias{print.MI}
-\alias{summary.MI}
-\alias{print.summary.MI}
 \title{Multiple imputation analysis for ODS data}
 \usage{
 MI(
@@ -68,8 +61,8 @@ from each final MI draw.}
 }
 \value{
 An object of class \code{"MI"} with combined coefficients,
-covariance matrix, the initial WL fit, the ordinal exposure fit, and
-interval information.
+  covariance matrix, the initial WL fit, the ordinal exposure fit, and
+  interval information.
 }
 \description{
 Fit a multiple-imputation analysis for a continuous expensive covariate in

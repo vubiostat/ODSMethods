@@ -35,7 +35,7 @@ GenerateX <- function(N, n, prev.grp, c.parm){
     id   <- rep(1:N, each=n)
     time <- rep(c(0:(n-1)), N)
     grp.tmp <- rbinom(N,1, prev.grp)
-    conf.tmp <- rnorm(N, c.parm[1]+grp.tmp*c.parm[2], 1) 
+    conf.tmp <- rnorm(N, c.parm[1]+grp.tmp*c.parm[2], 1)
     grp  <- rep(grp.tmp, each=n)
     conf <- rep(conf.tmp, each=n)
     out <- data.frame(id=id, time=time, grp=grp, conf=conf)
@@ -173,9 +173,9 @@ random.sampling <- function(id.long, n=225){
     }
 
 
-# 
-# 
-# 
+#
+#
+#
 # ODS.Sampling <- function(dat,                      ## a list generated from the GenPopnData() function
 #                          PopnQuants,               ## a matrix from est.quants function
 #                          w.function,               ## Response summary to sample on ("mean","intercept", or "slope")
@@ -183,26 +183,26 @@ random.sampling <- function(id.long, n=225){
 #                          TargetNSampledPerStratum, ## Theoretical (and possibly observed) number sampled per stratum
 #                          SamplingStrategy,         ## Options are "IndepODS" and "DepODS"
 #                          Univariate=FALSE){
-# 
-# 
+#
+#
 #     dat        = dat
 #     w.function = "intercept"
 #     TargetNSampledPerStratum <- c(100,100,100)
-# 
+#
 #     NCohort                    <- length(unique(dat$id))
 #     NStratumThry               <- round(NCohort*c(quants[1], quants[2]-quants[1], 1-quants[2]))
 #     SampProbThry               <- TargetNSampledPerStratum / NStratumThry
 #     SampProbThry[1] <- ifelse(SampProbThry[1]>1, 1, SampProbThry[1])
 #     SampProbThry[2] <- ifelse(SampProbThry[2]>1, 1, SampProbThry[2])
 #     SampProbThry[3] <- ifelse(SampProbThry[3]>1, 1, SampProbThry[3])
-# 
+#
 #     C1 <- ifelse(w.function=="mean",      PopnQuants[2,match(quants[1], PopnQuants[1,])],
 #           ifelse(w.function=="intercept", PopnQuants[3,match(quants[1], PopnQuants[1,])],
 #           ifelse(w.function=="slope",     PopnQuants[4,match(quants[1], PopnQuants[1,])])))
 #     C2 <- ifelse(w.function=="mean",      PopnQuants[2,match(quants[2], PopnQuants[1,])],
 #           ifelse(w.function=="intercept", PopnQuants[3,match(quants[2], PopnQuants[1,])],
 #           ifelse(w.function=="slope",     PopnQuants[4,match(quants[2], PopnQuants[1,])])))
-# 
+#
 #     uid <- unique(dat$id)
 #     ni  <- c(unlist(tapply(dat$id, dat$id, length)))
 #     SampVar <- NULL
@@ -213,26 +213,26 @@ random.sampling <- function(id.long, n=225){
 #     SampVar <- (w.function=="mean")*SampVar[,1] +
 #                (w.function=="intercept")*SampVar[,2] +
 #                (w.function=="slope")*SampVar[,3]
-# 
+#
 #     SampStratum  <- ifelse(SampVar<C1, 1,
 #                            ifelse(SampVar<C2, 2, 3))
 #     NperStratum  <- unlist(tapply(uid, SampStratum, length))
-# 
+#
 #     SampProbiThry <- ifelse(SampVar<C1, SampProbThry[1],
 #                             ifelse(SampVar<C2, SampProbThry[2], SampProbThry[3]))
-# 
+#
 #     Sampled     <- rbinom(length(SampProbiThry), 1, SampProbiThry)
 #     SampProbObs <- c(tapply(Sampled, SampStratum, mean))
-# 
+#
 #     SampProbiObs  <- ifelse(SampVar<C1, SampProbObs[1],
 #                             ifelse(SampVar<C2, SampProbObs[2], SampProbObs[3]))
 #     #print(rbind(SampProbThry, SampProbObs))
 #     #print(cbind(SampProbiThry,SampProbiObs))
-# 
-# 
+#
+#
 #     ## Independent Sampling
 #     if (SamplingStrategy=="IndepODS") InODS <- uid[ Sampled==1]
-# 
+#
 #     TheSample <- dat$id %in% InODS
 #     X.ods     <- dat$X[TheSample,]
 #     Y.ods     <- dat$Y[TheSample]
@@ -247,50 +247,50 @@ random.sampling <- function(id.long, n=225){
 #     dup.id <- duplicated(dat$id)
 #     dat.univariate <- dat$X[!dup.id,]
 #     dat.univ.ods   <- dat.univariate[InODS,]
-# 
+#
 #     SampProb  <- SampProbThry
 #     SampProbi <- rep(SampProbiThry, ni)
 #     Qi        <- SampVar
-# 
+#
 #     list(X=dat$X, Y=dat$Y, Z=dat$Z, id=dat$id,
 #          SampProb=SampProb, SampProbi=SampProbi,
 #          N=dat$N, n=dat$n, beta=dat$beta, sig.b0=dat$sig.b0,
 #          sig.b1=dat$sig.b1, rho=dat$rho, sig.e=dat$sig.e,
 #          prob.grp=dat$prob.grp, w.function=w.function,
 #          cutpoint=c(C1,C2), SampStratum=SampStratum, Qi=Qi, InSample=TheSample)
-# 
+#
 # }
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
 # GenPopnData <- function(N = 1000, n = 11, beta = c(1, 0.25, 0, 0.25),
 #                      sig.b0 = 0.25, sig.b1 = 0.25, rho = 0, sig.e = 0.5,
 #                      pr.conf=0.25, pr.grp.0 = 0.1, pr.grp.1 = 0.2, n.low=11, n.high=11,
@@ -305,13 +305,13 @@ random.sampling <- function(id.long, n=225){
 #     ###### Add between subject variation in the time variable
 #     ###### Note that we are creating ICC equal to 0.5
 #     ###### var(sample(seq(-2,2,length.out=10), 100000, replace=TRUE))
-# 
+#
 #     bl.age   <- rep(rep(0,N), each=n)
 #     #time     <- rep(seq(-2,2, length.out=n), N)
 #     time     <- rep(c(0:(n-1)), N)
 #     age      <- bl.age + time
 #     pr.grp.1.overall <- pr.conf*pr.grp.1 + (1-pr.conf)*pr.grp.0
-# 
+#
 #     cov.mat  <- matrix(c(sig.b0^2, rho*sig.b0*sig.b1, rho*sig.b0*sig.b1, sig.b1^2),2,2)
 #     if (dist %in% c("Gaussian","GaussianBal","Gamma5err","T5err","MixNorm3err")){bi <- mvrnorm(N, mu=c(0,0), Sigma=cov.mat)
 #     }else if (dist=="Gamma"){b0i <- gen.std.gam(n.obs=N, shape=3, rate=sqrt(3))*sig.b0
@@ -358,7 +358,7 @@ random.sampling <- function(id.long, n=225){
 #     	                   bi  <- cbind(b0i, b1i)
 #     }
 #     b        <- cbind(rep(bi[,1], each=n),rep(bi[,2], each=n))
-# 
+#
 #     if (dist == "Gamma5err"){
 #     	    error <- gen.std.gam(n.obs=N*n, shape=5, rate=sqrt(3))*sig.e
 #     	}else if (dist == "T5err"){
@@ -368,12 +368,12 @@ random.sampling <- function(id.long, n=225){
 #      }else{
 #      	error    <- rnorm(N*n, 0, sig.e)
 #      }
-# 
-# 
+#
+#
 #     X <- as.matrix(cbind(1, age, grp, age*grp, conf))
 #     Z <- X[,c(1:2)]
 #     Y <- X %*% beta + Z[,1]*b[,1] + Z[,2]*b[,2] + error
-# 
+#
 #     ## Induce MCAR dropout
 #     n.obs <- rep(sample(rep(c(n.low:n.high),2), N, replace=TRUE), each=n)
 #     obs.num <- rep(c(1:n), N)
@@ -384,8 +384,8 @@ random.sampling <- function(id.long, n=225){
 #     list(id=id, X=X, Y=Y, Z=Z, ni=c(unlist(tapply(Y,id,length))),
 #          N=N, n=n, beta=beta,sig.b0=sig.b0, sig.b1=sig.b1, rho=rho, sig.e=sig.e, pr.grp.1=pr.grp.1, pr.grp.0=pr.grp.0)
 # }
-# 
-# 
+#
+#
 # est.quants <- function(N, n, beta, sig.b0, sig.b1, rho, sig.e, pr.grp.0, pr.grp.1, pr.conf, quant, n.low=11, n.high=11, dist){
 #     d        <- GenPopnData(N=N, n=n, beta=beta, sig.b0=sig.b0, sig.b1=sig.b1, rho=rho, sig.e=sig.e,
 #                            pr.conf=pr.conf, pr.grp.0 = pr.grp.0, pr.grp.1 = pr.grp.1, dist=dist)
@@ -399,7 +399,7 @@ random.sampling <- function(id.long, n=225){
 #                        quantile(out[,3], probs=quant))
 #     rownames(r) <- c("quant", "mean", "int", "slp")
 #     r}
-# 
+#
 # ## Do a search to find the quantiles that correspond to the central rectangle that contains 60 and 80 percent of
 # ## the subject specific intercepts and slopes.  This is not necessary if slope and intercepts are independent
 # ## but with unequal followup they were positiviely correlated.  Searches for the smallest 'rectangle' defined
@@ -412,7 +412,7 @@ random.sampling <- function(id.long, n=225){
 #         out      <- matrix(unlist(lapply(split(data.tmp, data.tmp$id), LinRegFn)), byrow=TRUE, ncol=2)
 #         out      <- cbind(c(tapply(data.tmp$Y, data.tmp$id, mean)), out)
 #         print(cor(out[,2], out[,3]))
-# 
+#
 #         q1 <- .99
 #         Del <- 1
 #         while (Del>0.001){ q1 <- q1-.00025
@@ -430,12 +430,12 @@ random.sampling <- function(id.long, n=225){
 #                                            out[,3] > quantile(out[,3], probs=1-q2) &
 #                                            out[,3] < quantile(out[,3], probs=q2)) - quants[2])
 #                            q2}
-# 
+#
 #         rbind( c( quantile(out[,2], probs=1-q1), quantile(out[,2], probs=q1), quantile(out[,3], probs=1-q1), quantile(out[,3], probs=q1)),
 #                c( quantile(out[,2], probs=1-q2), quantile(out[,2], probs=q2), quantile(out[,3], probs=1-q2), quantile(out[,3], probs=q2)))
-# 
+#
 # }
-# 
+#
 # est.cutoffs <- function(N, n, beta, sig.b0, sig.b1, rho, sig.e, pr.grp.0, pr.grp.1, pr.conf, quant, n.low=11, n.high=11, dist){
 #     d        <- GenPopnData(N=N, n=n, beta=beta, sig.b0=sig.b0, sig.b1=sig.b1, rho=rho, sig.e=sig.e,
 #                             pr.conf=pr.conf, pr.grp.0 = pr.grp.0, pr.grp.1 = pr.grp.1, dist=dist)
@@ -449,22 +449,22 @@ random.sampling <- function(id.long, n=225){
 #                        quantile(out[,3], probs=quant))
 #     rownames(r) <- c("quant", "mean", "int", "slp")
 #     r}
-# 
-# 
+#
+#
 # ODS.Sampling.Bivar <- function(dat,                      ## a list generated from the GenPopnData() function
 #                                PopnQuantsBivar,          ## a matrix from est.bivar.lims function
 #                                PopnPropInRectangle,      ## Proportion of subjects in the central rectangle
 #                                TargetNSampledPerStratum, ## Theoretical (and possibly observed) number sampled per stratum
 #                                SamplingStrategy){        ## Options are "IndepODS" and "DepODS"
-# 
+#
 #     NCohort                    <- length(unique(dat$id))
 #     NStratumThry               <- round(NCohort*c(PopnPropInRectangle, (1-PopnPropInRectangle)))
 #     SampProbThry               <- TargetNSampledPerStratum / NStratumThry
 #     SampProbThry[1] <- ifelse(SampProbThry[1]>1, 1, SampProbThry[1])
 #     SampProbThry[2] <- ifelse(SampProbThry[2]>1, 1, SampProbThry[2])
-# 
+#
 #     Lims <- (PopnPropInRectangle==.6)*PopnQuantsBivar[1,] + (PopnPropInRectangle==.8)*PopnQuantsBivar[2,]
-# 
+#
 #     uid <- unique(dat$id)
 #     ni  <- c(unlist(tapply(dat$id, dat$id, length)))
 #     SampVar <- NULL
@@ -474,27 +474,27 @@ random.sampling <- function(id.long, n=225){
 #     }
 #    print(sum(SampVar[,2]>Lims[1] & SampVar[,2]<Lims[2]))
 #    print(sum(SampVar[,3]>Lims[3] & SampVar[,3]<Lims[4]))
-# 
+#
 #     SampStratum  <- ifelse(SampVar[,2]>Lims[1] & SampVar[,2]<Lims[2] &
 #                            SampVar[,3]>Lims[3] & SampVar[,3]<Lims[4], 1,2)
 #     print(table(SampStratum))
-# 
+#
 #     NperStratum  <- unlist(tapply(uid, SampStratum, length))
-# 
-# 
+#
+#
 #     SampProbiThry <- ifelse(SampStratum==1, SampProbThry[1],
 #                      ifelse(SampStratum==2, SampProbThry[2], NA))
-# 
-# 
+#
+#
 #     Sampled     <- rbinom(length(SampProbiThry), 1, SampProbiThry)
 #     SampProbObs <- c(tapply(Sampled, SampStratum, mean))
-# 
+#
 #     SampProbiObs  <- ifelse(SampStratum==1, SampProbObs[1],
 #                      ifelse(SampStratum==2, SampProbObs[2], NA))
-# 
+#
 #     ## Independent Sampling
 #     if (SamplingStrategy=="IndepODS") InODS <- uid[ Sampled==1]
-# 
+#
 #     TheSample <- dat$id %in% InODS
 #     X.ods     <- dat$X[TheSample,]
 #     Y.ods     <- dat$Y[TheSample]
@@ -513,7 +513,7 @@ random.sampling <- function(id.long, n=225){
 #     dup.id <- duplicated(dat$id)
 #     dat.univariate <- dat$X[!dup.id,]
 #     dat.univ.ods   <- dat.univariate[InODS,]
-# 
+#
 #     list(#X=X.ods, Y=Y.ods, Z=Z.ods, id=id.ods,
 #     X=dat$X, Y=dat$Y, Z=dat$Z, id=dat$id,
 #       SampProb=SampProb.ods, SampProbi=SampProbi.ods,
@@ -524,7 +524,7 @@ random.sampling <- function(id.long, n=225){
 #       SampStratum=SampStrat.ods, Qi=Qi, dat.univ.ods=dat.univ.ods,
 #       cutpoint=Lims, InSample=TheSample)
 # }
-# 
+#
 # ODS.Sampling <- function(dat,                      ## a list generated from the GenPopnData() function
 #                          PopnQuants,               ## a matrix from est.quants function
 #                          w.function,               ## Response summary to sample on ("mean","intercept", or "slope")
@@ -532,21 +532,21 @@ random.sampling <- function(id.long, n=225){
 #                          TargetNSampledPerStratum, ## Theoretical (and possibly observed) number sampled per stratum
 #                          SamplingStrategy,         ## Options are "IndepODS" and "DepODS"
 #                          Univariate=FALSE){
-# 
+#
 #     NCohort                    <- length(unique(dat$id))
 #     NStratumThry               <- round(NCohort*c(quants[1], quants[2]-quants[1], 1-quants[2]))
 #     SampProbThry               <- TargetNSampledPerStratum / NStratumThry
 #     SampProbThry[1] <- ifelse(SampProbThry[1]>1, 1, SampProbThry[1])
 #     SampProbThry[2] <- ifelse(SampProbThry[2]>1, 1, SampProbThry[2])
 #     SampProbThry[3] <- ifelse(SampProbThry[3]>1, 1, SampProbThry[3])
-# 
+#
 #     C1 <- ifelse(w.function=="mean",      PopnQuants[2,match(quants[1], PopnQuants[1,])],
 #           ifelse(w.function=="intercept", PopnQuants[3,match(quants[1], PopnQuants[1,])],
 #           ifelse(w.function=="slope",     PopnQuants[4,match(quants[1], PopnQuants[1,])])))
 #     C2 <- ifelse(w.function=="mean",      PopnQuants[2,match(quants[2], PopnQuants[1,])],
 #           ifelse(w.function=="intercept", PopnQuants[3,match(quants[2], PopnQuants[1,])],
 #           ifelse(w.function=="slope",     PopnQuants[4,match(quants[2], PopnQuants[1,])])))
-# 
+#
 #     uid <- unique(dat$id)
 #     ni  <- c(unlist(tapply(dat$id, dat$id, length)))
 #     SampVar <- NULL
@@ -557,26 +557,26 @@ random.sampling <- function(id.long, n=225){
 #     SampVar <- (w.function=="mean")*SampVar[,1] +
 #                (w.function=="intercept")*SampVar[,2] +
 #                (w.function=="slope")*SampVar[,3]
-# 
+#
 #     SampStratum  <- ifelse(SampVar<C1, 1,
 #                     ifelse(SampVar<C2, 2, 3))
 #     NperStratum  <- unlist(tapply(uid, SampStratum, length))
-# 
+#
 #     SampProbiThry <- ifelse(SampVar<C1, SampProbThry[1],
 #                      ifelse(SampVar<C2, SampProbThry[2], SampProbThry[3]))
-# 
+#
 #     Sampled     <- rbinom(length(SampProbiThry), 1, SampProbiThry)
 #     SampProbObs <- c(tapply(Sampled, SampStratum, mean))
-# 
+#
 #     SampProbiObs  <- ifelse(SampVar<C1, SampProbObs[1],
 #                      ifelse(SampVar<C2, SampProbObs[2], SampProbObs[3]))
 #     #print(rbind(SampProbThry, SampProbObs))
 #     #print(cbind(SampProbiThry,SampProbiObs))
-# 
-# 
+#
+#
 #     ## Independent Sampling
 #     if (SamplingStrategy=="IndepODS") InODS <- uid[ Sampled==1]
-# 
+#
 #     TheSample <- dat$id %in% InODS
 #     X.ods     <- dat$X[TheSample,]
 #     Y.ods     <- dat$Y[TheSample]
@@ -591,18 +591,18 @@ random.sampling <- function(id.long, n=225){
 #     dup.id <- duplicated(dat$id)
 #     dat.univariate <- dat$X[!dup.id,]
 #     dat.univ.ods   <- dat.univariate[InODS,]
-# 
+#
 #     SampProb  <- SampProbThry
 #     SampProbi <- rep(SampProbiThry, ni)
 #     Qi        <- SampVar
-# 
+#
 #     list(X=dat$X, Y=dat$Y, Z=dat$Z, id=dat$id,
 #       SampProb=SampProb, SampProbi=SampProbi,
 #       N=dat$N, n=dat$n, beta=dat$beta, sig.b0=dat$sig.b0,
 #       sig.b1=dat$sig.b1, rho=dat$rho, sig.e=dat$sig.e,
 #       prob.grp=dat$prob.grp, w.function=w.function,
 #       cutpoint=c(C1,C2), SampStratum=SampStratum, Qi=Qi, InSample=TheSample)
-# 
+#
 # }
 # #########################################################
 # #########################################################
@@ -615,10 +615,10 @@ random.sampling <- function(id.long, n=225){
 #     Y.rand     <- d$Y
 #     Z.rand     <- d$Z
 #     id.rand    <- d$id
-# 
+#
 #     C1 <- PopnQuants[2,match(quants[1], PopnQuants[1,])]
 #     C2 <- PopnQuants[2,match(quants[2], PopnQuants[1,])]
-# 
+#
 #     list(X=X.rand, Y=Y.rand, Z=Z.rand, id=id.rand, InSample=TheSample,
 #          N=d$N, n=d$n, beta=d$beta, sig.b0=d$sig.b0,
 #          sig.b1=d$sig.b1, rho=d$rho, sig.e=d$sig.e,

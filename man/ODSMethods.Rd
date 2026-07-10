@@ -33,6 +33,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Lucy Yan \email{bailu.yan@vanderbilt.edu} (\href{https://orcid.org/0000-0002-3718-3117}{ORCID})
   \item Shawn Garbett \email{shawn.garbett@vumc.org} (\href{https://orcid.org/0000-0003-4079-5621}{ORCID}) [contributor]
   \item Jonathan Schildcrout \email{jonny.schild@vumc.org} (\href{https://orcid.org/0000-0003-2276-2551}{ORCID}) [contributor]
 }
