@@ -683,15 +683,6 @@ print.summary.WL <- function(x, digits=NULL, signif.stars = getOption("show.sign
   invisible(object)
 }
 
-rand.effect.matrix <- function(gamma)
-{
-  sigma_0 <- gamma[1]
-  sigma_1 <- gamma[2]
-  rho     <- gamma[3]
-
-  diag(c(sigma_0, sigma_1)) %*% matrix(c(1, rho, rho, 1), 2, 2) %*% diag(c(sigma_0, sigma_1))
-}
-
 #' @export
 #' @rdname coef
 calc_D <- function(object, ...) UseMethod("calc_D")
