@@ -16,8 +16,6 @@ LogLikeiWL(subjectData, beta, sigma.vc, rho.vc, sigma.e)
 \item{rho.vc}{vector of correlations among the random effects.  The length should be q choose 2}
 
 \item{sigma.e}{std dev of the measurement error distribution}
-
-\item{w.function}{options include "mean" "intercept" "slope" and "bivariate"}
 }
 \value{
 ss contributions to the conditional log likelihood.  This is an internal function used by LogLikeWL

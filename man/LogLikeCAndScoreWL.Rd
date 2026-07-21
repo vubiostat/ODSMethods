@@ -10,12 +10,9 @@ LogLikeCAndScoreWL(
   x,
   z,
   id,
-  w.function,
   Weights,
   ProfileCol = NA,
-  Keep.liC = FALSE,
-  xcol.phase1,
-  ests.phase1
+  Keep.liC = FALSE
 )
 }
 \arguments{

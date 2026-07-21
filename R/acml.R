@@ -25,7 +25,11 @@
 #'
 #' Calculates the variance-covariance of Y for a linear mixed model
 #' for subject i using \eqn{V_i = Z_i D t(Z_i) + \sigma_e^2 I_{n_i}}.
-#'
+
+#' @importFrom graphics text
+#' @importFrom stats setNames
+#' @importFrom utils data
+
 #' @param zi n_i by q design matrix for the random effects
 #' @param sigma.vc vector of variance components on standard deviation scale
 #' @param rho.vc vector of correlations among the random effects.  The length should be q choose 2
@@ -186,13 +190,10 @@ LogLikeC2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sigma.e, 
 #' Calculate the ss contributions to the conditional likelihood for the univariate and bivariate sampling cases.
 #'
 #' @param subjectData a list containing: yi, xi, zi
-#' @param w.function options include "mean" "intercept" "slope" and "bivariate"
 #' @param beta mean model parameter p-vector
 #' @param sigma.vc vector of variance components on standard deviation scale
 #' @param rho.vc vector of correlations among the random effects.  The length should be q choose 2
 #' @param sigma.e std dev of the measurement error distribution
-#' @param cutpoints cutpoints defining the sampling regions. (a vector of length 4 c(xlow, xhigh, ylow, yhigh))
-#' @param SampProb Sampling probabilities from within each region (vector of length 2 c(central region, outlying region)).
 #' @return ss contributions to the conditional log likelihood.  This is an internal function used by LogLikeC2
 #' @export
 #'
@@ -269,7 +270,6 @@ LogLikeiC2 = function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
 #' @param sigma.vc vector of variance components on standard deviation scale
 #' @param rho.vc vector of correlations among the random effects.  The length should be q choose 2
 #' @param sigma.e std dev of the measurement error distribution
-#' @param sigmae std dev of the measurement error distribution
 #' @return gradient of the log transformed ascertainment correction under the bivariate sampling design
 #' @importFrom numDeriv grad
 #' @importFrom mvtnorm pmvnorm
@@ -780,16 +780,10 @@ CreateSubjectData <- function(id,y,x,z,SampProb,cutpoints,w.function, xcol.phase
 
 #' Fitting function: ACML or WL for a linear mixed effects model (random intercept and slope)
 #'
-#' @param formula.fixed formula for the fixed effects (of the form y~x)
-#' @param formula.random formula for the random effects (of the form ~z).  Right now this model only fits random intercept and slope models.
-#' @param id sum(n_i) vector of subject ids (a variable contained in data)
-#' @param method sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi* zi) * t.zi)[1,]), "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[1,]). "intercept2" (second intercept of the regression of the Yi ~
-##zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[3,]), "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[4,]) "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[c(1,2),]) "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) * t.zi)[c(1,3),]) "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[c(1,3),]).  There should be one unique value per subject.  NOTE: We also have the same designs but for BLUP based sampling, in which case, the character string should begin with "blup.".  For example "blup.intercept". There should be one unique value per subject but n_i replicates of that value.  Note that w.function should NOT be in the dat dataframe.
+#' @param formula is the outcome model formula used for the linear mixed model.
+#' @param design an object of class 'odsdesign'. This specifies the design of sampling used for the fitting algorithm.
 #' @param InitVals starting values for c(beta, log(sigma0), log(sigma1), log((1+rho)/(1-rho)), log(sigmae))
-#' @param cutpoints A matrix with the first dimension equal to sum(n_i).  These cutpoints define the sampling regions for individual subjects.  If using a low, medium, high, sampling scheme, this is a sum(n_i) by 2 matrix that must be a distinct object not contained in the dat dataframe.  Each row is a vector of length 2 c(k1,k2) to define the sampling regions, i.e., low, middle, high.  If using a square doughnut design this should be sum(n_i) by 4 matrix (var1lower, var1upper, var2lower, var2upper). Each subject should have n_i rows of the same values.
-#' @param acml_samp_prob A matrix with the first dimension equal to sum(n_i).   Sampling probabilities from within each region. For low medium high sampling, each row is a vector of length 3 with sampling probabilities for each region. For bivariate stratum sampling each row is a vector of length 2 with sampling probabilities for the inner and outer strata. Each subject should have n_i rows of the same values.  Not in data.
-#' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
-#'                   while fixing these columns at the values of InitVals[ProfileCol]
+#' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters while fixing these columns at the values of InitVals[ProfileCol]
 #' @return Ascertainment corrected Maximum likelihood: Ests, covar, logLik, code, robcov
 #' @importFrom stats model.frame
 #' @importFrom stats model.matrix
@@ -1324,10 +1318,6 @@ logLik.acml <- function(object, ...)
 #'   The details of model specification are given under ‘Details’.
 #' @param design an object of class 'odsdesign'. This specifies the
 #'   design of sampling used for the fitting algorithm.
-#' @param data `data.frame`; an optional data frame, list or environment (or
-#'   object coercible by as.data.frame to a data frame) containing the variables
-#'   in the model. If not found in data, the variables are taken from
-#'   environment(formula), typically the environment from which acml is called.
 #' @param subset an optional vector specifying a subset of observations to be
 #'   used in the fitting process. (See additional details about how this
 #'   argument interacts with data-dependent bases in the ‘Details’ section of
@@ -1337,8 +1327,6 @@ logLik.acml <- function(object, ...)
 #'   observations to be used in the fitting process. (See additional details
 #'   about how this argument interacts with data-dependent bases in the
 #'   ‘Details’ section of the model.frame documentation.)
-#' @param MI `logical(1)`; Is multiple imputation to be performed. Defaults to FALSE.
-#' @param MImethod `character(1)`; Specifies multiple imputation method, defaults to 'direct'. Can also be 'indirect'.
 #' @param na.action `function`; an optional vector specifying a subset of
 #'   observations to be used in the fitting process. (See additional details
 #'   about how this argument interacts with data-dependent bases in the
@@ -1347,6 +1335,7 @@ logLik.acml <- function(object, ...)
 #'   (sent to the optimizer).
 #' @param init `numeric`; Initial starting position for parameter search
 #'   via the optimizer.
+#' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters while fixing these columns at the values of params at the location of ProfileCol
 #' @param ... Optional additional parameters passed to sub methods.
 #'
 #' @export
@@ -1365,8 +1354,6 @@ acml <- function(
     formula,
     design,
     subset = NULL,
-    # MI = FALSE,
-    # MImethod = "direct",
     na.action = getOption('na.action'),
     verbose = 0L,
     init = NULL,

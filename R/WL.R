@@ -25,7 +25,6 @@
 #' @param y response vector
 #' @param x sum(n_i) by p design matrix for fixed effects
 #' @param z sum(n_i) by q design matrix for random effects
-#' @param w.function sum(n_i) vector with possible values that include "mean" "intercept" "slope" and "bivariate."  There should be one unique value per subject
 #' @param id sum(n_i) vector of subject ids
 #' @param beta mean model parameter p-vector
 #' @param sigma.vc vector of variance components on standard deviation scale
@@ -33,12 +32,10 @@
 #' @param sigma.e std dev of the measurement error distribution
 #' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
 #' @param Keep.liC If FALSE, the function returns the conditional log likelihood across all subjects.  If TRUE, subject specific contributions and exponentiated subject specific ascertainment corrections are returned in a list.
-#' @param xcol.phase1 This only applied if doing BLUP-based sampling.  It is the column numbers of the design matrix x that were used in phase 1 to conduct analyses from which BLUP estimates are calculated. e.g. xcol.phase1 = c(1,2,4) if the first second and fourth columns of x were used in phase 1
-#' @param ests.phase1 This only applied if doing BLUP-based sampling.  These are the estimates from the phase 1 analysis.  It is assumed that the columns of the design matrix in phase 1 are a subset of those in phase II.  The estimates should be ordered in the following way and appropriately transformed: (beta, log(variance component SDs), FisherZ(correlation parameters in random effects covariance matrix), log(error SDs)).  The transformed variance component SDs and correlations should be ordered the same way they are ordered in the phase II model
 #' @return If Keep.liC=FALSE, conditional log likelihood.  If Keep.liC=TRUE, a two-element list that contains subject specific likelihood contributions and exponentiated ascertainment corrections.
 #' @export
 #' @importFrom utils head
-LogLikeWL <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sigma.e, Weights, Keep.liC=FALSE){
+LogLikeWL <- function(y, x, z, id, beta, sigma.vc, rho.vc, sigma.e, Weights, Keep.liC=FALSE){
 
     subjectData    <- CreateSubjectDataWL(id=id,y=y,x=x,z=z,Weights=Weights)
     liC <- lapply(subjectData, LogLikeiWL, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e)
@@ -76,7 +73,6 @@ LogLikeWL <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sigma.e, 
 #' Calculate the ss contributions to the conditional likelihood for the univariate and bivariate sampling cases.
 #'
 #' @param subjectData a list containing: yi, xi, zi, Weights.i
-#' @param w.function options include "mean" "intercept" "slope" and "bivariate"
 #' @param beta mean model parameter p-vector
 #' @param sigma.vc vector of variance components on standard deviation scale
 #' @param rho.vc vector of correlations among the random effects.  The length should be q choose 2
@@ -187,7 +183,6 @@ li.lme.scoreWL <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
 #' @param y response vector
 #' @param x sum(n_i) by p design matrix for fixed effects
 #' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
-#' @param w.function sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi \%*\% zi) \%*\% t.zi)[1,])}, "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi \%*\% zi) \%*\% t.zi)[1,])}. "intercept2" (second intercept of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \eqn{solve(t.zi \%*\% zi) \%*\% t.zi)[3,])}, "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi \%*\% zi) \%*\% t.zi)[2,])}, "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi \%*\% zi) \%*\% t.zi)[2,])}, "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \eqn{solve(t.zi \%*\% zi) \%*\% t.zi)[4,])} "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects \eqn{(solve(t.zi \%*\% zi) \%*\% t.zi)[c(1,2),])} "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \eqn{solve(t.zi \%*\% zi) \%*\% t.zi)[c(1,3),])} "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) \eqn{solve(t.zi \%*\% zi) \%*\% t.zi)[c(1,3),])}.  There should be one unique value per subject
 #' @param id sum(n_i) vector of subject ids
 #' @param beta mean model parameter p-vector
 #' @param sigma.vc vector of variance components on standard deviation scale
@@ -195,11 +190,9 @@ li.lme.scoreWL <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
 #' @param sigma.e std dev of the measurement error distribution
 #' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
 #' @param CheeseCalc If FALSE, the function returns the gradient of the conditional log likelihood across all subjects.  If TRUE, the cheese part of the sandwich esitmator is calculated.
-#' @param xcol.phase1 This only applied if doing BLUP-based sampling.  It is the column numbers of the design matrix x that were used in phase 1 to conduct analyses from which BLUP estimates are calculated. e.g. xcol.phase1 = c(1,2,4) if the first second and fourth columns of x were used in phase 1
-#' @param ests.phase1 This only applied if doing BLUP-based sampling.  These are the estimates from the phase 1 analysis.  It is assumed that the columns of the design matrix in phase 1 are a subset of those in phase II.  The estimates should be ordered in the following way and appropriately transformed: (beta, log(variance component SDs), FisherZ(correlation parameters in random effects covariance matrix), log(error SDs)).  The transformed variance component SDs and correlations should be ordered the same way they are ordered in the phase II model
 #' @return If CheeseCalc=FALSE, gradient of conditional log likelihood.  If CheeseCalc=TRUE, the cheese part of the sandwich estimator is calculated.
 #' @export
-LogLikeC.ScoreWL <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sigma.e, Weights, CheeseCalc=FALSE){
+LogLikeC.ScoreWL <- function(y, x, z, id, beta, sigma.vc, rho.vc, sigma.e, Weights, CheeseCalc=FALSE){
     param.vec <- c(beta, log(sigma.vc),log((1+rho.vc)/(1-rho.vc)),log(sigma.e))
     #print(c("blahblah", param.vec))
     npar     <- length(param.vec)
@@ -246,7 +239,7 @@ LogLikeC.ScoreWL <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, si
 #' @param Keep.liC If TRUE outputs subject specific conditional log lileihoods to be used for the imputation procedure described in the AOAS paper keep z sum(n_i) by 2 design matric for random effects (intercept and slope)
 #' @return The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) and subject specific contributions to the conditional likelihood if Keep.liC=TRUE).
 #' @export
-LogLikeCAndScoreWL <- function(params, y, x, z, id, w.function, Weights, ProfileCol=NA, Keep.liC=FALSE, xcol.phase1, ests.phase1){
+LogLikeCAndScoreWL <- function(params, y, x, z, id, Weights, ProfileCol=NA, Keep.liC=FALSE){
     npar   <- length(params)
 
     nbeta <- ncol(x)
@@ -264,9 +257,9 @@ LogLikeCAndScoreWL <- function(params, y, x, z, id, w.function, Weights, Profile
     rho.vc   <- (exp(params[vc.rho.index])-1) / (exp(params[vc.rho.index])+1)
     sigma.e  <- exp(params[err.sd.index])
 
-    out     = LogLikeWL( y=y, x=x, z=z, w.function=w.function, id=id, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e,
+    out     = LogLikeWL( y=y, x=x, z=z, id=id, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e,
                          Weights=Weights, Keep.liC=Keep.liC)
-    GRAD    = LogLikeC.ScoreWL(y=y, x=x, z=z, w.function=w.function, id=id, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e,
+    GRAD    = LogLikeC.ScoreWL(y=y, x=x, z=z, id=id, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e,
                               Weights=Weights)
     ## Need to use the chain rule: note that params is on the unconstrained
     ## scale but GRAD was calculated on the constrained parameters
@@ -320,23 +313,13 @@ CreateSubjectDataWL <- function(id,y,x,z,Weights){
   subjectData
 }
 
-## If you do not want to use the ascertainment correction term in the conditional likelihood
-## set all SampProb values equal to each other.  This would be the case if you were doing
-## straightforward maximum likelihood (albeit computationally inefficient) or weighted likelihood.
-
 #' Fitting function: ACML or WL for a linear mixed effects model (random intercept and slope)
 #'
-#' @param formula.fixed formula for the fixed effects (of the form y~x)
-#' @param formula.random formula for the random effects (of the form ~z).  Right now this model only fits random intercept and slope models.
-#' @param data data frame that should contain everything in formula.fixed, formula.random, id, and Weights.  It does not include: w.function
-#' @param id sum(n_i) vector of subject ids (a variable contained in data)
-#' @param method sum(n_i) vector with possible values that include "mean" (mean of response series), "intercept" (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi* zi) * t.zi)[1,]), "intercept1"  (intercept of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[1,]). "intercept2" (second intercept of the regression of the Yi ~
-##zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[3,]), "slope" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope1" (slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[2,]), "slope2" (second slope of the regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[4,]) "bivariate" (intercept and slope of the regression of Yi ~ zi where zi is the design matrix for the random effects (solve(t.zi * zi) * t.zi)[c(1,2),]) "mvints" (first and second intercepts of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi %*% zi) * t.zi)[c(1,3),]) "mvslps" (first and second slopes of the bivariate regression of the Yi ~ zi where zi is the design matrix for the bivariate random effects (b10,b11,b20,b21) solve(t.zi * zi) * t.zi)[c(1,3),]).  There should be one unique value per subject.  NOTE: We also have the same designs but for BLUP based sampling, in which case, the character string should begin with "blup.".  For example "blup.intercept". There should be one unique value per subject but n_i replicates of that value.  Note that w.function should NOT be in the dat dataframe.
+#' @param formula is the outcome model formula used for the linear mixed model.
+#' @param design an object of class 'odsdesign'. This specifies the design of sampling used for the fitting algorithm.
 #' @param InitVals starting values for c(beta, log(sigma0), log(sigma1), log((1+rho)/(1-rho)), log(sigmae))
-#' @param weights Subject specific sampling weights.  A vector of length sum(n_i).  This should be a variable in the data dataframe. It should only be used if doing IPWL.  Note if doing IPWL, only use robcov (robust variances) and not covar.  If not doing IPWL, this must be a vectors of 1s.
-#' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters
-#'                   while fixing these columns at the values of InitVals[ProfileCol]
-#' @return Ascertainment corrected Maximum likelihood: Ests, covar, logLik, code, robcov
+#' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters while fixing these columns at the values of InitVals[ProfileCol]
+#' @return Weighted likelihood: Ests, covar, logLik, code, robcov
 #' @importFrom stats model.frame
 #' @importFrom stats model.matrix
 #' @importFrom stats model.response
@@ -569,8 +552,6 @@ print.WL <- function(x, digits = max(3L, getOption("digits")), transform = FALSE
       paste(deparse(object$design$call), collapse="\n"),
       "\n",
       paste(deparse(object$call), collapse="\n"),
-      "\n\n",
-      "Cutpoints:\n",
       sep="")
   cat("\nFixed Effects:\n")
   print(round(fixef(object), digits=digits), ...)
@@ -644,8 +625,6 @@ print.summary.WL <- function(x, digits=NULL, signif.stars = getOption("show.sign
       paste(deparse(object$design$call), collapse="\n"),
       "\n",
       paste(deparse(object$call), collapse="\n"),
-      "\n\n",
-      "Cutpoints:\n",
       sep="")
   cat("\nFixed Effects:\n")
   printCoefmat(object$coefficients[1:object$n_fixed,], digits = digits-1, dig.tst=digits, signif.stars = signif.stars,
@@ -849,25 +828,15 @@ logLik.WL <- function(object, ...)
 #'   The details of model specification are given under ‘Details’.
 #' @param design an object of class 'odsdesign'. This specifies the
 #'   design of sampling used for the fitting algorithm.
-#' @param data `data.frame`; an optional data frame, list or environment (or
-#'   object coercible by as.data.frame to a data frame) containing the variables
-#'   in the model. If not found in data, the variables are taken from
-#'   environment(formula), typically the environment from which acml is called.
 #' @param subset an optional vector specifying a subset of observations to be
 #'   used in the fitting process. (See additional details about how this
 #'   argument interacts with data-dependent bases in the ‘Details’ section of
 #'   the model.frame documentation.)
-#' @param weights	an optional vector of weights to be used in the fitting
-#'   process. Should be NULL or a numeric vector. If non-NULL, weighted least
-#'   squares is used with weights weights (that is, minimizing sum(w*e^2));
-#'   otherwise ordinary least squares is used. See also ‘Details’,
 #' @param na.action a function which indicates what should happen when the data contain NAs. The default is set by the na.action setting of options, and is na.fail if that is unset. The ‘factory-fresh’ default is na.omit. Another possible value is NULL, no action. Value na.exclude can be useful.
 #' @param subset `logical`; an optional vector specifying a subset of
 #'   observations to be used in the fitting process. (See additional details
 #'   about how this argument interacts with data-dependent bases in the
 #'   ‘Details’ section of the model.frame documentation.)
-#' @param MI `logical(1)`; Is multiple imputation to be performed. Defaults to FALSE.
-#' @param MImethod `character(1)`; Specifies multiple imputation method, defaults to 'direct'. Can also be 'indirect'.
 #' @param na.action `function`; an optional vector specifying a subset of
 #'   observations to be used in the fitting process. (See additional details
 #'   about how this argument interacts with data-dependent bases in the
@@ -877,7 +846,7 @@ logLik.WL <- function(object, ...)
 #' @param init `numeric`; Initial starting position for parameter search
 #'   via the optimizer.
 #' @param ... Optional additional parameters passed to sub methods.
-#'
+#' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters while fixing these columns at the values of InitVals[ProfileCol]
 #' @export
 #' @importFrom checkmate makeAssertCollection
 #' @importFrom checkmate assert_formula assert_numeric assert_class assert_logical assert_choice

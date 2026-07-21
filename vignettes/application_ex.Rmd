@@ -3,7 +3,7 @@ title: "ODSMethods Application Example"
 author: "Shawn Garbett, Lucy Yan, Jonathan Schildcrout"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{ODSMethods}
+  %\VignetteIndexEntry{ODSMethods_app}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

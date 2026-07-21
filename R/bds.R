@@ -107,11 +107,17 @@ plot.bdsdesign <- function(
 #'   used in the fitting process. (See additional details about how this
 #'   argument interacts with data-dependent bases in the ‘Details’ section of
 #'   the model.frame documentation.)
+#' @param prob_intercept The proportion of selecting the Phase-II sample in the mixture design of two-phase sampling.
+#' @param weights The column name of the sampling weights for each subject, which is the inverse of the sampling probability of the subject being selected.
+#' @param method_name The column name of the method. This is ONLY used when the two-phase sampling was completed and the Phase-II sample was collected. When using this field, the p_sample, quantiles, and cutpoints field should not be used.
+#' @param acml_samp_prob_name The column name of the sampling probabilities from within each region. For low medium high sampling, each cell is a vector of length 3 with sampling probabilities for each region. For bivariate stratum sampling each cell is a vector of length 2 with sampling probabilities for the inner and outer strata. Each subject should have n_i rows of the same values. This is ONLY used when the two-phase sampling was completed and the Phase-II sample was collected. When using this field, the p_sample, quantiles, and cutpoints field should not be used.
+#' @param cutpoints_name The column name of the cutpoints for each region. This is ONLY used when the two-phase sampling was completed and the Phase-II sample was collected. When using this field, the p_sample, quantiles, and cutpoints field should not be used.
+#' @param sampled_name The column name of whether the subject is sampled in Phase-II data collection. This is ONLY used when the two-phase sampling was completed and the Phase-II sample was collected. When using this field, the p_sample, quantiles, and cutpoints field should not be used.
 #' @param na.action a function which indicates what should happen when the data
 #'   contain NAs. The default is set by the na.action setting of options, and is
 #'   na.fail if that is unset. The ‘factory-fresh’ default is na.omit. Another
 #'   possible value is NULL, no action. Value na.exclude can be useful.
-#' @param ... additional arguments.
+#' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters while fixing these columns at the values of params at the location of ProfileCol
 #' @return Returns an BDS design object.
 #' @seealso [plot.bdsdesign()]
 #' @examples

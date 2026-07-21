@@ -52,10 +52,10 @@ See \code{\link{par}}.}
  \code{"blank"} uses ‘invisible lines’ (i.e., does not draw them).
  See \code{\link{par}}.}
 
+\item{label_strata}{Option to show the strata label on the plot.}
+
 \item{...}{Additional arguments past to \code{\link{plot}}, \code{\link{hist}},
 or \code{\link{lines}} depending on context.}
-
-\item{col}{A specification for the default plotting color. See \code{\link{par}}.}
 }
 \description{
 Generate a basic scatter plot of an ODS design and overlay the

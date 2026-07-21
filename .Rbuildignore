@@ -5,3 +5,4 @@ sandbox
 ^\.positai$
 ^\.claude$
 AGENTS.md
+^vignettes/Things to do$

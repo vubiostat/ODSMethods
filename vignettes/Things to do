@@ -1,0 +1,10 @@
+Things to do for the ODSMethods package:
+Shawn: Fixing the test error caused by the bivariate design.
+Lucy: Remove redundant output variables for ODS, ACML, WL.
+Lucy: Modify the BDS design to match up with the ODS design.
+Lucy: Run simulations to check if the BDS design results match with the existing literature
+Shawn: Prepare a test case according to Chiara's code/paper.
+Lucy: Write Multiple Imputation (MI) function and add it as another function for analyzing the ODS design. Adding the link function for MI. (Think about if we want to write the method with normality assumption and semiparamatric method with ORM separately or combined.)
+Shawn: Look at pull requests for rms to use base stats family functions for orm.
+Lucy: Create a pull request for the robcov on correcting the weighting.
+We need to think about what to include for the package and until what method/design.

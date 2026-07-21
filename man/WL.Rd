@@ -39,21 +39,9 @@ about how this argument interacts with data-dependent bases in the
 \item{init}{`numeric`; Initial starting position for parameter search
 via the optimizer.}
 
+\item{ProfileCol}{the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters while fixing these columns at the values of InitVals[ProfileCol]}
+
 \item{...}{Optional additional parameters passed to sub methods.}
-
-\item{data}{`data.frame`; an optional data frame, list or environment (or
-object coercible by as.data.frame to a data frame) containing the variables
-in the model. If not found in data, the variables are taken from
-environment(formula), typically the environment from which acml is called.}
-
-\item{weights}{an optional vector of weights to be used in the fitting
-process. Should be NULL or a numeric vector. If non-NULL, weighted least
-squares is used with weights weights (that is, minimizing sum(w*e^2));
-otherwise ordinary least squares is used. See also ‘Details’,}
-
-\item{MI}{`logical(1)`; Is multiple imputation to be performed. Defaults to FALSE.}
-
-\item{MImethod}{`character(1)`; Specifies multiple imputation method, defaults to 'direct'. Can also be 'indirect'.}
 }
 \description{
 Outcome dependent sampling designs need to be corrected when fitting a
