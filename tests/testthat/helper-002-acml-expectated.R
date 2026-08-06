@@ -41,7 +41,7 @@ gradient_acml_bivar <- c(0.430732452414889, -17.8598196167201,
 
 ## Data used for these estimates
 
-data <- structure(list(Patient = c(1L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 2L,
+validated_data <- structure(list(Patient = c(1L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 2L,
 2L, 3L, 3L, 3L, 3L, 3L, 6L, 6L, 6L, 6L, 6L, 7L, 7L, 7L, 7L, 7L,
 12L, 12L, 12L, 12L, 12L, 14L, 14L, 14L, 14L, 14L, 15L, 15L, 15L,
 15L, 15L, 18L, 18L, 18L, 18L, 18L, 20L, 20L, 20L, 20L, 20L, 22L,
