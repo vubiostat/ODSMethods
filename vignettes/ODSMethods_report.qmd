@@ -3,14 +3,27 @@ title: "ODSMethods Progress Report"
 subtitle: "Package functionality and slope-sampling simulation performance"
 author: "Lucy Yan"
 date: today
-format:
+format: 
   html:
-    toc: true
-    toc-depth: 3
-    number-sections: true
+    theme: yeti
     code-fold: false
-    theme: cosmo
+    code-tools: true
+    html-math-method: katex
+    toc: true
+    toc-depth: 5
+    fig-width: 13
+    fig-height: 10
+    toc-title: "Contents"
+    number-sections: true
+    self-contained: true
+    self-contained-math: true
+    smooth-scroll: true
+    fontsize: 0.8em
+    title-block-banner: true
+    citation-location: margin
     df-print: paged
+editor: source
+engine: knitr
 execute:
   echo: true
   warning: false
@@ -27,8 +40,8 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 7,
-  fig.height = 4.5
+  fig.width = 13,
+  fig.height = 10
 )
 
 pkg_root <- normalizePath(if (file.exists("DESCRIPTION")) "." else "..")

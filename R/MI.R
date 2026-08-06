@@ -317,17 +317,122 @@ MI <- function(
   if (!inherits(design, "odsdesign")) stop("design must be an odsdesign object.")
   if (missing(exposure)) stop("Please provide the expensive covariate name in exposure.")
 
+  dots <- list(...)
+  get_dot <- function(name, default = NULL) {
+    if (name %in% names(dots)) dots[[name]] else default
+  }
+
+  links_to_try <- get_dot(
+    "links_to_try",
+    c("logistic", "probit", "loglog", "cloglog", "cauchit")
+  )
+  exposure_family <- get_dot("family", NULL)
+  olinks_gradtol <- get_dot("olinks_gradtol", 0.001)
+  cluster_var <- get_dot("cluster_var", design$id)
+  prefer_robcov <- isTRUE(get_dot("prefer_robcov", FALSE))
+
+  make_pd <- function(Sigma, eps = 1e-8) {
+    Sigma <- as.matrix(Sigma)
+    Sigma <- 0.5 * (Sigma + t(Sigma))
+    ev <- eigen(Sigma, symmetric = TRUE, only.values = TRUE)$values
+    min_ev <- min(ev, na.rm = TRUE)
+    if (!is.finite(min_ev)) stop("Covariance matrix has non-finite eigenvalues.")
+    if (min_ev < eps) {
+      Sigma <- Sigma + diag(eps - min_ev + eps, nrow(Sigma))
+    }
+    Sigma
+  }
+
+  draw_mvn_plain <- function(mu, Sigma) {
+    Sigma <- make_pd(Sigma)
+    as.numeric(MASS::mvrnorm(1, mu = mu, Sigma = Sigma))
+  }
+
+  draw_mvn_named <- function(mu, Sigma) {
+    Sigma <- Sigma[names(mu), names(mu), drop = FALSE]
+    Sigma <- make_pd(Sigma)
+    out <- as.numeric(MASS::mvrnorm(1, mu = mu, Sigma = Sigma))
+    names(out) <- names(mu)
+    out
+  }
+
+  get_orm_vcov_weighted_sandwich <- function(fit, data, cluster_var, intercepts = "all") {
+    B <- as.matrix(stats::vcov(fit, intercepts = intercepts))
+
+    if (is.null(rownames(B)) || is.null(colnames(B))) {
+      stop("vcov(fit) must have rownames and colnames.")
+    }
+    if (is.null(fit$mscore)) {
+      stop("fit$mscore is NULL. Fit orm with mscore = TRUE.")
+    }
+
+    S <- as.matrix(fit$mscore)
+
+    if (nrow(S) != nrow(data)) {
+      stop("Score matrix rows do not match exposure-model data rows.")
+    }
+    if (ncol(S) != ncol(B)) {
+      stop("Score matrix columns do not match exposure-model covariance columns.")
+    }
+
+    colnames(S) <- colnames(B)
+
+    if (!is.null(cluster_var)) {
+      if (!cluster_var %in% names(data)) {
+        stop("cluster_var was not found in exposure-model data.")
+      }
+      S <- rowsum(S, group = data[[cluster_var]], reorder = FALSE)
+    }
+
+    V <- B %*% crossprod(S) %*% B
+    V <- 0.5 * (V + t(V))
+    dimnames(V) <- dimnames(B)
+    V
+  }
+
+  get_orm_probs_support <- function(omega, fit, newdata, x_support) {
+    slope_names <- colnames(fit$x)
+    alpha <- omega[slope_names]
+    intercepts <- omega[!(names(omega) %in% slope_names)]
+
+    if (length(slope_names) > 0L) {
+      Xnew <- as.matrix(stats::predict(fit, newdata = newdata, type = "x"))
+      if (ncol(Xnew) != length(slope_names)) {
+        stop("Exposure-model design matrix columns do not match slope coefficients.")
+      }
+      colnames(Xnew) <- slope_names
+      eta <- as.numeric(Xnew %*% alpha)
+    } else {
+      eta <- 0
+    }
+
+    cumprob <- eval(fit$famfunctions[1])
+    q <- cumprob(as.numeric(intercepts + eta))
+    q <- cummin(pmin(pmax(q, 0), 1))
+
+    p <- c(
+      1 - q[1],
+      q[-length(q)] - q[-1],
+      q[length(q)]
+    )
+
+    if (length(p) != length(x_support)) {
+      stop("Exposure probabilities and observed exposure support have different lengths.")
+    }
+
+    p <- pmax(p, 0)
+    p / sum(p)
+  }
+
   exposure_expr <- substitute(exposure)
   exposure_name <- if (is.character(exposure_expr)) exposure_expr[1L] else as.character(exposure_expr)
   weights_name <- design$weights
 
   M <- as.integer(M)
   n_imp <- as.integer(n_imp)
-  L <- as.integer(L)
 
   if (length(M) != 1L || M < 2L) stop("M must be at least 2.")
   if (length(n_imp) != 1L || n_imp < 1L) stop("n_imp must be at least 1.")
-  if (length(L) != 1L || L < 3L) stop("L must be at least 3.")
 
   if (!is.null(seed)) set.seed(seed)
 
@@ -379,29 +484,13 @@ MI <- function(
     stop("The expensive covariate has missing values among phase-II subjects.")
   }
 
-  first_phase2 <- !duplicated(as.character(phase2_dat[[id_name]]))
-  phase2_subj_for_bins <- phase2_dat[first_phase2, , drop = FALSE]
-
-  interval_info <- .mi_make_intervals(
-    x_phase2 = phase2_subj_for_bins[[exposure_name]],
-    w_phase2 = phase2_subj_for_bins[[weights_name]],
-    L = L
-  )
-  interval_levels <- interval_info$levels
-
-  phase2_dat[[".mi_xe_int"]] <- .mi_assign_interval(phase2_dat[[exposure_name]], interval_info)
   phase2_subj <- phase2_dat[!duplicated(as.character(phase2_dat[[id_name]])), , drop = FALSE]
-
-  tab_phase2 <- table(factor(phase2_subj[[".mi_xe_int"]], levels = interval_levels))
-  if (any(tab_phase2 == 0)) stop("Some exposure intervals are empty in phase-II data.")
-
-  phase2_subj[[".mi_xe_ord"]] <- ordered(phase2_subj[[".mi_xe_int"]], levels = interval_levels)
 
   if (is.null(exposure_model)) {
     exposure_model <- .mi_default_exposure_model(formula, exposure_name, time_name)
   }
   exposure_rhs <- .mi_formula_rhs(exposure_model)
-  exposure_formula <- stats::as.formula(paste(".mi_xe_ord ~", exposure_rhs))
+  exposure_formula <- stats::as.formula(paste(exposure_name, "~", exposure_rhs))
 
   exposure_vars <- all.vars(exposure_formula)
   missing_exposure_vars <- setdiff(exposure_vars, names(phase2_subj))
@@ -422,17 +511,58 @@ MI <- function(
   fit_initial <- WL(formula, phase2_design, init = init)
 
   if (verbose) message("Fitting ordinal exposure model.")
-  fit_exposure <- rms::orm(
+  fit_exposure_link <- rms::orm(
     formula = exposure_formula,
     data = phase2_subj,
     weights = phase2_subj[[weights_name]],
-    family = "probit",
     x = TRUE,
     y = TRUE
   )
 
+  link_results <- NULL
+  if (is.null(exposure_family)) {
+    link_results_list <- lapply(links_to_try, function(link) {
+      tryCatch(
+        rms::Olinks(fit_exposure_link, links = link, gradtol = olinks_gradtol),
+        error = function(e) NULL
+      )
+    })
+    link_results_list <- Filter(Negate(is.null), link_results_list)
+
+    if (length(link_results_list) > 0L) {
+      link_results <- do.call(rbind, link_results_list)
+      link_results <- link_results[!duplicated(link_results$link), , drop = FALSE]
+    }
+
+    exposure_family <- if (is.null(link_results) || nrow(link_results) == 0L) {
+      "logistic"
+    } else {
+      link_results$link[which.min(link_results$R2)]
+    }
+  }
+
+  fit_exposure <- rms::orm(
+    formula = exposure_formula,
+    data = phase2_subj,
+    weights = phase2_subj[[weights_name]],
+    family = exposure_family,
+    x = TRUE,
+    y = TRUE,
+    mscore = TRUE
+  )
+
+  x_support <- as.numeric(fit_exposure$yunique)
+  if (length(x_support) < 2L || any(!is.finite(x_support))) {
+    stop("The exposure model did not return a finite observed exposure support.")
+  }
+
   omega_hat <- stats::coef(fit_exposure)
-  V_omega <- .mi_get_orm_vcov_all(fit_exposure)
+  V_omega <- get_orm_vcov_weighted_sandwich(
+    fit = fit_exposure,
+    data = phase2_subj,
+    cluster_var = cluster_var,
+    intercepts = "all"
+  )
   if (length(omega_hat) != ncol(V_omega)) {
     stop("Exposure-model coefficient and covariance dimensions do not match.")
   }
@@ -461,9 +591,15 @@ MI <- function(
     imp_dat <- NULL
 
     for (kk in seq_len(n_imp)) {
-      params_draw <- .mi_draw_mvn(
+      outcome_covariance <- if (prefer_robcov && kk == 1L && !is.null(fit_current$robcov)) {
+        fit_current$robcov
+      } else {
+        fit_current$covariance
+      }
+
+      params_draw <- draw_mvn_plain(
         mu = fit_current$coefficients,
-        Sigma = fit_current$covariance
+        Sigma = outcome_covariance
       )
 
       X1 <- fit_current$model.matrix
@@ -485,9 +621,7 @@ MI <- function(
       )
       sigmae_2 <- exp(params_draw[k0 + 4L])^2
 
-      omega_draw <- .mi_draw_mvn(omega_hat, V_omega)
-      fit_exposure_draw <- fit_exposure
-      fit_exposure_draw$coefficients <- omega_draw
+      omega_draw <- draw_mvn_named(omega_hat, V_omega)
 
       phase1_ids <- as.character(phase1_only[[id_name]])
       uid <- unique(phase1_ids)
@@ -504,18 +638,17 @@ MI <- function(
         y_i <- matrix(dat_i[[response_name]], ncol = 1L)
 
         new_subj <- dat_i[1L, , drop = FALSE]
-        px_i <- .mi_get_orm_probs(
-          fit = fit_exposure_draw,
+        px_i <- get_orm_probs_support(
+          omega = omega_draw,
+          fit = fit_exposure,
           newdata = new_subj,
-          interval_levels = interval_levels
+          x_support = x_support
         )
 
-        log_w <- rep(NA_real_, length(interval_levels))
-        names(log_w) <- as.character(interval_levels)
+        log_w <- rep(-Inf, length(x_support))
 
-        for (ll in seq_along(interval_levels)) {
-          interval_val <- interval_levels[ll]
-          x_val <- interval_info$midpoints[interval_val]
+        for (ll in seq_along(x_support)) {
+          x_val <- x_support[ll]
           dat_l <- dat_i
           dat_l[[exposure_name]] <- x_val
 
@@ -533,7 +666,14 @@ MI <- function(
           quad <- as.numeric(t(res_l) %*% solve(Vi, res_l))
           log_f_y <- -0.5 * (length(y_i) * log(2 * pi) + log_det + quad)
 
-          log_w[ll] <- log_f_y + log(px_i[as.character(interval_val)])
+          px_val <- px_i[ll]
+          if (is.finite(px_val) && px_val > 0) {
+            log_w[ll] <- log_f_y + log(px_val)
+          }
+        }
+
+        if (!any(is.finite(log_w))) {
+          stop("All posterior log weights are -Inf for subject ", id_i, ".")
         }
 
         prob_l <- exp(log_w - max(log_w))
@@ -542,15 +682,13 @@ MI <- function(
           stop("Could not compute finite imputation probabilities for subject ", id_i, ".")
         }
 
-        interval_draw <- as.integer(sample(names(prob_l), size = 1L, prob = as.numeric(prob_l)))
-        exposure_by_id[id_i] <- interval_info$midpoints[interval_draw]
+        exposure_by_id[id_i] <- sample(x = x_support, size = 1L, prob = prob_l)
       }
 
       phase1_only_imp <- phase1_only
       phase1_only_imp[[exposure_name]] <- as.numeric(exposure_by_id[as.character(phase1_only_imp[[id_name]])])
 
       phase2_completed <- phase2_dat
-      phase2_completed[[".mi_xe_int"]] <- NULL
       phase1_only_imp[[".mi_sampled_all"]] <- 1
       phase2_completed[[".mi_sampled_all"]] <- 1
       phase1_only_imp[[".mi_weight_all"]] <- 1
@@ -589,7 +727,9 @@ MI <- function(
     B = rubin$B,
     coef_mi = coef_mi,
     cov_mi = cov_mi,
-    interval_info = interval_info,
+    x_support = x_support,
+    exposure_family = exposure_family,
+    exposure_link_results = link_results,
     initial_fit = fit_initial,
     exposure_fit = fit_exposure,
     completed_data = completed_data,
