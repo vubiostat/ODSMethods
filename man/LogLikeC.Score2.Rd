@@ -18,7 +18,8 @@ LogLikeC.Score2(
   SampProb,
   CheeseCalc = FALSE,
   xcol.phase1,
-  ests.phase1
+  ests.phase1,
+  subjectData = NULL
 )
 }
 \arguments{

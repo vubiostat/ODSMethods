@@ -12,7 +12,8 @@ LogLikeCAndScoreWL(
   id,
   Weights,
   ProfileCol = NA,
-  Keep.liC = FALSE
+  Keep.liC = FALSE,
+  subjectData = NULL
 )
 }
 \arguments{

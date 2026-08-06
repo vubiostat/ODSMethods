@@ -16,7 +16,8 @@ LogLikeCAndScore2(
   ProfileCol = NA,
   Keep.liC = FALSE,
   xcol.phase1,
-  ests.phase1
+  ests.phase1,
+  subjectData = NULL
 )
 }
 \arguments{

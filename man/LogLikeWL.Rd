@@ -14,7 +14,8 @@ LogLikeWL(
   rho.vc,
   sigma.e,
   Weights,
-  Keep.liC = FALSE
+  Keep.liC = FALSE,
+  subjectData = NULL
 )
 }
 \arguments{

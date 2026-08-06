@@ -14,7 +14,8 @@ LogLikeC.ScoreWL(
   rho.vc,
   sigma.e,
   Weights,
-  CheeseCalc = FALSE
+  CheeseCalc = FALSE,
+  subjectData = NULL
 )
 }
 \arguments{
