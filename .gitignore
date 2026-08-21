@@ -8,3 +8,5 @@ sandbox
 inst/doc
 .positai
 ODSMethods.Rcheck
+src/*.o
+src/*.so

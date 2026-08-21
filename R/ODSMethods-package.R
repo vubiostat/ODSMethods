@@ -8,6 +8,8 @@
 #' process via multiple methods.
 #'
 #' @name ODSMethods
+#' @useDynLib ODSMethods, .registration = TRUE
+#' @importFrom Rcpp sourceCpp
 #' @keywords ods, acml, 2-phase, sampling
 #' @references
 #'  Jonathan S. Schildcrout, Shawn P. Garbett, and Patrick J. Heagerty. “Outcome Vector Dependent Sampling with Longitudinal Continuous Response Data: Stratified Sampling Based on Summary Statistics”. en. In: Biometrics 69.2 (June 2013), pp. 405–416. issn: 0006-341X, 1541-0420. doi: 10.1111/biom.12013.

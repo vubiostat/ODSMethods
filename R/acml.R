@@ -35,19 +35,27 @@
 #' @param rho.vc vector of correlations among the random effects.  The length should be q choose 2
 #' @param sigma.e std dev of the measurement error distribution
 #' @return V_i
-#' @export
 #'
-vi.calc <- function(zi, sigma.vc, rho.vc, sigma.e){
-    SDMat.RE  <- diag(sigma.vc)
-    ncolzi    <- ncol(zi) ## make sure this equals length(sigma.vc)
-    nrowzi    <- nrow(zi)
-    nERRsd    <- length(sigma.e)
-    b         <- matrix(0,ncolzi,ncolzi)
-    b[lower.tri(b, diag=FALSE)] <- rho.vc
-    CorMat.RE <- t(b)+b+diag(rep(1,ncolzi))
-    CovMat.RE <- SDMat.RE %*% CorMat.RE %*% SDMat.RE
-    zi %*% CovMat.RE %*% t(zi) + diag(rep(sigma.e^2, each=nrowzi/nERRsd))
+# vi.calc <- function(zi, sigma.vc, rho.vc, sigma.e){
+#     SDMat.RE  <- diag(sigma.vc)
+#     ncolzi    <- ncol(zi) ## make sure this equals length(sigma.vc)
+#     nrowzi    <- nrow(zi)
+#     nERRsd    <- length(sigma.e)
+#     b         <- matrix(0,ncolzi,ncolzi)
+#     b[lower.tri(b, diag=FALSE)] <- rho.vc
+#     CorMat.RE <- t(b)+b+diag(rep(1,ncolzi))
+#     CovMat.RE <- SDMat.RE %*% CorMat.RE %*% SDMat.RE
+#     zi %*% CovMat.RE %*% t(zi) + diag(rep(sigma.e^2, each=nrowzi/nERRsd))
+# }
+vi_calc <- function(zi, sigma_vc, rho_vc, sigma_e)
+{
+  .Call('_ODSMethods_vi_calc', zi, sigma_vc, rho_vc, sigma_e)
 }
+
+vi.calc <- function(zi, sigma.vc, rho.vc, sigma.e)
+  vi_calc(zi=zi, sigma_vc=sigma.vc, rho_vc=rho.vc, sigma_e=sigma.e)
+
+
 
 #' Ascertainment correction piece for univariate sampling
 #'
