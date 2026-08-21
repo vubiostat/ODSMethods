@@ -9,25 +9,18 @@ Rcpp::NumericMatrix vi_calc(
     const Rcpp::NumericVector& sigma_e
 )
 {
-  // nrowzi    <- nrow(zi)
-  int nrowzi = zi.nrow();
-  // ncolzi <- ncol(zi) ## make sure this equals length(sigma.vc)
-  int ncolzi = zi.ncol();
-  // nERRsd <- length(sigma.e)
-  int nERRsd = sigma_e.size();
+  const int nrowzi = zi.nrow();
+  const int ncolzi = zi.ncol();
+  const int nERRsd = sigma_e.size();
 
-  // Question: This is a vector in R?
-  // SDMat.RE  <- diag(sigma.vc)
-  // Diagonal matrix of random-effect standard deviations
-  Rcpp::NumericMatrix SDMat_RE(ncolzi, ncolzi);
-  for (int i = 0; i < ncolzi; ++i)
-    SDMat_RE(i, i) = sigma_vc[i];
+  // Construct random-effects correlation matrix.
+  //
+  // R:
+  // b <- matrix(0, ncolzi, ncolzi)
+  // b[lower.tri(b)] <- rho.vc
+  // CorMat.RE <- t(b) + b + diag(ncolzi)
 
-  // Construct correlation matrix
   Rcpp::NumericMatrix CorMat_RE(ncolzi, ncolzi);
-  // b         <- matrix(0,ncolzi,ncolzi)
-  // b[lower.tri(b, diag=FALSE)] <- rho.vc
-  // CorMat.RE <- t(b)+b+diag(rep(1,ncolzi))
 
   int rho_idx = 0;
 
@@ -44,23 +37,17 @@ Rcpp::NumericMatrix vi_calc(
     }
   }
 
-  // Covariance matrix of random effects:
+  // V = Z D Z'
   //
-  // CovMat.RE <- SDMat.RE %*% CorMat.RE %*% SDMat.RE
-  Rcpp::NumericMatrix CovMat_RE(ncolzi, ncolzi);
+  // D[i,j] = sigma_vc[i] *
+  //          CorMat_RE[i,j] *
+  //          sigma_vc[j]
+  //
+  // Rather than constructing D, incorporate the standard deviations
+  // directly into the matrix multiplication.
 
-  for (int i = 0; i < ncolzi; ++i)
-  {
-    for (int j = 0; j < ncolzi; ++j)
-    {
-      CovMat_RE(i, j) = sigma_vc[i]*CorMat_RE(i, j)*sigma_vc[j];
-    }
-  }
-
-  // V_i = Z_i D Z_i' + sigma_e^2 I
   Rcpp::NumericMatrix V(nrowzi, nrowzi);
 
-  // R version: V_i = zi %*% CovMat.RE %*% t(zi)
   for (int i = 0; i < nrowzi; ++i)
   {
     for (int j = 0; j < nrowzi; ++j)
@@ -71,7 +58,12 @@ Rcpp::NumericMatrix vi_calc(
       {
         for (int l = 0; l < ncolzi; ++l)
         {
-          value += zi(i, k)*CovMat_RE(k, l)*zi(j, l);
+          value +=
+            zi(i, k) *
+            sigma_vc[k] *
+            CorMat_RE(k, l) *
+            sigma_vc[l] *
+            zi(j, l);
         }
       }
 
@@ -81,13 +73,14 @@ Rcpp::NumericMatrix vi_calc(
 
   // Add measurement-error variance to the diagonal.
   //
-  // R version: zi %*% CovMat.RE %*% t(zi) + diag(rep(sigma.e^2, each=nrowzi/nERRsd))
-  // diag(rep(sigma.e^2, each=nrowzi/nERRsd))
-  int observations_per_sigma = nrowzi / nERRsd;
+  // R:
+  // diag(rep(sigma.e^2, each = nrowzi / nERRsd))
+
+  const int observations_per_sigma = nrowzi / nERRsd;
 
   for (int i = 0; i < nrowzi; ++i)
   {
-    int sigma_idx = i / observations_per_sigma;
+    const int sigma_idx = i / observations_per_sigma;
 
     V(i, i) += sigma_e[sigma_idx] * sigma_e[sigma_idx];
   }
