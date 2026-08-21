@@ -32,6 +32,8 @@ LogLikeCAndScoreWL(
 \item{ProfileCol}{the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters while fixing these columns at the values of params at the location of ProfileCol}
 
 \item{Keep.liC}{If TRUE outputs subject specific conditional log lileihoods to be used for the imputation procedure described in the AOAS paper keep z sum(n_i) by 2 design matric for random effects (intercept and slope)}
+
+\item{subjectData}{Optional precomputed subject-specific data list from \code{CreateSubjectDataWL}.}
 }
 \value{
 The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) and subject specific contributions to the conditional likelihood if Keep.liC=TRUE).

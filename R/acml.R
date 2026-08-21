@@ -150,8 +150,8 @@ li.lme <- function(yi, xi, beta, vi){
     resid <- yi - xi %*% beta
     R <- chol(vi)
     logdet <- 2 * sum(log(diag(R)))
-    inv.v.resid <- backsolve(R, forwardsolve(t(R), resid))
-    quad <- sum(resid * inv.v.resid)
+    std.resid <- backsolve(R, resid, transpose = TRUE)
+    quad <- sum(std.resid^2)
     -0.5 * (length(yi) * log(2 * pi) + logdet + quad)
 }
 
@@ -1120,7 +1120,7 @@ summary.acml <- function(object, digits = max(3L, getOption("digits")),
 
 #' @exportS3Method
 #' @importFrom stats printCoefmat
-print.summary.acml <- function(x, digits=NULL, signif.stars = getOption("show.signif.stars"), ...)
+print.summary.acml <- function(x, digits=NULL, signif.stars = FALSE, ...)
 {
   object <- x
   if(is.null(digits)) digits <- object$digits

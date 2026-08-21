@@ -633,7 +633,7 @@ summary.WL <- function(object, digits = max(3L, getOption("digits")),
 
 #' @exportS3Method
 #' @importFrom stats printCoefmat
-print.summary.WL <- function(x, digits=NULL, signif.stars = getOption("show.signif.stars"), ...)
+print.summary.WL <- function(x, digits=NULL, signif.stars = FALSE, ...)
 {
   object <- x
   if(is.null(digits)) digits <- object$digits

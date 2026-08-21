@@ -38,6 +38,8 @@ LogLikeC.ScoreWL(
 \item{Weights}{Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
 
 \item{CheeseCalc}{If FALSE, the function returns the gradient of the conditional log likelihood across all subjects.  If TRUE, the cheese part of the sandwich esitmator is calculated.}
+
+\item{subjectData}{Optional precomputed subject-specific data list from \code{CreateSubjectDataWL}.}
 }
 \value{
 If CheeseCalc=FALSE, gradient of conditional log likelihood.  If CheeseCalc=TRUE, the cheese part of the sandwich estimator is calculated.

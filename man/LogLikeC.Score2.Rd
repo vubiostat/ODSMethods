@@ -50,6 +50,8 @@ LogLikeC.Score2(
 \item{xcol.phase1}{This only applied if doing BLUP-based sampling.  It is the column numbers of the design matrix x that were used in phase 1 to conduct analyses from which BLUP estimates are calculated. e.g. xcol.phase1 = c(1,2,4) if the first second and fourth columns of x were used in phase 1}
 
 \item{ests.phase1}{This only applied if doing BLUP-based sampling.  These are the estimates from the phase 1 analysis.  It is assumed that the columns of the design matrix in phase 1 are a subset of those in phase II.  The estimates should be ordered in the following way and appropriately transformed: (beta, log(variance component SDs), FisherZ(correlation parameters in random effects covariance matrix), log(error SDs)).  The transformed variance component SDs and correlations should be ordered the same way they are ordered in the phase II model}
+
+\item{subjectData}{Optional precomputed subject-specific data list from \code{CreateSubjectData}.}
 }
 \value{
 If CheeseCalc=FALSE, gradient of conditional log likelihood.  If CheeseCalc=TRUE, the cheese part of the sandwich estimator is calculated.

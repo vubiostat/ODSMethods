@@ -38,6 +38,8 @@ LogLikeWL(
 \item{Weights}{Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
 
 \item{Keep.liC}{If FALSE, the function returns the conditional log likelihood across all subjects.  If TRUE, subject specific contributions and exponentiated subject specific ascertainment corrections are returned in a list.}
+
+\item{subjectData}{Optional precomputed subject-specific data list from \code{CreateSubjectDataWL}.}
 }
 \value{
 If Keep.liC=FALSE, conditional log likelihood.  If Keep.liC=TRUE, a two-element list that contains subject specific likelihood contributions and exponentiated ascertainment corrections.
