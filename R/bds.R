@@ -432,26 +432,50 @@ bds <- function(
     mf[[id_name]] <- as.character(mf[[id_name]])
   }
 
-  ## 3) Construct z_i by subject: mean(y), intercept, slope -----------
   split_list <- split(mf, mf[[id_name]])
 
-  z_fun <- function(df_id) {
-    y  <- df_id[[y_name]]
-    tt <- df_id[[time_name]]
+  phase1_formula <- stats::as.formula(
+    paste(y_name, "~", time_name, "+ (", time_name, "|", id_name, ")")
+  )
+  phase1_fit <- lme4::lmer(phase1_formula, data = mf, REML = TRUE)
 
-    fit <- stats::lm(y ~ tt, data = df_id) #, na.action = na.action)
-    c(mean = mean(y), intercept = stats::coef(fit)[1], slope = stats::coef(fit)[2])
-  }
+  z_mean <- vapply(split_list, function(df_id) mean(df_id[[y_name]]), numeric(1))
+  z_ranef <- lme4::ranef(phase1_fit)[[id_name]]
+  z_ranef <- z_ranef[names(split_list), , drop = FALSE]
 
-  z_i <- vapply(split_list, z_fun, FUN.VALUE = c(mean = 0, intercept = 0, slope = 0))
-  colnames(z_i) <- names(split_list)
+  z_i <- rbind(
+    mean      = z_mean,
+    intercept = z_ranef[, "(Intercept)"],
+    slope     = z_ranef[, time_name]
+  )
 
-  ## 4) Fixed-effect design matrix for (Intercept + time) -------------
   z_mf <- stats::model.matrix(
     stats::reformulate(time_name, intercept = TRUE),
     data = mf
   )
 
+  beta_phase1 <- lme4::fixef(phase1_fit)
+  vc_phase1 <- as.data.frame(lme4::VarCorr(phase1_fit))[,"sdcor"]
+  n_vc_phase1 <- ncol(z_mf)
+  n_rho_phase1 <- choose(n_vc_phase1, 2)
+
+  sigma_vc_phase1 <- as.numeric(vc_phase1[seq_len(n_vc_phase1)])
+  rho_vc_phase1 <- as.numeric(
+    vc_phase1[n_vc_phase1 + seq_len(n_rho_phase1)]
+  )
+  rho_vc_phase1 <- pmin(
+    pmax(rho_vc_phase1, -1 + .Machine$double.eps),
+    1 - .Machine$double.eps
+  )
+  sigma_e_phase1 <- as.numeric(vc_phase1[length(vc_phase1)])
+
+  xcol.phase1 <- colnames(z_mf)
+  ests.phase1 <- c(
+    beta_phase1,
+    log(sigma_vc_phase1),
+    log((1 + rho_vc_phase1) / (1 - rho_vc_phase1)),
+    log(sigma_e_phase1)
+  )
 
   ## create/process cutpoints
   smpl <- NULL
@@ -649,9 +673,6 @@ bds <- function(
     sample_ids    = smpl
   }
 
-  xcol.phase1 <- NULL
-  ests.phase1 <- NULL
-
   # Return design object
   structure(list(
     call        = cl,
@@ -678,5 +699,4 @@ bds <- function(
   class = "bdsdesign"
   )
 }
-
 
