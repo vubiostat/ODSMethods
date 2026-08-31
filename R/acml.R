@@ -240,7 +240,7 @@ LogLikeiC2 = function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
             }
         }
     }
-    if (!(w.function %in% c("bivariate", "mvints", "mvslps"))){
+    if (!(w.function %in% c("bivariate", "mvints", "mvslps", "blup.bivariate"))){
         wi         <- matrix(wi, 1, ni)
         tmp        = logACi1q(yi, xi, zi, wi, beta, sigma.vc, rho.vc, sigma.e, cutpoints, SampProb, mui.phase1)
         logACi     <- tmp[["logACi"]]
@@ -300,6 +300,7 @@ logACi2q.score2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
     cutpoints   <- subjectData[["cutpoints.i"]]
 
     wi          <- subjectData[["wi"]]
+    mui.phase1  <- subjectData[["mui.phase1"]]
     if (is.null(wi)) {
         t.zi        <- t(zi)
         wi.tmp      <- chol2inv(chol(crossprod(zi))) %*% t.zi
@@ -328,7 +329,7 @@ logACi2q.score2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
         grad(function(x) { new.param <- param
         new.param[rr] <- x
         vi      <- vi.calc(zi, new.param[vc.sd.index], new.param[vc.rho.index], new.param[err.sd.index])
-        mu_q    <- as.vector(wi %*% (xi %*% new.param[c(beta.index)]))
+        mu_q    <- as.vector(wi %*% (xi %*% new.param[c(beta.index)] - mui.phase1))
         sigma_q <- wi %*% vi %*% t.wi
         ## for some reason the upper and lower triangles to not always equal.  Not sure this is a problem here
         ## but doing this to be safe.  Maybe can remove later once understood.
@@ -342,7 +343,7 @@ logACi2q.score2 <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
     )
 
     vi      <- vi.calc(zi, sigma.vc, rho.vc, sigma.e)
-    mu_q    <- as.vector(wi %*% (xi %*% beta))
+    mu_q    <- as.vector(wi %*% (xi %*% beta - mui.phase1))
     sigma_q <- wi %*% vi %*% t.wi
     ## for some reason the upper and lower triangles to not always equal, so I am forcing
     ## the upper triangle to equal the lower triangle.
@@ -589,7 +590,7 @@ LogLikeC.Score2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sig
     #print(c("blah1", UncorrectedScore))
     ## NOTE HERE: I used the first element of w.function in this call.  This means, for now, we cannot mix bivariate with other
     ## sampling schemes.  This also applies to the cheese calculation
-    if (!(w.function[[1]] %in% c("bivariate","mvints","mvslps"))){
+    if (!(w.function[[1]] %in% c("bivariate","mvints","mvslps","blup.bivariate"))){
         logACi.Score <- lapply(subjectData, logACi1q.score2, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e)
         logAC.Score  <- Reduce('+', logACi.Score)
         CorrectedScore <- UncorrectedScore + logAC.Score
@@ -600,7 +601,7 @@ LogLikeC.Score2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sig
     }
     #print(c("blah2", CorrectedScore))
     if (CheeseCalc==TRUE){
-        if (!(w.function[[1]] %in% c("bivariate","mvints","mvslps"))){ GradiMat <- mapply("+", Gradienti, logACi.Score)
+        if (!(w.function[[1]] %in% c("bivariate","mvints","mvslps","blup.bivariate"))){ GradiMat <- mapply("+", Gradienti, logACi.Score)
         }else{                           GradiMat <- mapply("-", Gradienti, logACi.Score)} ## notice this has the opposite sign compared to above.  Remember to check
         ## Need to use the chain rule: note that param,vec is on the unconstrained scale but Gradi was calculated on the constrained parameters
         GradiMat[notbeta.index,] <- GradiMat[notbeta.index,]*c(exp(param.vec[vc.sd.index]), 2*exp(param.vec[vc.rho.index])/((exp(param.vec[vc.rho.index])+1)^2), exp(param.vec[err.sd.index]))
@@ -746,17 +747,16 @@ CreateSubjectData <- function(id,y,x,z,SampProb,cutpoints,w.function, xcol.phase
       wi.tmp     = D.phase1 %*% t.zi %*% Vi.phase1.inv
       mui.phase1 = xi.phase1 %*% beta.phase1
       ####################################################
-      if (!(w.functioni %in% c("blup.bivariate", "blup.mvints", "blup.mvslps"))){
-        if (w.functioni %in% c("blup.intercept", "blup.intercept1")){ wi = wi.tmp[1,]
-        } else if (w.functioni %in% c("blup.slope", "blup.slope1")){  wi = wi.tmp[2,]
-        } else if (w.functioni %in% c("blup.intercept2")){            wi = wi.tmp[3,]
-        } else if (w.functioni %in% c("blup.slope2")){                wi = wi.tmp[4,]
+      if (!(w.functioni %in% c("blup.bivariate"))){
+        if (w.functioni %in% c("blup.intercept")){                    wi = wi.tmp[1,]
+        } else if (w.functioni %in% c("blup.slope")){                 wi = wi.tmp[2,]
+        } else if (w.functioni=="mean"){                              wi = t(rep(1/ni, ni)); mui.phase1 = rep(0, nrow(xi))
+        } else {
+          stop("You have not chosen an appropriate w.function for BLUP sampling")
         }
         wi         = matrix(wi, 1, ni)
         # wi         = matrix(wi.tmp, 1, ni) # CHECKME
       }else if (w.functioni %in% c("blup.bivariate")){ wi = wi.tmp[c(1,2),]
-      } else if (w.functioni %in% c("blup.mvints")){ wi = wi.tmp[c(1,3),]
-      } else if (w.functioni %in% c("blup.mvslps")){ wi = wi.tmp[c(2,4),]
       } else {stop("You have not chosen an appropriate w.function for BLUP sampling")
       }
       ####################################################
@@ -871,6 +871,12 @@ acml_internal <- function(formula,
 
   xcol.phase1=design$xcol.phase1
   ests.phase1=design$ests.phase1
+
+  if (inherits(design, "bdsdesign") && !is.null(xcol.phase1)) {
+    blup_methods <- c("intercept", "slope", "bivariate")
+    needs_blup <- w.function %in% blup_methods
+    w.function[needs_blup] <- paste0("blup.", w.function[needs_blup])
+  }
 
   #if (is.na(SampProb[1])) SampProb = c(1,1,1)
 
