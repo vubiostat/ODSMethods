@@ -139,6 +139,8 @@ expect_bds_gbti_reference <- function(method, p_sample, quantiles, expected,
     paste0("blup.", method)
   }
 
+  subjectData <- CreateSubjectData(id=input$id,y=input$y,x=input$x,z=input$z,SampProb=input$SampProb,cutpoints=input$cutpoints, w.function=rep(w_function, length(input$y)), xcol.phase1=design$xcol.phase1, ests.phase1=design$ests.phase1)
+
   current <- LogLikeCAndScore2(
     expected$coefficients,
     y = input$y,
@@ -149,7 +151,8 @@ expect_bds_gbti_reference <- function(method, p_sample, quantiles, expected,
     cutpoints = input$cutpoints,
     SampProb = input$SampProb,
     xcol.phase1 = design$xcol.phase1,
-    ests.phase1 = design$ests.phase1
+    ests.phase1 = design$ests.phase1,
+    subjectData = subjectData
   )
 
   expect_true(inherits(fit, "acml"))
@@ -215,6 +218,8 @@ test_that("BDS slope likelihood matches the built-in ACML validation helper",
   params <- bds_test_params(input$x)
   w_function <- rep("blup.slope", length(input$y))
 
+  subjectData <- CreateSubjectData(id=input$id,y=input$y,x=input$x,z=input$z,SampProb=input$SampProb,cutpoints=input$cutpoints, w.function=w_function, xcol.phase1=design$xcol.phase1, ests.phase1=design$ests.phase1)
+
   current <- LogLikeCAndScore2(
     params,
     y = input$y,
@@ -225,7 +230,8 @@ test_that("BDS slope likelihood matches the built-in ACML validation helper",
     cutpoints = input$cutpoints,
     SampProb = input$SampProb,
     xcol.phase1 = design$xcol.phase1,
-    ests.phase1 = design$ests.phase1
+    ests.phase1 = design$ests.phase1,
+    subjectData = subjectData
   )
   reference <- av_bds_LogLikeCAndScore2(
     params,
@@ -313,6 +319,8 @@ test_that("BDS bivariate likelihood uses the bivariate BLUP correction",
   input <- bds_test_acml_input(design, bds_test_reference_ids(gbti, n_each = 2))
   params <- bds_test_params(input$x)
 
+  subjectData <- CreateSubjectData(id=input$id,y=input$y,x=input$x,z=input$z,SampProb=input$SampProb,cutpoints=input$cutpoints, w.function= rep("blup.bivariate", length(input$y)), xcol.phase1=design$xcol.phase1, ests.phase1=design$ests.phase1)
+
   expect_error(
     result <- LogLikeCAndScore2(
       params,
@@ -324,7 +332,8 @@ test_that("BDS bivariate likelihood uses the bivariate BLUP correction",
       cutpoints = input$cutpoints,
       SampProb = input$SampProb,
       xcol.phase1 = design$xcol.phase1,
-      ests.phase1 = design$ests.phase1
+      ests.phase1 = design$ests.phase1,
+      subjectData = subjectData
     ),
     NA
   )

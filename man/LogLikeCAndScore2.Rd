@@ -17,7 +17,7 @@ LogLikeCAndScore2(
   Keep.liC = FALSE,
   xcol.phase1,
   ests.phase1,
-  subjectData = NULL
+  subjectData
 )
 }
 \arguments{

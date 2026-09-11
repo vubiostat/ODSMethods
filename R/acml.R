@@ -630,8 +630,9 @@ LogLikeC.Score2 <- function(y, x, z, w.function, id, beta, sigma.vc, rho.vc, sig
 #' @param ests.phase1 This only applied if doing BLUP-based sampling.  These are the estimates from the phase 1 analysis.  It is assumed that the columns of the design matrix in phase 1 are a subset of those in phase II.  The estimates should be ordered in the following way and appropriately transformed: (beta, log(variance component SDs), FisherZ(correlation parameters in random effects covariance matrix), log(error SDs)).  The transformed variance component SDs and correlations should be ordered the same way they are ordered in the phase II model
 #' @param subjectData Optional precomputed subject-specific data list from \code{CreateSubjectData}.
 #' @return The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) and subject specific contributions to the conditional likelihood if Keep.liC=TRUE).
-#' @export
-LogLikeCAndScore2 <- function(params, y, x, z, id, w.function, cutpoints, SampProb, ProfileCol=NA, Keep.liC=FALSE, xcol.phase1, ests.phase1, subjectData=NULL){
+LogLikeCAndScore2 <- function(params, y, x, z, id, w.function, cutpoints, SampProb, ProfileCol=NA, Keep.liC=FALSE, xcol.phase1, ests.phase1, subjectData)
+{
+    if(is.null(subjectData)) error("No subject data provided.")
     npar   <- length(params)
 
     nbeta <- ncol(x)
@@ -648,11 +649,6 @@ LogLikeCAndScore2 <- function(params, y, x, z, id, w.function, cutpoints, SampPr
     sigma.vc <- exp(params[vc.sd.index])
     rho.vc   <- (exp(params[vc.rho.index])-1) / (exp(params[vc.rho.index])+1)
     sigma.e  <- exp(params[err.sd.index])
-
-    if (is.null(subjectData)) {
-        subjectData <- CreateSubjectData(id=id,y=y,x=x,z=z,SampProb=SampProb,cutpoints=cutpoints,
-                                         w.function=w.function, xcol.phase1=xcol.phase1, ests.phase1=ests.phase1)
-    }
 
     out     = LogLikeC2( y=y, x=x, z=z, w.function=w.function, id=id, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e, cutpoints=cutpoints,
                          SampProb=SampProb, Keep.liC=Keep.liC, xcol.phase1=xcol.phase1, ests.phase1=ests.phase1, subjectData=subjectData)
