@@ -60,14 +60,11 @@ package_wl <- function(fit, design, formula)
 {
   input <- validated_wl_input(design, formula)
 
-  LogLikeCAndScoreWL(
-    coef(fit),
-    y = input$y,
-    x = input$x,
-    z = input$z,
-    id = input$id,
+  subjectData <- CreateSubjectDataWL(
+    id = input$id, y = input$y, x = input$x, z = input$z,
     Weights = input$weights
   )
+  LogLikeCAndScoreWL(coef(fit), subjectData = subjectData)
 }
 
 expect_validated_wl <- function(method, p_sample, quantiles, expected)

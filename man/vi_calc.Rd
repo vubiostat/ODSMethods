@@ -9,11 +9,11 @@ vi_calc(zi, sigma_vc, rho_vc, sigma_e)
 \arguments{
 \item{zi}{n_i by q design matrix for the random effects}
 
-\item{sigma.vc}{vector of variance components on standard deviation scale}
+\item{sigma_vc}{vector of variance components on standard deviation scale}
 
-\item{rho.vc}{vector of correlations among the random effects.  The length should be q choose 2}
+\item{rho_vc}{vector of correlations among the random effects.  The length should be q choose 2}
 
-\item{sigma.e}{std dev of the measurement error distribution}
+\item{sigma_e}{std dev of the measurement error distribution}
 }
 \value{
 V_i

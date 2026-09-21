@@ -5,28 +5,15 @@
 \title{Calculate the gradient of the conditional likelihood}
 \usage{
 LogLikeC.ScoreWL(
-  y,
-  x,
-  z,
-  id,
   beta,
   sigma.vc,
   rho.vc,
   sigma.e,
-  Weights,
   CheeseCalc = FALSE,
-  subjectData = NULL
+  subjectData
 )
 }
 \arguments{
-\item{y}{response vector}
-
-\item{x}{sum(n_i) by p design matrix for fixed effects}
-
-\item{z}{sum(n_i) by 2 design matric for random effects (intercept and slope)}
-
-\item{id}{sum(n_i) vector of subject ids}
-
 \item{beta}{mean model parameter p-vector}
 
 \item{sigma.vc}{vector of variance components on standard deviation scale}
@@ -35,11 +22,9 @@ LogLikeC.ScoreWL(
 
 \item{sigma.e}{std dev of the measurement error distribution}
 
-\item{Weights}{Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
-
 \item{CheeseCalc}{If FALSE, the function returns the gradient of the conditional log likelihood across all subjects.  If TRUE, the cheese part of the sandwich esitmator is calculated.}
 
-\item{subjectData}{Optional precomputed subject-specific data list from \code{CreateSubjectDataWL}.}
+\item{subjectData}{Precomputed subject-specific data list from \code{CreateSubjectDataWL}.}
 }
 \value{
 If CheeseCalc=FALSE, gradient of conditional log likelihood.  If CheeseCalc=TRUE, the cheese part of the sandwich estimator is calculated.

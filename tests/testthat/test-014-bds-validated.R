@@ -143,15 +143,6 @@ expect_bds_gbti_reference <- function(method, p_sample, quantiles, expected,
 
   current <- LogLikeCAndScore2(
     expected$coefficients,
-    y = input$y,
-    x = input$x,
-    z = input$z,
-    id = input$id,
-    w.function = rep(w_function, length(input$y)),
-    cutpoints = input$cutpoints,
-    SampProb = input$SampProb,
-    xcol.phase1 = design$xcol.phase1,
-    ests.phase1 = design$ests.phase1,
     subjectData = subjectData
   )
 
@@ -222,15 +213,6 @@ test_that("BDS slope likelihood matches the built-in ACML validation helper",
 
   current <- LogLikeCAndScore2(
     params,
-    y = input$y,
-    x = input$x,
-    z = input$z,
-    id = input$id,
-    w.function = w_function,
-    cutpoints = input$cutpoints,
-    SampProb = input$SampProb,
-    xcol.phase1 = design$xcol.phase1,
-    ests.phase1 = design$ests.phase1,
     subjectData = subjectData
   )
   reference <- av_bds_LogLikeCAndScore2(
@@ -324,15 +306,6 @@ test_that("BDS bivariate likelihood uses the bivariate BLUP correction",
   expect_error(
     result <- LogLikeCAndScore2(
       params,
-      y = input$y,
-      x = input$x,
-      z = input$z,
-      id = input$id,
-      w.function = rep("blup.bivariate", length(input$y)),
-      cutpoints = input$cutpoints,
-      SampProb = input$SampProb,
-      xcol.phase1 = design$xcol.phase1,
-      ests.phase1 = design$ests.phase1,
       subjectData = subjectData
     ),
     NA

@@ -4,36 +4,16 @@
 \alias{LogLikeCAndScoreWL}
 \title{Calculate the ascertainment corrected log likelihood and score}
 \usage{
-LogLikeCAndScoreWL(
-  params,
-  y,
-  x,
-  z,
-  id,
-  Weights,
-  ProfileCol = NA,
-  Keep.liC = FALSE,
-  subjectData = NULL
-)
+LogLikeCAndScoreWL(params, ProfileCol = NA, Keep.liC = FALSE, subjectData)
 }
 \arguments{
 \item{params}{parameter vector c(beta, log(sigma0), log(sigma1), rho, sigmae)}
-
-\item{y}{response vector}
-
-\item{x}{sum(n_i) by p design matrix for fixed effects}
-
-\item{z}{sum(n_i) by 2 design matric for random effects (intercept and slope)}
-
-\item{id}{sum(n_i) vector of subject ids}
-
-\item{Weights}{Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
 
 \item{ProfileCol}{the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters while fixing these columns at the values of params at the location of ProfileCol}
 
 \item{Keep.liC}{If TRUE outputs subject specific conditional log lileihoods to be used for the imputation procedure described in the AOAS paper keep z sum(n_i) by 2 design matric for random effects (intercept and slope)}
 
-\item{subjectData}{Optional precomputed subject-specific data list from \code{CreateSubjectDataWL}.}
+\item{subjectData}{Precomputed subject-specific data list from \code{CreateSubjectDataWL}.}
 }
 \value{
 The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) and subject specific contributions to the conditional likelihood if Keep.liC=TRUE).

@@ -22,25 +22,16 @@
 
 #' Calculate the conditional likelihood for the univariate and bivariate sampling cases across all subjects (Keep.liC=FALSE) or the subject specific contributions to the conditional likelihood along with the log-transformed ascertainment correction for multiple imputation (Keep.liC=TRUE).
 #'
-#' @param y response vector
-#' @param x sum(n_i) by p design matrix for fixed effects
-#' @param z sum(n_i) by q design matrix for random effects
-#' @param id sum(n_i) vector of subject ids
 #' @param beta mean model parameter p-vector
 #' @param sigma.vc vector of variance components on standard deviation scale
 #' @param rho.vc vector of correlations among the random effects.  The length should be q choose 2
 #' @param sigma.e std dev of the measurement error distribution
-#' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
 #' @param Keep.liC If FALSE, the function returns the conditional log likelihood across all subjects.  If TRUE, subject specific contributions and exponentiated subject specific ascertainment corrections are returned in a list.
-#' @param subjectData Optional precomputed subject-specific data list from \code{CreateSubjectDataWL}.
+#' @param subjectData Precomputed subject-specific data list from \code{CreateSubjectDataWL}.
 #' @return If Keep.liC=FALSE, conditional log likelihood.  If Keep.liC=TRUE, a two-element list that contains subject specific likelihood contributions and exponentiated ascertainment corrections.
-#' @export
 #' @importFrom utils head
-LogLikeWL <- function(y, x, z, id, beta, sigma.vc, rho.vc, sigma.e, Weights, Keep.liC=FALSE, subjectData=NULL){
+LogLikeWL <- function(beta, sigma.vc, rho.vc, sigma.e, Keep.liC=FALSE, subjectData){
 
-    if (is.null(subjectData)) {
-        subjectData <- CreateSubjectDataWL(id=id,y=y,x=x,z=z,Weights=Weights)
-    }
     liC <- lapply(subjectData, LogLikeiWL, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e)
 
 
@@ -81,7 +72,6 @@ LogLikeWL <- function(y, x, z, id, beta, sigma.vc, rho.vc, sigma.e, Weights, Kee
 #' @param rho.vc vector of correlations among the random effects.  The length should be q choose 2
 #' @param sigma.e std dev of the measurement error distribution
 #' @return ss contributions to the conditional log likelihood.  This is an internal function used by LogLikeWL
-#' @export
 #'
 #'
 LogLikeiWL = function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
@@ -106,7 +96,6 @@ LogLikeiWL = function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
 #' @param rho.vc vector of correlations among the random effects.  The length should be q choose 2
 #' @param sigma.e std dev of the measurement error distribution
 #' @return Subject specific contribution to the log-likelihood score (also returns marginal Vi=Cov(Y|X))
-#' @export
 li.lme.scoreWL <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
   yi          <- subjectData[["yi"]]
   xi          <- subjectData[["xi"]]
@@ -184,20 +173,14 @@ li.lme.scoreWL <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
 
 #' Calculate the gradient of the conditional likelihood
 #' @description Calculate the gradient of the conditional likelihood for the univariate and bivariate sampling cases across all subjects (CheeseCalc=FALSE) or the cheese part of the sandwich estimator if CheeseCalc=TRUE.
-#' @param y response vector
-#' @param x sum(n_i) by p design matrix for fixed effects
-#' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
-#' @param id sum(n_i) vector of subject ids
 #' @param beta mean model parameter p-vector
 #' @param sigma.vc vector of variance components on standard deviation scale
 #' @param rho.vc vector of correlations among the random effects.  The length should be q choose 2
 #' @param sigma.e std dev of the measurement error distribution
-#' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
 #' @param CheeseCalc If FALSE, the function returns the gradient of the conditional log likelihood across all subjects.  If TRUE, the cheese part of the sandwich esitmator is calculated.
-#' @param subjectData Optional precomputed subject-specific data list from \code{CreateSubjectDataWL}.
+#' @param subjectData Precomputed subject-specific data list from \code{CreateSubjectDataWL}.
 #' @return If CheeseCalc=FALSE, gradient of conditional log likelihood.  If CheeseCalc=TRUE, the cheese part of the sandwich estimator is calculated.
-#' @export
-LogLikeC.ScoreWL <- function(y, x, z, id, beta, sigma.vc, rho.vc, sigma.e, Weights, CheeseCalc=FALSE, subjectData=NULL){
+LogLikeC.ScoreWL <- function(beta, sigma.vc, rho.vc, sigma.e, CheeseCalc=FALSE, subjectData){
     param.vec <- c(beta, log(sigma.vc),log((1+rho.vc)/(1-rho.vc)),log(sigma.e))
     #print(c("blahblah", param.vec))
     npar     <- length(param.vec)
@@ -213,9 +196,6 @@ LogLikeC.ScoreWL <- function(y, x, z, id, beta, sigma.vc, rho.vc, sigma.e, Weigh
     err.sd.index  <- len.beta + len.sigma.vc + len.rho.vc + c(1:len.sigma.e)
     notbeta.index <- c(vc.sd.index,vc.rho.index,err.sd.index)
 
-    if (is.null(subjectData)) {
-        subjectData = CreateSubjectDataWL(id=id,y=y,x=x,z=z,Weights=Weights)
-    }
 
     UncorrectedScorei <- lapply(subjectData, li.lme.scoreWL, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e)
     Gradienti         <- lapply(UncorrectedScorei, function(x) x[['gr']]) ## create a list of ss contributions to gradient
@@ -237,21 +217,17 @@ LogLikeC.ScoreWL <- function(y, x, z, id, beta, sigma.vc, rho.vc, sigma.e, Weigh
 #' @description
 #' Calculate the ascertainment corrected log likelihood and score for different designs
 #' @param params parameter vector c(beta, log(sigma0), log(sigma1), rho, sigmae)
-#' @param y response vector
-#' @param x sum(n_i) by p design matrix for fixed effects
-#' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
-#' @param id sum(n_i) vector of subject ids
-#' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
 #' @param ProfileCol the column number(s) for which we want fixed at the value of param.  Maimizing the log likelihood for all other parameters while fixing these columns at the values of params at the location of ProfileCol
 #' @param Keep.liC If TRUE outputs subject specific conditional log lileihoods to be used for the imputation procedure described in the AOAS paper keep z sum(n_i) by 2 design matric for random effects (intercept and slope)
-#' @param subjectData Optional precomputed subject-specific data list from \code{CreateSubjectDataWL}.
+#' @param subjectData Precomputed subject-specific data list from \code{CreateSubjectDataWL}.
 #' @return The conditional log likelihood with a "gradient" attribute (if Keep.liC=FALSE) and subject specific contributions to the conditional likelihood if Keep.liC=TRUE).
-#' @export
-LogLikeCAndScoreWL <- function(params, y, x, z, id, Weights, ProfileCol=NA, Keep.liC=FALSE, subjectData=NULL){
+LogLikeCAndScoreWL <- function(params, ProfileCol=NA, Keep.liC=FALSE, subjectData){
     npar   <- length(params)
 
-    nbeta <- ncol(x)
-    nVCsd <- ncol(z)
+    if (missing(subjectData) || is.null(subjectData) || length(subjectData) == 0L) stop("No subject data provided.")
+
+    nbeta <- ncol(subjectData[[1]][["xi"]])
+    nVCsd <- ncol(subjectData[[1]][["zi"]])
     nVCrho <- choose(nVCsd,2)
     nERRsd <- npar-nbeta-nVCsd-nVCrho
 
@@ -265,14 +241,10 @@ LogLikeCAndScoreWL <- function(params, y, x, z, id, Weights, ProfileCol=NA, Keep
     rho.vc   <- (exp(params[vc.rho.index])-1) / (exp(params[vc.rho.index])+1)
     sigma.e  <- exp(params[err.sd.index])
 
-    if (is.null(subjectData)) {
-        subjectData <- CreateSubjectDataWL(id=id,y=y,x=x,z=z,Weights=Weights)
-    }
-
-    out     = LogLikeWL( y=y, x=x, z=z, id=id, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e,
-                         Weights=Weights, Keep.liC=Keep.liC, subjectData=subjectData)
-    GRAD    = LogLikeC.ScoreWL(y=y, x=x, z=z, id=id, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e,
-                              Weights=Weights, subjectData=subjectData)
+    out     = LogLikeWL(beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e,
+                         Keep.liC=Keep.liC, subjectData=subjectData)
+    GRAD    = LogLikeC.ScoreWL(beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e,
+                              subjectData=subjectData)
     ## Need to use the chain rule: note that params is on the unconstrained
     ## scale but GRAD was calculated on the constrained parameters
     GRAD[vc.sd.index]  <- GRAD[vc.sd.index]*exp(params[vc.sd.index])
@@ -293,7 +265,6 @@ LogLikeCAndScoreWL <- function(params, y, x, z, id, Weights, ProfileCol=NA, Keep
 #' @param x sum(n_i) by p design matrix for fixed effects
 #' @param z sum(n_i) by 2 design matric for random effects (intercept and slope)
 #' @param Weights Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood
-#' @export
 CreateSubjectDataWL <- function(id,y,x,z,Weights){
   id.tmp          = split(id,id)
   y.tmp           = split(y,id)
@@ -338,7 +309,6 @@ CreateSubjectDataWL <- function(id,y,x,z,Weights){
 #' @importFrom stats na.omit
 #' @importFrom stats nlm
 #' @importFrom stats pnorm
-#' @export
 
 WL_internal <- function(formula,
                         design,
@@ -400,11 +370,6 @@ WL_internal <- function(formula,
   WL.fit <- nlm(
     LogLikeCAndScoreWL,
     InitVals,
-    y = y,
-    x = x,
-    z = z,
-    id = id,
-    Weights = Weights,
     ProfileCol = design$ProfileCol,
     subjectData = subjectData,
     stepmax = 4,
@@ -423,11 +388,6 @@ WL_internal <- function(formula,
   for (j in 1:npar) {
     temp <- LogLikeCAndScoreWL(
       WL.fit$estimate + eps.mtx[j, ],
-      y = y,
-      x = x,
-      z = z,
-	      id = id,
-	      Weights = Weights,
 	      ProfileCol = design$ProfileCol,
 	      subjectData = subjectData
 	    )
@@ -452,16 +412,11 @@ WL_internal <- function(formula,
   err.sd.index <- nbeta + nVCsd + nVCrho + c(1:nERRsd)
 
   Cheese <- LogLikeC.ScoreWL(
-    y = y,
-    x = x,
-    z = z,
-    id = id,
     beta = WL.fit$estimate[beta.index],
     sigma.vc = exp(WL.fit$estimate[vc.sd.index]),
     rho.vc = (exp(WL.fit$estimate[vc.rho.index]) - 1) /
       (exp(WL.fit$estimate[vc.rho.index]) + 1),
     sigma.e = exp(WL.fit$estimate[err.sd.index]),
-    Weights = Weights,
     CheeseCalc = TRUE,
     subjectData = subjectData
   )

@@ -53,15 +53,6 @@ acml_gbti_gradient <- function(fit, design, formula)
 
   out <- LogLikeCAndScore2(
     coef(fit),
-    y = input$y,
-    x = input$x,
-    z = input$z,
-    id = input$id,
-    w.function = input$w.function,
-    cutpoints = input$cutpoints,
-    SampProb = input$SampProb,
-    xcol.phase1 = design$xcol.phase1,
-    ests.phase1 = design$ests.phase1,
     subjectData = subjectData
   )
 

@@ -4,29 +4,9 @@
 \alias{LogLikeWL}
 \title{Calculate the conditional likelihood for the univariate and bivariate sampling cases across all subjects (Keep.liC=FALSE) or the subject specific contributions to the conditional likelihood along with the log-transformed ascertainment correction for multiple imputation (Keep.liC=TRUE).}
 \usage{
-LogLikeWL(
-  y,
-  x,
-  z,
-  id,
-  beta,
-  sigma.vc,
-  rho.vc,
-  sigma.e,
-  Weights,
-  Keep.liC = FALSE,
-  subjectData = NULL
-)
+LogLikeWL(beta, sigma.vc, rho.vc, sigma.e, Keep.liC = FALSE, subjectData)
 }
 \arguments{
-\item{y}{response vector}
-
-\item{x}{sum(n_i) by p design matrix for fixed effects}
-
-\item{z}{sum(n_i) by q design matrix for random effects}
-
-\item{id}{sum(n_i) vector of subject ids}
-
 \item{beta}{mean model parameter p-vector}
 
 \item{sigma.vc}{vector of variance components on standard deviation scale}
@@ -35,11 +15,9 @@ LogLikeWL(
 
 \item{sigma.e}{std dev of the measurement error distribution}
 
-\item{Weights}{Subject specific sampling weights.  A vector of length sum(n_i).  Not used unless using weighted Likelihood}
-
 \item{Keep.liC}{If FALSE, the function returns the conditional log likelihood across all subjects.  If TRUE, subject specific contributions and exponentiated subject specific ascertainment corrections are returned in a list.}
 
-\item{subjectData}{Optional precomputed subject-specific data list from \code{CreateSubjectDataWL}.}
+\item{subjectData}{Precomputed subject-specific data list from \code{CreateSubjectDataWL}.}
 }
 \value{
 If Keep.liC=FALSE, conditional log likelihood.  If Keep.liC=TRUE, a two-element list that contains subject specific likelihood contributions and exponentiated ascertainment corrections.
