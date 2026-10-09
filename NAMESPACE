@@ -86,6 +86,7 @@ importFrom(numDeriv,grad)
 importFrom(stats,
   as.formula,
   coef,
+  cov,
   dnorm,
   lm,
   model.frame,

@@ -2,86 +2,123 @@
 % Please edit documentation in R/MI.R
 \name{MI}
 \alias{MI}
-\title{Multiple imputation analysis for ODS data}
+\title{Fit model using multiple imputation (MI)}
 \usage{
 MI(
   formula,
   design,
+  subset = NULL,
+  na.action = getOption("na.action"),
+  verbose = 0L,
+  init = NULL,
+  ProfileCol = NA,
   exposure,
   exposure_model = NULL,
   M = 20L,
-  n_imp = 5L,
-  L = 20L,
+  n_donors = 5L,
+  ridge = 1e-04,
   data = NULL,
   sampled_col = NULL,
   seed = NULL,
-  verbose = FALSE,
-  init = NULL,
   keep_completed = FALSE,
   ...
 )
 }
 \arguments{
-\item{formula}{A model formula for the outcome model, such as
-\code{y ~ grp * time + conf}.}
+\item{formula}{\code{formula}; a symbolic description of the outcome model,
+such as \code{y ~ grp * time + conf}. Use formula interactions to ensure
+exposure-dependent terms are recomputed after imputation.}
 
-\item{design}{An \code{odsdesign} object created by \code{\link{ods}}.}
+\item{design}{an object of class \code{odsdesign} created by \code{\link{ods}}.}
 
-\item{exposure}{The name of the continuous expensive covariate to impute.
-This can be supplied quoted or unquoted.}
+\item{subset}{an optional logical vector selecting phase-I observations.
+For PMM, selected subjects must retain the same complete visit schedule.}
 
-\item{exposure_model}{A one-sided formula for the subject-level exposure
-model, such as \code{~ conf}. If omitted, subject-level covariates are
-taken from the outcome model after removing the exposure and time
-variables.}
+\item{na.action}{a function indicating what should happen when model
+covariates contain NAs. PMM requires observed predictors and outcomes;
+missing exposure values are allowed for phase-I-only subjects.}
 
-\item{M}{Number of final MI draws.}
+\item{verbose}{\code{numeric(1)}; progress printing level.}
 
-\item{n_imp}{Number of updating imputations within each final draw.}
+\item{init}{\code{numeric}; initial values passed to completed-data \code{WL}
+fits, on the same scale as for \code{WL}.}
 
-\item{L}{Number of weighted quantile intervals used to approximate the
-continuous expensive covariate.}
+\item{ProfileCol}{reserved for profile likelihood; must be \code{NA} for MI.}
 
-\item{data}{Optional full phase-I data. Defaults to \code{design$data}.}
+\item{exposure}{name of the expensive covariate, quoted or unquoted.
+Supports numeric continuous, count, binary, or ordinal values, logical
+binary values, two-level factors or binary character labels, and ordered
+factors with explicitly specified levels for ordinal categories.}
 
-\item{sampled_col}{Name of the column indicating phase-II sampling. Defaults
-to \code{"sampled"}.}
+\item{exposure_model}{a one-sided or two-sided formula specifying
+subject-level PMM predictors, e.g. \code{~ conf}. All longitudinal outcomes
+are automatically added as \code{y0}, \code{y1}, etc., in increasing order
+of visit time. If omitted, covariates come from the outcome formula after
+removing exposure and time.}
 
-\item{seed}{Optional random seed.}
+\item{M}{number of imputations, an integer of at least 2.}
 
-\item{verbose}{Logical; print progress messages.}
+\item{n_donors}{number of nearest donors, a positive integer. Defaults to 5;
+capped at the number of available donors.}
 
-\item{init}{Optional initial values passed to the initial \code{\link{WL}}
-fit.}
+\item{ridge}{positive ridge factor for the PMM posterior covariance.
+Defaults to \code{1e-4}.}
 
-\item{keep_completed}{Logical; if \code{TRUE}, keep the completed data set
-from each final MI draw.}
+\item{data}{optional full phase-I data. Defaults to \code{design$data}.}
 
-\item{...}{Reserved for future options.}
+\item{sampled_col}{optional name of a 0/1 phase-II sampling column.
+By default PMM uses the sampling recorded in \code{design$data$sampled},
+matched by subject id.}
+
+\item{seed}{optional nonnegative integer random seed.}
+
+\item{keep_completed}{logical; keep each completed data set if \code{TRUE}.}
+
+\item{...}{reserved for additional arguments. Currently no additional
+arguments are accepted.}
 }
 \value{
-An object of class \code{"MI"} with combined coefficients,
-  covariance matrix, the initial WL fit, the ordinal exposure fit, and
-  interval information.
+An object of class \code{"MI"} containing pooled
+  \code{coefficients}, \code{covariance}, within-imputation covariance
+  \code{U_bar}, between-imputation covariance \code{B}, individual
+  \code{coef_mi} and \code{cov_mi}, the PMM \code{exposure_fit}, and optional
+  \code{completed_data}. The methods \code{coef}, \code{fixef}, \code{ranef},
+  \code{vcov}, \code{print}, and \code{summary} follow the fitted-model interface.
 }
 \description{
-Fit a multiple-imputation analysis for a continuous expensive covariate in
-an outcome dependent sampling design. The observed phase-II expensive
-covariate is discretized into weighted quantile intervals, an ordinal
-exposure model is fit with \code{rms::orm}, unsampled phase-I subjects are
-imputed, and the completed-data analyses are combined with Rubin's rule.
+Impute a continuous, binary, or ordinal subject-level expensive covariate using
+Type-1 predictive mean matching (PMM). Fit an unweighted ridge linear model among phase-II
+donors using subject-level covariates and all phase-I longitudinal outcomes.
+Donor predictions use the fitted coefficients; recipient predictions use
+posterior draws of the coefficients and residual variance. Each recipient
+receives the observed exposure of a randomly selected nearest donor.
+Fit each completed phase-I data set with unit-weight \code{\link{WL}}
+and combine all model parameters on the unconstrained scale using Rubin's rules.
+Completed-data sampling probabilities are all 1, so design construction
+does not introduce additional random sampling between imputation draws.
+}
+\details{
+PMM requires one exposure constant within each donor and
+  a common complete visit schedule for all subjects. There must be more
+  donors than coefficients in the PMM working model. The PMM residual sum
+  of squares must be positive and finite. PMM supports mean,
+  intercept, slope, and bivariate ODS designs with \code{method},
+  \code{p_sample}, and cutpoints stored in the design. Imputed values stay
+  on the observed donor support and retain the original exposure type,
+  factor levels, and ordering. Numeric exposures retain their numeric scores
+  in the working model; logical and two-level factor exposures use 0/1,
+  binary character labels use 0/1 in sorted label order, and ordered factors
+  use scores 1, 2, etc. in the declared level order. These numeric scores are
+  only used for matching; recipients receive the donor's original value.
+  Neither sampling weights nor a Poisson regression are used in the PMM
+  working model. Completed-data analyses use model-based WL covariance.
 }
 \examples{
 \dontrun{
-fit_mi <- MI(
-  y ~ grp * time + conf,
-  design,
-  exposure = grp,
-  exposure_model = ~ conf,
-  M = 20,
-  n_imp = 5,
-  L = 20
-)
-summary(fit_mi)
+fit <- MI(y ~ grp * time + conf, design,
+          exposure = grp, exposure_model = ~ conf,
+          M = 20, n_donors = 5, seed = 1)
+coef(fit)
+summary(fit)
 }
 }

@@ -30,17 +30,15 @@ Depends: R (>= 3.5.0), lme4, numDeriv
 LinkingTo: Rcpp, RcppEigen
 Suggests: 
     testthat (>= 3.0.0),
+    MASS,
     knitr,
     rmarkdown,
     quarto,
     tidyverse
 VignetteBuilder: knitr
 Imports:
-    MASS,
-    Matrix,
     mvtnorm,
     checkmate,
-    rms,
     graphics,
     stats,
     utils,
