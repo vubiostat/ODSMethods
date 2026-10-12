@@ -1,0 +1,3 @@
+CFLAGS += -Wno-ignored-attributes
+CXXFLAGS += -Wno-ignored-attributes
+PKG_CXXFLAGS = -Wno-ignored-attributes
