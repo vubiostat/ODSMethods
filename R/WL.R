@@ -151,8 +151,7 @@ li.lme.scoreWL <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
     m2                    <- m
     m2[tmp[1,1],tmp[1,2]] <- 1
     m2[tmp[2,1],tmp[2,2]] <- 1
-    tmp                   <- rho.vc[mmm] + 1*(rho.vc[mmm]==0) ## to prevent division by 0
-    dViMat.drho.vc        <- m2 * D / tmp
+    dViMat.drho.vc        <- SDMat.RE %*% m2 %*% SDMat.RE
     tmp                   <- zi %*% dViMat.drho.vc %*% t.zi
     dli.drho.vc           <- c(dli.drho.vc, -0.5*(sum(diag(inv.v %*% tmp)) - t.resid.inv.v %*% tmp %*% inv.v.resid)[1,1])
   }
@@ -180,6 +179,10 @@ li.lme.scoreWL <- function(subjectData, beta, sigma.vc, rho.vc, sigma.e){
 #' @param CheeseCalc If FALSE, the function returns the gradient of the conditional log likelihood across all subjects.  If TRUE, the cheese part of the sandwich esitmator is calculated.
 #' @param subjectData Precomputed subject-specific data list from \code{CreateSubjectDataWL}.
 #' @return If CheeseCalc=FALSE, gradient of conditional log likelihood.  If CheeseCalc=TRUE, the cheese part of the sandwich estimator is calculated.
+#' @details The cheese is the sum of outer products of the subject-specific
+#' inverse-probability-weighted scores, on the unconstrained optimization
+#' scale. Each subject contributes one score vector, so the sampling weights
+#' enter the cheese squared.
 LogLikeC.ScoreWL <- function(beta, sigma.vc, rho.vc, sigma.e, CheeseCalc=FALSE, subjectData){
     param.vec <- c(beta, log(sigma.vc),log((1+rho.vc)/(1-rho.vc)),log(sigma.e))
     #print(c("blahblah", param.vec))
@@ -200,9 +203,10 @@ LogLikeC.ScoreWL <- function(beta, sigma.vc, rho.vc, sigma.e, CheeseCalc=FALSE, 
     UncorrectedScorei <- lapply(subjectData, li.lme.scoreWL, beta=beta, sigma.vc=sigma.vc, rho.vc=rho.vc, sigma.e=sigma.e)
     Gradienti         <- lapply(UncorrectedScorei, function(x) x[['gr']]) ## create a list of ss contributions to gradient
     UncorrectedScore  <- Reduce('+', Gradienti)  ## Note if using IPW this is actually a corrected score (corrected by the IPW)
-    GradiMat <- matrix(UncorrectedScore, ncol = 1)
 
     if (CheeseCalc==TRUE){
+        ## Each column is one subject's weighted score, before summing.
+        GradiMat <- do.call(cbind, Gradienti)
         ## Need to use the chain rule: note that param,vec is on the unconstrained scale but Gradi was calculated on the constrained parameters
         GradiMat[notbeta.index,] <- GradiMat[notbeta.index,]*c(exp(param.vec[vc.sd.index]), 2*exp(param.vec[vc.rho.index])/((exp(param.vec[vc.rho.index])+1)^2), exp(param.vec[err.sd.index]))
         cheese <- matrix(0,  npar, npar)
@@ -541,7 +545,7 @@ summary.WL <- function(object, digits = max(3L, getOption("digits")),
 {
   raw              <- coef(object, ...)
   beta             <- coef(object, transform=transform, ...)
-  se               <- sqrt(diag(vcov(object)))
+  se               <- sqrt(diag(vcov(object, robust=robust)))
   object$transform <- transform
   object$robust    <- robust
   object$digits    <- digits
@@ -572,7 +576,7 @@ summary.WL <- function(object, digits = max(3L, getOption("digits")),
 
     # The one with special handling is the rho(s)
     rhos <- ran[(n_rand+1):(length(ran) - 1)] # Find rho(s)
-    object$coefficients[rhos, 2] <- abs(1/cosh(coef(object)[rhos]/2)^2/2) *object$coefficients[rhos, 2]
+    object$coefficients[rhos, 2] <- abs(1/cosh(raw[rhos]/2)^2/2) *object$coefficients[rhos, 2]
 
     # This works for rest coefficients since they are just exp(x) and D(exp(x)) = exp(x)
     ran <- ran[!ran %in% rhos]

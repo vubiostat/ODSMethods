@@ -32,3 +32,9 @@ If CheeseCalc=FALSE, gradient of conditional log likelihood.  If CheeseCalc=TRUE
 \description{
 Calculate the gradient of the conditional likelihood for the univariate and bivariate sampling cases across all subjects (CheeseCalc=FALSE) or the cheese part of the sandwich estimator if CheeseCalc=TRUE.
 }
+\details{
+The cheese is the sum of outer products of the subject-specific
+inverse-probability-weighted scores, on the unconstrained optimization
+scale. Each subject contributes one score vector, so the sampling weights
+enter the cheese squared.
+}
